@@ -1,6 +1,12 @@
-# 🚀 AI 全能竞技场 (AI Quiz Arena) - 教师使用指南
+# 🚀 太平华联中学历史科：互动学习门户 (AI Quiz Arena & Portal)
 
-**AI 全能竞技场**是一款专为老师设计的、由 AI 驱动的实时课堂竞技平台。只需粘贴一段课文或资料，AI 即可在几秒钟内为你生成一套高品质的竞赛题，让课堂瞬间变成热血的竞技场。
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![AI-Powered](https://img.shields.io/badge/Powered%20by-Google%20Gemini-orange.svg)
+![Education](https://img.shields.io/badge/Category-EdTech-green.svg)
+![History](https://img.shields.io/badge/Subject-History-red.svg)
+
+> **“让历史在指尖‘活’起来。”**  
+> 这是一个专为历史教育设计的数字化中心。通过 AI 自动出题竞技场与沉浸式互动游戏，我们将传统课堂转变为跨越时空的探索之旅。
 
 ---
 
