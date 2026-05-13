@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太平华联中学历史科 - 数字学术中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gold: #d4af37;
+            --deep-red: #4a0404;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
+            color: #e5e7eb;
+            font-family: 'Noto Serif SC', serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 动态背景星空效果 */
+        .stars-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            animation: moveStars 100s linear infinite;
+            opacity: 0.3;
+        }
+        @keyframes moveStars { from { transform: translateY(0); } to { transform: translateY(-1000px); } }
+
+        .title-font { font-family: 'Ma Shan Zheng', cursive; }
+        .modern-font { font-family: 'Outfit', sans-serif; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card:hover {
+            transform: translateY(-20px) scale(1.02);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary-gold);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 40px rgba(212, 175, 55, 0.2);
+        }
+
+        .gold-text-glow {
+            color: var(--primary-gold);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .action-btn {
+            background: linear-gradient(45deg, #8b0000, #4a0404);
+            border: 1px solid var(--primary-gold);
+            color: var(--primary-gold);
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            font-weight: 900;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .action-btn:hover {
+            background: var(--primary-gold);
+            color: black;
+            box-shadow: 0 0 30px var(--primary-gold);
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 10vw, 8rem);
+            line-height: 1;
+            background: linear-gradient(to bottom, #fff 0%, #d4af37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* 装饰条 */
+        .divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--primary-gold), transparent);
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-12">
+
+    <div class="stars-container"></div>
+
+    <!-- Header Section -->
+    <header class="text-center mb-20 relative animate-fade-in">
+        <div class="inline-block mb-4 px-6 py-2 border border-gold-500 rounded-full text-gold-500 modern-font tracking-widest text-sm uppercase">
+            Taiping Hua Lian High School
+        </div>
+        <h1 class="hero-title title-font mb-4">太平华联中学历史科</h1>
+        <p class="text-2xl md:text-4xl gold-text-glow title-font">数字历史学术中心</p>
+        <div class="divider mx-auto w-1/2"></div>
+    </header>
+
+    <!-- Project Grid -->
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-12 container mx-auto max-w-7xl">
+        
+        <!-- Project 1: AI Quiz Arena -->
+        <div class="glass-card flex flex-col h-full group">
+            <div class="h-64 overflow-hidden relative">
+                <img src="https://images.unsplash.com/photo-1451187530220-4e2a16828821?auto=format&fit=crop&q=80&w=1000" alt="Quiz Arena" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent"></div>
+                <div class="absolute bottom-6 left-8">
+                    <span class="bg-blue-600 text-xs px-3 py-1 rounded-full text-white mb-2 inline-block">AI 驱动</span>
+                    <h3 class="text-3xl font-black title-font">AI 全能竞技场</h3>
+                </div>
+            </div>
+            <div class="p-8 flex flex-col justify-between flex-grow">
+                <p class="text-gray-400 text-lg leading-relaxed mb-8">
+                    基于 Google Gemini 的实时出题系统。只需粘贴教学资料，即可一键开启热血的全班竞技对抗，最后三题 BONUS 模式引爆课堂高潮。
+                </p>
+                <a href="quiz.html" class="action-btn text-center inline-block">开启竞技场</a>
+            </div>
+        </div>
+
+        <!-- Project 2: Melaka Project -->
+        <div class="glass-card flex flex-col h-full group">
+            <div class="h-64 overflow-hidden relative">
+                <img src="https://images.unsplash.com/photo-1543831215-05047814407b?auto=format&fit=crop&q=80&w=1000" alt="Melaka Crossroads" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent"></div>
+                <div class="absolute bottom-6 left-8">
+                    <span class="bg-yellow-600 text-xs px-3 py-1 rounded-full text-white mb-2 inline-block">沉浸体验</span>
+                    <h3 class="text-3xl font-black title-font">马六甲：东方十字路口</h3>
+                </div>
+            </div>
+            <div class="p-8 flex flex-col justify-between flex-grow">
+                <p class="text-gray-400 text-lg leading-relaxed mb-8">
+                    穿越回马六甲苏丹王朝的黄金时代。通过互动对话与智慧选择，亲历这个繁华贸易港口的兴衰变迁。
+                </p>
+                <a href="https://chewyenhan.github.io/Melaka_Project/" target="_blank" class="action-btn text-center inline-block">穿越马六甲</a>
+            </div>
+        </div>
+
+        <!-- Project 3: French Revolution -->
+        <div class="glass-card flex flex-col h-full group">
+            <div class="h-64 overflow-hidden relative">
+                <img src="https://images.unsplash.com/photo-1563294371-3315a0c3260d?auto=format&fit=crop&q=80&w=1000" alt="1789 Survival" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent"></div>
+                <div class="absolute bottom-6 left-8">
+                    <span class="bg-red-600 text-xs px-3 py-1 rounded-full text-white mb-2 inline-block">生存挑战</span>
+                    <h3 class="text-3xl font-black title-font">法国大革命 1789</h3>
+                </div>
+            </div>
+            <div class="p-8 flex flex-col justify-between flex-grow">
+                <p class="text-gray-400 text-lg leading-relaxed mb-8">
+                    身处巴黎生存危机，你该如何选择？沉浸式亲历自由、平等、博爱的鲜血代价。
+                </p>
+                <a href="https://chewyenhan.github.io/-/" target="_blank" class="action-btn text-center inline-block">亲历巴黎风云</a>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-32 text-center pb-20">
+        <div class="divider mx-auto w-1/4"></div>
+        <p class="modern-font text-gray-500 uppercase tracking-widest text-sm mb-2">Developed By</p>
+        <p class="title-font text-3xl gold-text-glow">朱彦翰 (Zhu Yanhan)</p>
+        <p class="mt-6 text-gray-600 modern-font text-xs">© 2026 Taiping Hua Lian High School - History Department. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // 简单的入场动画效果
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach((card, i) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(50px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 200 * i);
+            });
+        });
+    </script>
+</body>
+</html>
