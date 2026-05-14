@@ -104,12 +104,51 @@
 <body>
 
     <header class="header-bg">
-        <div class="container mx-auto">
+        <div class="container mx-auto px-4">
             <p class="text-xl uppercase tracking-widest text-gold-500 mb-4 opacity-80">Taiping Hua Lian High School</p>
             <h1 class="text-6xl font-black mb-6">历史科互动学习门户</h1>
-            <p class="text-2xl text-gray-300">让历史在指尖“活”起来</p>
+            
+            <!-- 网站简介 -->
+            <div class="max-w-3xl mx-auto mb-10 bg-black/30 backdrop-blur-md p-8 rounded-3xl border border-white/10">
+                <h3 class="text-2xl font-bold text-gold-500 mb-4">🌐 网站简介</h3>
+                <p class="text-lg leading-relaxed text-gray-200">
+                    本网站由 <span class="text-white font-bold">朱彦翰 (Chew Yen Han)</span> 倾力打造，旨在通过最前沿的 <span class="text-gold-500">AI 技术</span> 赋能历史教学。
+                    我们通过“AI 智能竞技”与“沉浸式角色扮演”，打破传统的照本宣科，让历史课堂转变为跨越时空的探索之旅。
+                    在这里，历史不再是冰冷的文字，而是鲜活的体验。
+                </p>
+                <button onclick="toggleModal(true)" class="mt-6 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-full font-bold transition-all flex items-center gap-2 mx-auto">
+                    🔑 如何获取免费 API Key 体验游戏？
+                </button>
+            </div>
         </div>
     </header>
+
+    <!-- API 教程弹窗 -->
+    <div id="api-modal" class="fixed inset-0 bg-black/90 z-[9999] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-gold-500 rounded-[40px] max-w-2xl w-full p-10 relative shadow-2xl">
+            <button onclick="toggleModal(false)" class="absolute top-6 right-8 text-4xl text-gray-400 hover:text-white">&times;</button>
+            <h2 class="text-4xl font-black text-gold-500 mb-8 title-font">🔑 获取免费 API Key 指南</h2>
+            <div class="space-y-6 text-gray-300 text-lg">
+                <div class="flex gap-4">
+                    <span class="bg-gold-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">1</span>
+                    <p>使用 Google 账号登录 <a href="https://aistudio.google.com/" target="_blank" class="text-blue-400 underline">Google AI Studio</a>。</p>
+                </div>
+                <div class="flex gap-4">
+                    <span class="bg-gold-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">2</span>
+                    <p>在左侧菜单点击 <b>"Get API key"</b>。</p>
+                </div>
+                <div class="flex gap-4">
+                    <span class="bg-gold-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">3</span>
+                    <p>点击 <b>"Create API key in new project"</b> 并复制那一串字符。</p>
+                </div>
+                <div class="flex gap-4">
+                    <span class="bg-gold-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">4</span>
+                    <p>回到游戏界面，粘贴 Key 即可开启 AI 互动。请放心，Key 仅保存在您的浏览器本地，安全无忧。</p>
+                </div>
+            </div>
+            <button onclick="toggleModal(false)" class="mt-10 w-full bg-gold-500 text-black py-4 rounded-2xl font-black text-xl hover:scale-105 transition-transform">我明白了，去尝试！</button>
+        </div>
+    </div>
 
     <main class="container mx-auto px-6 py-20">
         
@@ -181,6 +220,15 @@
         <p class="text-3xl font-black text-gold-500">Chew Yen Han</p>
         <p class="mt-4 text-gray-600">© 2026 Taiping Hua Lian High School - History Department</p>
     </footer>
-
+    <script>
+        function toggleModal(show) {
+            const modal = document.getElementById('api-modal');
+            if(show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>
