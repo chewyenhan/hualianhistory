@@ -6,6 +6,9 @@
     <title>AI 全能竞技场 - 终极至尊版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <!-- 引入文档解析库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <style>
         :root {
             --theme-color: #3b82f6;
@@ -142,8 +145,17 @@
 
             <!-- Text & Count Slider -->
             <section>
-                <label class="block text-2xl font-bold mb-2 text-gray-700">📖 粘贴课文/资料内容</label>
-                <textarea id="source-text" class="setup-input h-64 text-lg" placeholder="在这里输入你的教学材料..."></textarea>
+                <div class="flex justify-between items-end mb-4">
+                    <label class="block text-2xl font-bold text-gray-700">📖 粘贴资料 或 上传文档</label>
+                    <div class="flex items-center gap-4">
+                        <span id="upload-status" class="text-lg font-bold text-blue-600 hidden">⌛ 正在解析文档...</span>
+                        <button onclick="document.getElementById('file-upload').click()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-xl border-2 border-gray-300 font-bold flex items-center gap-2 transition-all">
+                            📂 上传 PDF / Word
+                        </button>
+                        <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx" onchange="handleFileUpload(this)">
+                    </div>
+                </div>
+                <textarea id="source-text" class="setup-input h-64 text-lg" placeholder="在这里输入你的教学材料，或者通过上方按钮上传文档..."></textarea>
                 <div class="mt-8 flex items-center gap-8 bg-gray-50 p-6 rounded-2xl">
                     <span class="text-2xl font-black">出题数量：</span>
                     <input type="range" id="q-count-input" min="1" max="30" value="10" class="flex-grow h-4" oninput="document.getElementById('q-count-val').innerText = this.value">
@@ -530,6 +542,45 @@
             const u = new SpeechSynthesisUtterance(t);
             u.lang = 'zh-CN'; u.rate = 0.9;
             window.speechSynthesis.speak(u);
+        }
+
+        // --- 文档解析逻辑 ---
+        async function handleFileUpload(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            const status = document.getElementById('upload-status');
+            const target = document.getElementById('source-text');
+            status.classList.remove('hidden');
+            target.placeholder = "正在从文档中提取文字，请稍候...";
+
+            try {
+                if(file.type === "application/pdf") {
+                    const arrayBuffer = await file.arrayBuffer();
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+                    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                    let fullText = "";
+                    for(let i=1; i<=pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        fullText += content.items.map(item => item.str).join(' ') + "\n";
+                    }
+                    target.value = fullText;
+                } else if(file.name.endsWith('.docx')) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
+                    target.value = result.value;
+                } else {
+                    alert("目前仅支持 PDF 和 Word (.docx) 格式。PPT 请先另存为 PDF 再上传。");
+                }
+            } catch(e) {
+                console.error(e);
+                alert("文档解析失败，请尝试直接复制粘贴文字。");
+            } finally {
+                status.classList.add('hidden');
+                target.placeholder = "在这里输入你的教学材料...";
+                input.value = ""; // 重置上传控件
+            }
         }
     </script>
 </body>
