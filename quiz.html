@@ -106,6 +106,15 @@
             animation: pulse 1s infinite;
         }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        .lottery-highlight {
+            background: #fbbf24 !important;
+            color: #000 !important;
+            border-color: #f59e0b !important;
+            transform: scale(1.15);
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.4);
+            transition: all 0.08s ease;
+        }
     </style>
 </head>
 <body>
@@ -120,7 +129,7 @@
     <!-- BGM Widget -->
     <div id="bgm-widget" class="fixed top-5 right-5 bg-black/80 rounded-full p-4 text-white hidden z-[2000] flex items-center gap-4">
         <span onclick="toggleBGM()" class="cursor-pointer text-3xl">🎵</span>
-        <input type="range" min="0" max="0.5" step="0.01" value="0.05" oninput="updateVolume(this.value)">
+        <input type="range" min="0" max="100" step="1" value="30" oninput="updateVolume(this.value)">
     </div>
 
     <!-- Step 0: Setup View -->
@@ -158,8 +167,69 @@
                 <textarea id="source-text" class="setup-input h-64 text-lg" placeholder="在这里输入你的教学材料，或者通过上方按钮上传文档..."></textarea>
                 <div class="mt-8 flex items-center gap-8 bg-gray-50 p-6 rounded-2xl">
                     <span class="text-2xl font-black">出题数量：</span>
-                    <input type="range" id="q-count-input" min="1" max="30" value="10" class="flex-grow h-4" oninput="document.getElementById('q-count-val').innerText = this.value">
+                    <input type="range" id="q-count-input" min="1" max="30" value="10" class="flex-grow h-4" oninput="document.getElementById('q-count-val').innerText = this.value; document.getElementById('diff-total-target').innerText = this.value; validateDiffSum()">
                     <span id="q-count-val" class="text-5xl font-black text-blue-600 w-20 text-center">10</span>
+                </div>
+            </section>
+
+            <!-- Difficulty Distribution -->
+            <section class="p-8 bg-white border-4 border-dashed border-purple-200 rounded-3xl">
+                <h3 class="text-3xl font-black mb-4 text-center text-purple-900 underline decoration-purple-400">🎯 题目难度分配</h3>
+                <p class="text-xl text-gray-500 mb-6 text-center">各难度题数总和须等于 <span id="diff-total-target" class="font-black text-blue-600">10</span></p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-green-50 p-6 rounded-2xl border-2 border-green-200">
+                        <div class="text-center mb-3">
+                            <span class="text-3xl">🟢</span>
+                            <h4 class="text-2xl font-black text-green-700">简单</h4>
+                        </div>
+                        <div class="flex items-center justify-center gap-3 mb-3">
+                            <button onclick="adjustDiffCount('easy',-1)" class="w-10 h-10 bg-green-200 rounded-full text-xl font-black hover:bg-green-300">−</button>
+                            <input type="number" id="easy-count" value="3" min="0" max="30" class="w-16 text-center text-2xl font-black border-2 border-green-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            <button onclick="adjustDiffCount('easy',1)" class="w-10 h-10 bg-green-200 rounded-full text-xl font-black hover:bg-green-300">+</button>
+                        </div>
+                        <div class="flex justify-center items-center gap-2">
+                            <span class="text-sm font-bold text-gray-500">倍率:</span>
+                            <input type="number" id="mult-easy" value="1" min="0" max="10" step="0.5" class="w-16 text-center font-black border-2 border-green-200 rounded-lg text-lg">
+                            <span class="text-sm text-gray-400">×</span>
+                        </div>
+                    </div>
+                    <div class="bg-yellow-50 p-6 rounded-2xl border-2 border-yellow-200">
+                        <div class="text-center mb-3">
+                            <span class="text-3xl">🟡</span>
+                            <h4 class="text-2xl font-black text-yellow-700">中等</h4>
+                        </div>
+                        <div class="flex items-center justify-center gap-3 mb-3">
+                            <button onclick="adjustDiffCount('medium',-1)" class="w-10 h-10 bg-yellow-200 rounded-full text-xl font-black hover:bg-yellow-300">−</button>
+                            <input type="number" id="medium-count" value="5" min="0" max="30" class="w-16 text-center text-2xl font-black border-2 border-yellow-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            <button onclick="adjustDiffCount('medium',1)" class="w-10 h-10 bg-yellow-200 rounded-full text-xl font-black hover:bg-yellow-300">+</button>
+                        </div>
+                        <div class="flex justify-center items-center gap-2">
+                            <span class="text-sm font-bold text-gray-500">倍率:</span>
+                            <input type="number" id="mult-medium" value="2" min="0" max="10" step="0.5" class="w-16 text-center font-black border-2 border-yellow-200 rounded-lg text-lg">
+                            <span class="text-sm text-gray-400">×</span>
+                        </div>
+                    </div>
+                    <div class="bg-red-50 p-6 rounded-2xl border-2 border-red-200">
+                        <div class="text-center mb-3">
+                            <span class="text-3xl">🔴</span>
+                            <h4 class="text-2xl font-black text-red-700">困难</h4>
+                        </div>
+                        <div class="flex items-center justify-center gap-3 mb-3">
+                            <button onclick="adjustDiffCount('hard',-1)" class="w-10 h-10 bg-red-200 rounded-full text-xl font-black hover:bg-red-300">−</button>
+                            <input type="number" id="hard-count" value="2" min="0" max="30" class="w-16 text-center text-2xl font-black border-2 border-red-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            <button onclick="adjustDiffCount('hard',1)" class="w-10 h-10 bg-red-200 rounded-full text-xl font-black hover:bg-red-300">+</button>
+                        </div>
+                        <div class="flex justify-center items-center gap-2">
+                            <span class="text-sm font-bold text-gray-500">倍率:</span>
+                            <input type="number" id="mult-hard" value="3" min="0" max="10" step="0.5" class="w-16 text-center font-black border-2 border-red-200 rounded-lg text-lg">
+                            <span class="text-sm text-gray-400">×</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="diff-sum-error" class="hidden mt-4 bg-red-100 text-red-700 p-4 rounded-2xl text-center font-black text-xl"></div>
+                <div class="mt-6 pt-4 border-t border-gray-200 flex items-center gap-4">
+                    <input type="checkbox" id="shuffle-difficulty" class="w-8 h-8 cursor-pointer">
+                    <label for="shuffle-difficulty" class="text-xl font-black cursor-pointer">🔀 随机排放题目难度（不按简单→困难固定顺序）</label>
                 </div>
             </section>
 
@@ -190,9 +260,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-10 pt-6 border-t border-gray-100 flex items-center gap-6">
-                    <input type="checkbox" id="bonus-enabled" class="w-8 h-8 cursor-pointer" checked>
-                    <label for="bonus-enabled" class="text-2xl font-black cursor-pointer">开启决胜关：最后 3 题难度提升且积分翻倍！</label>
+                <div class="mt-10 pt-6 border-t border-gray-100 space-y-6">
+                    <div class="flex items-center gap-6">
+                        <input type="checkbox" id="timer-enabled" class="w-8 h-8 cursor-pointer" onchange="document.getElementById('timer-seconds-group').classList.toggle('hidden', !this.checked)">
+                        <label for="timer-enabled" class="text-2xl font-black cursor-pointer">⏱️ 开启倒计时</label>
+                    </div>
+                    <div id="timer-seconds-group" class="hidden flex items-center gap-8 bg-gray-50 p-6 rounded-2xl">
+                        <span class="text-2xl font-black">倒计时秒数：</span>
+                        <input type="range" id="timer-seconds-input" min="1" max="30" value="15" class="flex-grow h-4" oninput="document.getElementById('timer-seconds-val').innerText = this.value">
+                        <span id="timer-seconds-val" class="text-5xl font-black text-red-500 w-20 text-center">15</span>
+                    </div>
                 </div>
             </section>
 
@@ -214,45 +291,65 @@
 
     <!-- Game View -->
     <div id="game-view" class="hidden p-8 animate-fade-in">
-        <div id="live-scores" class="flex flex-wrap justify-center gap-6 mb-8"></div>
+        <div id="progress-dots" class="flex justify-center gap-2 mb-4 flex-wrap"></div>
+        <div id="live-scores" class="flex flex-wrap justify-center gap-6 mb-4"></div>
 
-        <div class="glass-panel p-10 max-w-7xl mx-auto shadow-2xl bg-white/95">
-            <div class="flex justify-between items-start mb-8 border-b-8 border-gray-100 pb-8">
+        <!-- Countdown Timer Bar -->
+        <div id="timer-bar" class="hidden max-w-7xl mx-auto mb-6 sticky top-0 z-[999]">
+            <div class="bg-gray-900/85 backdrop-blur-md rounded-2xl p-4 shadow-2xl border-2 border-gray-700">
+                <div class="flex items-center gap-4">
+                    <span class="text-white text-2xl font-black whitespace-nowrap">⏱️</span>
+                    <div class="flex-grow bg-gray-700/60 rounded-full h-8 overflow-hidden shadow-inner">
+                        <div id="timer-progress" class="h-full rounded-full transition-all duration-1000 ease-linear" style="width: 100%; background: linear-gradient(90deg, #22c55e, #eab308);"></div>
+                    </div>
+                    <span id="timer-text" class="text-white text-4xl font-black w-20 text-center" style="font-family: 'Orbitron', sans-serif;">15</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-6 max-w-7xl mx-auto shadow-2xl bg-white/95">
+            <div class="flex justify-between items-center mb-4 border-b-4 border-gray-100 pb-4">
                 <div>
-                    <h2 id="round-title" class="text-5xl font-black text-gray-800">第一关</h2>
-                    <div class="flex items-center gap-6 mt-4">
-                        <span id="round-diff" class="text-3xl text-orange-500">⭐⭐⭐</span>
-                        <span id="bonus-tag" class="bonus-badge hidden">🏆 BONUS ROUND</span>
-                    </div>
-                </div>
-                <div id="active-status" class="bg-gray-800 text-white p-6 rounded-3xl text-center min-w-[350px] shadow-xl">
-                    <p class="text-lg opacity-60 font-bold mb-2">📢 正在作答战队：</p>
-                    <p id="active-team-info" class="text-4xl font-black text-yellow-400">等待点选...</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
-                <div class="lg:col-span-1 text-center">
-                    <div id="q-emoji" class="text-[12rem] p-10 bg-white border-8 border-gray-100 rounded-[50px] shadow-2xl">🤔</div>
-                </div>
-                <div class="lg:col-span-3 space-y-8">
-                    <div class="p-10 bg-gray-50 border-8 border-gray-200 rounded-[40px] shadow-inner">
-                        <p id="q-text" class="text-mega leading-tight font-black text-gray-800"></p>
-                    </div>
-                    <div id="options-grid" class="grid grid-cols-1 gap-6"></div>
-                    
-                    <div class="flex justify-between items-center pt-12">
-                        <p class="text-4xl font-black">已锁定回答：<span id="locked-count" class="text-blue-600">0</span> / <span id="total-teams">3</span></p>
-                        <button id="reveal-btn" onclick="revealAnswers()" class="hidden bg-red-600 text-white px-20 py-8 rounded-full text-5xl font-black shadow-2xl animate-bounce border-8 border-white">揭晓正确答案！</button>
+                    <h2 id="round-title" class="text-4xl font-black text-gray-800">第一关</h2>
+                    <div class="flex items-center gap-4 mt-2">
+                        <span id="round-diff" class="text-2xl text-orange-500">⭐⭐⭐</span>
+                        <span id="difficulty-badge" class="px-3 py-1 rounded-xl font-black text-lg border-2 bg-yellow-100 text-yellow-800 border-yellow-300">🟡 中等</span>
+                        <span id="bonus-tag" class="bonus-badge hidden">🔥 困难题 · 高分值</span>
                     </div>
                 </div>
             </div>
 
-            <div id="note-box" class="hidden mt-16 p-12 bg-blue-900 text-white rounded-[60px] shadow-2xl animate-fade-in">
-                <h4 class="text-4xl font-black mb-6 text-yellow-400">💡 知识精华总结：</h4>
-                <p id="note-text" class="text-6xl leading-tight font-black text-white drop-shadow-lg"></p>
-                <div class="flex justify-center mt-12">
-                    <button onclick="nextRound()" class="bg-yellow-500 text-black px-24 py-8 rounded-full text-4xl font-black hover:scale-110 transition-transform shadow-xl">下一关 →</button>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div class="lg:col-span-2 text-center">
+                    <div id="q-emoji" class="text-[5rem] p-4 bg-white border-4 border-gray-100 rounded-[30px] shadow-lg">🤔</div>
+                </div>
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="p-6 bg-gray-50 border-4 border-gray-200 rounded-[30px] shadow-inner">
+                        <p id="q-text" class="text-5xl leading-tight font-black text-gray-800"></p>
+                    </div>
+                    <div id="options-grid" class="grid grid-cols-1 gap-4"></div>
+                    <div class="flex justify-between items-center pt-4">
+                        <p class="text-3xl font-black">已锁定：<span id="locked-count" class="text-blue-600">0</span>/<span id="total-teams">3</span></p>
+                        <button id="reveal-btn" onclick="revealAnswers()" class="hidden bg-red-600 text-white px-16 py-6 rounded-full text-4xl font-black shadow-2xl animate-bounce border-4 border-white">揭晓答案！</button>
+                    </div>
+                </div>
+                <div class="lg:col-span-3">
+                    <div id="active-status" class="bg-gray-800 text-white p-5 rounded-3xl text-center shadow-xl sticky top-20">
+                        <p class="text-base opacity-60 font-bold mb-1">📢 正在作答战队</p>
+                        <p id="active-team-info" class="text-3xl font-black text-yellow-400">等待点选...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="answer-summary" class="hidden mt-4 p-4 bg-gray-50 rounded-3xl border-2 border-gray-200">
+                <h4 class="text-xl font-black mb-3">📋 各组作答汇总</h4>
+                <div id="answer-summary-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+            </div>
+            <div id="note-box" class="hidden mt-6 p-8 bg-blue-900 text-white rounded-[40px] shadow-2xl animate-fade-in">
+                <h4 class="text-3xl font-black mb-4 text-yellow-400">💡 知识精华总结：</h4>
+                <p id="note-text" class="text-5xl leading-tight font-black text-white drop-shadow-lg"></p>
+                <div class="flex justify-center mt-8">
+                    <button onclick="nextRound()" class="bg-yellow-500 text-black px-20 py-6 rounded-full text-3xl font-black hover:scale-110 transition-transform shadow-xl">下一关 →</button>
                 </div>
             </div>
         </div>
@@ -285,9 +382,10 @@
     </div>
 
     <script>
-        let config = { ptsCorrect: 1, ptsWrong: 0, ptsFirstCorrect: 2, ptsFirstWrong: 1, bonusEnabled: true, qCount: 10 };
+        let config = { ptsCorrect: 1, ptsWrong: 0, ptsFirstCorrect: 2, ptsFirstWrong: 1, qCount: 10, easyCount: 3, mediumCount: 5, hardCount: 2, multEasy: 1, multMedium: 2, multHard: 3, shuffleDifficulty: false, timerEnabled: false, timerSeconds: 15 };
         let teams = [], scenes = [], curIdx = 0, activeTeamIdx = -1, firstResponderIdx = -1, lockedCount = 0;
         let bgmOn = false;
+        let timerInterval = null, timerRemaining = 0;
 
         const sounds = {
             start: new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'),
@@ -302,6 +400,12 @@
             const savedKey = localStorage.getItem('gemini_api_key');
             if(savedKey) document.getElementById('api-key').value = savedKey;
             renderTeamSetupInputs(3);
+            loadSettings();
+            // Auto-save settings whenever any input changes
+            document.querySelectorAll('#setup-view input, #setup-view select, #setup-view textarea').forEach(el => {
+                el.addEventListener('change', saveSettings);
+                el.addEventListener('input', saveSettings);
+            });
         };
 
         function renderTeamSetupInputs(count) {
@@ -342,17 +446,128 @@
             } catch(e) { alert(e.message); }
         }
 
+        function adjustDiffCount(diff, delta) {
+            const input = document.getElementById(diff + '-count');
+            input.value = Math.max(0, Math.min(30, parseInt(input.value || 0) + delta));
+            validateDiffSum();
+        }
+
+        function validateDiffSum() {
+            const total = parseInt(document.getElementById('q-count-input').value);
+            const easy = parseInt(document.getElementById('easy-count').value || 0);
+            const medium = parseInt(document.getElementById('medium-count').value || 0);
+            const hard = parseInt(document.getElementById('hard-count').value || 0);
+            const sum = easy + medium + hard;
+            const errorEl = document.getElementById('diff-sum-error');
+            if (sum !== total) {
+                errorEl.classList.remove('hidden');
+                errorEl.innerText = `⚠️ 当前总和 ${sum}，需等于总题数 ${total}（${sum < total ? '还差 ' + (total - sum) + ' 题' : '多出 ' + (sum - total) + ' 题'}）`;
+            } else {
+                errorEl.classList.add('hidden');
+            }
+        }
+
+        // ========== COUNTDOWN TIMER ==========
+        function startTimer() {
+            if (!config.timerEnabled) return;
+            stopTimer();
+            timerRemaining = config.timerSeconds;
+            updateTimerDisplay();
+            document.getElementById('timer-bar').classList.remove('hidden');
+            timerInterval = setInterval(timerTick, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            document.getElementById('timer-bar').classList.add('hidden');
+        }
+
+        function timerTick() {
+            timerRemaining--;
+            updateTimerDisplay();
+            if (timerRemaining <= 10 && timerRemaining > 0) {
+                playUrgentBeep();
+            }
+            if (timerRemaining <= 0) {
+                stopTimer();
+                handleTimerExpired();
+            }
+        }
+
+        function updateTimerDisplay() {
+            const pct = (timerRemaining / config.timerSeconds) * 100;
+            const prog = document.getElementById('timer-progress');
+            prog.style.width = pct + '%';
+            document.getElementById('timer-text').innerText = timerRemaining;
+            if (timerRemaining <= 5) {
+                prog.style.background = '#ef4444';
+            } else if (timerRemaining <= 10) {
+                prog.style.background = 'linear-gradient(90deg, #eab308, #ef4444)';
+            } else {
+                prog.style.background = 'linear-gradient(90deg, #22c55e, #eab308)';
+            }
+        }
+
+        function handleTimerExpired() {
+            if (activeTeamIdx !== -1) {
+                const t = teams[activeTeamIdx];
+                t.selection = -1; // -1 = timed out, shows as greyed
+                // First team picked IS the first responder - even if they time out
+                if (firstResponderIdx === -1) { firstResponderIdx = activeTeamIdx; t.isFirst = true; }
+                lockedCount++;
+                const teamName = t.name;
+                activeTeamIdx = -1;
+                document.getElementById('locked-count').innerText = lockedCount;
+                document.getElementById('rand-stu-btn').disabled = true;
+                document.getElementById('active-team-info').innerText = '⏰ 时间到！自动锁定';
+                renderControlTeams();
+                if (lockedCount === teams.length) {
+                    document.getElementById('reveal-btn').classList.remove('hidden');
+                }
+                speak(`时间到！${teamName} 未作答，判定错误`);
+            } else {
+                document.getElementById('active-team-info').innerText = '⏰ 倒计时结束';
+                setTimeout(() => { if (!timerInterval) document.getElementById('active-team-info').innerText = '等待点选...'; }, 3000);
+            }
+        }
+
+        function playUrgentBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.value = 660;
+                osc.type = 'sine';
+                gain.gain.value = 0.06;
+                osc.start(); osc.stop(ctx.currentTime + 0.15);
+            } catch(e) { /* audio not available */ }
+        }
+
+        function getDiffMultiplier(difficulty) {
+            const map = { 'easy': config.multEasy || 1, 'medium': config.multMedium || 2, 'hard': config.multHard || 3 };
+            return map[difficulty] || config.multMedium || 2;
+        }
+
         async function launchAI() {
             const apiKey = document.getElementById('api-key').value.trim(), text = document.getElementById('source-text').value.trim(), model = document.getElementById('model-select').value, qCount = document.getElementById('q-count-input').value;
             if(!apiKey || !text || !model) return alert("请补全所有必填项！");
             
-            config = { 
-                ptsCorrect: parseInt(document.getElementById('pts-correct').value), 
+            config = {
+                ptsCorrect: parseInt(document.getElementById('pts-correct').value),
                 ptsWrong: parseInt(document.getElementById('pts-wrong').value),
-                ptsFirstCorrect: parseInt(document.getElementById('pts-first-correct').value), 
+                ptsFirstCorrect: parseInt(document.getElementById('pts-first-correct').value),
                 ptsFirstWrong: parseInt(document.getElementById('pts-first-wrong').value),
-                bonusEnabled: document.getElementById('bonus-enabled').checked, 
-                qCount: parseInt(qCount) 
+                qCount: parseInt(qCount),
+                easyCount: parseInt(document.getElementById('easy-count').value) || 0,
+                mediumCount: parseInt(document.getElementById('medium-count').value) || 0,
+                hardCount: parseInt(document.getElementById('hard-count').value) || 0,
+                multEasy: parseFloat(document.getElementById('mult-easy').value) || 1,
+                multMedium: parseFloat(document.getElementById('mult-medium').value) || 2,
+                multHard: parseFloat(document.getElementById('mult-hard').value) || 3,
+                shuffleDifficulty: document.getElementById('shuffle-difficulty').checked,
+                timerEnabled: document.getElementById('timer-enabled').checked,
+                timerSeconds: parseInt(document.getElementById('timer-seconds-input').value) || 15
             };
             
             const tCount = document.getElementById('team-count-input').value;
@@ -360,11 +575,23 @@
             for(let i=1; i<=tCount; i++) teams.push({ name: document.getElementById(`team-name-${i}`).value || `战队 ${i}`, size: parseInt(document.getElementById(`team-size-${i}`).value), score: 0, selection: null, isFirst: false, isRandom: false });
 
             document.getElementById('loading').classList.remove('hidden');
-            const prompt = `Task: Create EXACTLY ${config.qCount} quiz questions from this text: "${text}". 
-            Format: JSON array of objects.
-            Keys: q, options (3 strings), ans (0-2 index), note, title, emoji, diff (⭐ to ⭐⭐⭐⭐⭐). 
-            ${config.bonusEnabled ? "IMPORTANT: The last 3 questions must be significantly HARDER and CHALLENGING. Mark diff as ⭐⭐⭐⭐⭐." : ""} 
-            Include 'themeColor' (Hex code) based on content. Output ONLY JSON.`;
+            const easyN = config.easyCount, medN = config.mediumCount, hardN = config.hardCount;
+            const prompt = `Task: Create EXACTLY ${config.qCount} quiz questions from this text: "${text}".
+
+IMPORTANT RULES:
+- Use the EXACT SAME LANGUAGE as the source text. If the text is in Chinese, ALL questions/options/notes MUST be in Chinese. If English, then English.
+- The 'note' field must be an ACTUAL EXPLANATION of the correct answer (2-3 sentences). Explain WHY it is correct, with key facts from the source text. Never write meta-phrases like "考察学生对XX的理解" or "测试XX知识" — that is useless. Explain the CONTENT, not the question design.
+
+Format: JSON array of objects.
+Keys: q (the question), options (3 strings), ans (0-2 index of correct option), note (EXPLAIN the answer), title, emoji, diff (⭐ to ⭐⭐⭐⭐⭐), difficulty (exactly one of: "easy", "medium", "hard").
+
+CRITICAL DIFFICULTY DISTRIBUTION:
+- EXACTLY ${easyN} questions must have difficulty "easy". Straightforward recall.
+- EXACTLY ${medN} questions must have difficulty "medium". Some analysis or connection-making.
+- EXACTLY ${hardN} questions must have difficulty "hard". Challenging, deeper inference.
+${ config.shuffleDifficulty ? '- Randomly shuffle the order of difficulty levels. Do NOT group them together.' : '' }
+
+Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid JSON array, no markdown, no code blocks.`;
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1/${model}:generateContent?key=${apiKey}`, { 
@@ -379,6 +606,29 @@
                 if (!match) throw new Error("AI 格式错误，请尝试减少字数或重试。");
                 
                 scenes = JSON.parse(match[0]);
+
+                // Normalize difficulty: fallback if AI response doesn't match distribution
+                const diffOrder = [];
+                for (let i = 0; i < config.easyCount; i++) diffOrder.push('easy');
+                for (let i = 0; i < config.mediumCount; i++) diffOrder.push('medium');
+                for (let i = 0; i < config.hardCount; i++) diffOrder.push('hard');
+                if (config.shuffleDifficulty) {
+                    // Fisher-Yates shuffle
+                    for (let i = diffOrder.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [diffOrder[i], diffOrder[j]] = [diffOrder[j], diffOrder[i]];
+                    }
+                }
+                const aiOk = scenes.length === config.qCount &&
+                    scenes.every(s => ['easy','medium','hard'].includes(s.difficulty)) &&
+                    scenes.filter(s => s.difficulty === 'easy').length === config.easyCount &&
+                    scenes.filter(s => s.difficulty === 'medium').length === config.mediumCount &&
+                    scenes.filter(s => s.difficulty === 'hard').length === config.hardCount;
+                const diffStars = { easy: '⭐', medium: '⭐⭐⭐', hard: '⭐⭐⭐⭐⭐' };
+                if (!aiOk) {
+                    scenes.forEach((s, i) => { s.difficulty = diffOrder[i] || 'medium'; s.diff = diffStars[s.difficulty] || '⭐⭐⭐'; });
+                }
+
                 const themeCol = scenes[0].themeColor || '#3b82f6';
                 document.documentElement.style.setProperty('--theme-color', themeCol);
 
@@ -401,11 +651,22 @@
             document.getElementById('q-emoji').innerText = s.emoji;
             document.getElementById('q-text').innerText = s.q;
             document.getElementById('note-box').classList.add('hidden');
+            document.getElementById('answer-summary').classList.add('hidden');
             document.getElementById('reveal-btn').classList.add('hidden');
             document.getElementById('active-team-info').innerText = "等待点选...";
             
-            const isBonus = config.bonusEnabled && (curIdx >= scenes.length - 3);
-            document.getElementById('bonus-tag').classList.toggle('hidden', !isBonus);
+            const isHard = s.difficulty === 'hard';
+            document.getElementById('bonus-tag').classList.toggle('hidden', !isHard);
+            if (isHard) {
+                document.getElementById('bonus-tag').innerText = '🔥 困难题 · 高分值';
+            }
+
+            const diffLabels = { easy: '🟢 简单', medium: '🟡 中等', hard: '🔴 困难' };
+            const diffColors = { easy: 'bg-green-100 text-green-800 border-green-300', medium: 'bg-yellow-100 text-yellow-800 border-yellow-300', hard: 'bg-red-100 text-red-800 border-red-300' };
+            const d = s.difficulty || 'medium';
+            const badge = document.getElementById('difficulty-badge');
+            badge.innerText = diffLabels[d] || diffLabels['medium'];
+            badge.className = 'px-4 py-2 rounded-2xl font-black text-xl border-2 ' + (diffColors[d] || diffColors['medium']);
 
             activeTeamIdx = -1; firstResponderIdx = -1; lockedCount = 0;
             teams.forEach(t => { t.selection = null; t.isFirst = false; t.isRandom = false; });
@@ -413,7 +674,7 @@
             document.getElementById('locked-count').innerText = "0";
             document.getElementById('total-teams').innerText = teams.length;
             
-            renderOptions(); renderControlTeams(); renderLiveScores();
+            renderOptions(); renderProgressDots(); renderControlTeams(); renderLiveScores();
             speak(s.q);
         }
 
@@ -432,8 +693,8 @@
         function renderControlTeams() {
             const row = document.getElementById('manual-teams-row');
             row.innerHTML = teams.map((t, i) => `
-                <button onclick="pickTeam(${i}, false)" class="px-8 py-3 rounded-2xl border-4 font-black whitespace-nowrap text-xl transition-all ${t.selection !== null ? 'opacity-20 grayscale' : (i === activeTeamIdx ? 'bg-yellow-400 border-black text-black scale-110 shadow-xl' : 'bg-white border-blue-500 text-blue-500 hover:scale-105')}">
-                    ${t.name}
+                <button onclick="pickTeam(${i}, false)" class="px-8 py-3 rounded-2xl border-4 font-black whitespace-nowrap text-xl transition-all ${t.selection !== null ? (t.selection === -1 ? 'opacity-30 grayscale bg-red-100 border-red-400' : 'opacity-20 grayscale') : (i === activeTeamIdx ? 'bg-yellow-400 border-black text-black scale-110 shadow-xl' : 'bg-white border-blue-500 text-blue-500 hover:scale-105')}">
+                    ${t.name}${t.selection === -1 ? ' ⏰' : ''}
                 </button>
             `).join('');
         }
@@ -446,13 +707,62 @@
             document.getElementById('active-team-info').innerText = teams[idx].name + (isRand ? " (抽中)" : " (抢答组)");
             document.getElementById('rand-stu-btn').disabled = false;
             renderControlTeams();
+            if (config.timerEnabled) startTimer();
         }
 
         function randomPickTeam() {
             const av = teams.map((t,i)=>i).filter(i=>teams[i].selection === null);
             if(av.length === 0) return;
-            const r = av[Math.floor(Math.random()*av.length)];
-            pickTeam(r, true);
+            if(av.length === 1) { pickTeam(av[0], true); return; }
+
+            // Disable random button during animation
+            const randBtn = document.querySelector('#control-bar button[onclick="randomPickTeam()"]');
+            if (randBtn) randBtn.disabled = true;
+
+            const row = document.getElementById('manual-teams-row');
+            const btns = row.children;
+            const totalSteps = 12 + Math.floor(Math.random() * 6); // 12-17 steps
+            let step = 0;
+            let prevIdx = -1;
+            let delay = 60; // starting ms
+
+            function tick() {
+                // Remove highlight from previous
+                if (prevIdx >= 0 && btns[prevIdx]) {
+                    btns[prevIdx].classList.remove('lottery-highlight');
+                }
+                step++;
+                // Pick a random available team to highlight
+                const pick = av[Math.floor(Math.random() * av.length)];
+                if (btns[pick]) btns[pick].classList.add('lottery-highlight');
+                prevIdx = pick;
+
+                // Play short tick via Web Audio
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.frequency.value = 600;
+                    osc.type = 'sine';
+                    gain.gain.value = 0.08;
+                    osc.start(); osc.stop(ctx.currentTime + 0.04);
+                } catch(e) {}
+
+                if (step < totalSteps) {
+                    // Gradually increase delay (slow down)
+                    delay = 60 + (step / totalSteps) * 400;
+                    setTimeout(tick, delay);
+                } else {
+                    // Animation done - pick the last highlighted team
+                    if (prevIdx >= 0 && btns[prevIdx]) {
+                        btns[prevIdx].classList.remove('lottery-highlight');
+                    }
+                    if (randBtn) randBtn.disabled = false;
+                    pickTeam(pick, true);
+                }
+            }
+            tick();
         }
 
         function randomPickStudent() {
@@ -472,38 +782,37 @@
             document.getElementById('locked-count').innerText = lockedCount;
             document.getElementById('rand-stu-btn').disabled = true;
             document.getElementById('active-team-info').innerText = "已提交锁定";
-            
+            stopTimer();
             sounds.click.play(); renderControlTeams();
             if(lockedCount === teams.length) document.getElementById('reveal-btn').classList.remove('hidden');
         }
 
         function revealAnswers() {
+            stopTimer();
             const ans = scenes[curIdx].ans, cards = document.getElementById('options-grid').children;
             for(let i=0; i<cards.length; i++) cards[i].classList.add(i === ans ? 'correct' : 'wrong');
-            
-            const isBonus = config.bonusEnabled && (curIdx >= scenes.length - 3);
-            const mult = isBonus ? 2 : 1;
+
+            const diffMult = getDiffMultiplier(scenes[curIdx].difficulty || 'medium');
 
             teams.forEach(t => {
                 if(t.selection === ans) {
-                    // 如果是 Bonus 关卡，去掉抢答加成功能，统一用普通加分
-                    let p = (t.isFirst && !t.isRandom && !isBonus) ? config.ptsFirstCorrect : config.ptsCorrect;
-                    t.score += p * mult;
+                    let p = (t.isFirst && !t.isRandom) ? config.ptsFirstCorrect : config.ptsCorrect;
+                    t.score += p * diffMult;
                     sounds.correct.play();
                 } else {
-                    // 如果是 Bonus 关卡，去掉抢答加成功能，统一用普通扣分
-                    let p = (t.isFirst && !t.isRandom && !isBonus) ? config.ptsFirstWrong : config.ptsWrong;
-                    t.score -= p * mult;
+                    let p = (t.isFirst && !t.isRandom) ? config.ptsFirstWrong : config.ptsWrong;
+                    t.score -= p * diffMult;
                     if(p > 0) sounds.wrong.play();
                 }
             });
 
             renderLiveScores();
+            renderAnswerSummary(ans);
             document.getElementById('reveal-btn').classList.add('hidden');
             document.getElementById('note-box').classList.remove('hidden');
             document.getElementById('note-text').innerText = scenes[curIdx].note;
             document.getElementById('note-box').scrollIntoView({ behavior: 'smooth' });
-            
+
             speak(`知识要点总结：${scenes[curIdx].note}`);
         }
 
@@ -511,10 +820,6 @@
             curIdx++;
             if(curIdx < scenes.length) loadRound();
             else showResults();
-        }
-
-        function renderLiveScores() {
-            document.getElementById('live-scores').innerHTML = teams.map(t => `<div class="bg-gray-800 text-white px-8 py-3 rounded-2xl font-black text-2xl border-b-8 border-yellow-500 shadow-xl">${t.name}: ${t.score}</div>`).join('');
         }
 
         function showResults() {
@@ -534,7 +839,7 @@
             bgmOn = !bgmOn;
         }
 
-        function updateVolume(v) { sounds.bgm.volume = v; }
+        function updateVolume(v) { sounds.bgm.volume = Math.pow(v / 100, 2); }
 
         function speak(t) {
             if(!window.speechSynthesis) return;
@@ -581,6 +886,155 @@
                 target.placeholder = "在这里输入你的教学材料...";
                 input.value = ""; // 重置上传控件
             }
+        }
+
+        // ========== KEYBOARD SHORTCUTS ==========
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+            const gameView = document.getElementById('game-view');
+            if (gameView.classList.contains('hidden')) return;
+            switch (e.key) {
+                case ' ': case 'Enter':
+                    e.preventDefault();
+                    const revealBtn = document.getElementById('reveal-btn');
+                    if (!revealBtn.classList.contains('hidden')) { revealAnswers(); }
+                    else if (!document.getElementById('note-box').classList.contains('hidden')) { nextRound(); }
+                    break;
+                case 'r': case 'R': e.preventDefault(); randomPickTeam(); break;
+                case 's': case 'S': e.preventDefault(); randomPickStudent(); break;
+                case 'ArrowRight': e.preventDefault();
+                    if (!document.getElementById('note-box').classList.contains('hidden')) nextRound();
+                    break;
+                default:
+                    if (e.key >= '1' && e.key <= '9') {
+                        const idx = parseInt(e.key) - 1;
+                        if (idx < teams.length && teams[idx].selection === null) pickTeam(idx, false);
+                    }
+            }
+        });
+
+        // ========== LOCAL STORAGE PERSISTENCE ==========
+        function saveSettings() {
+            const settings = {
+                apiKey: document.getElementById('api-key').value,
+                qCount: document.getElementById('q-count-input').value,
+                teamCount: document.getElementById('team-count-input').value,
+                ptsCorrect: document.getElementById('pts-correct').value,
+                ptsWrong: document.getElementById('pts-wrong').value,
+                ptsFirstCorrect: document.getElementById('pts-first-correct').value,
+                ptsFirstWrong: document.getElementById('pts-first-wrong').value,
+                easyCount: document.getElementById('easy-count').value,
+                mediumCount: document.getElementById('medium-count').value,
+                hardCount: document.getElementById('hard-count').value,
+                multEasy: document.getElementById('mult-easy').value,
+                multMedium: document.getElementById('mult-medium').value,
+                multHard: document.getElementById('mult-hard').value,
+                shuffleDifficulty: document.getElementById('shuffle-difficulty').checked,
+                timerEnabled: document.getElementById('timer-enabled').checked,
+                timerSeconds: document.getElementById('timer-seconds-input').value
+            };
+            const tCount = parseInt(settings.teamCount);
+            for (let i = 1; i <= tCount; i++) {
+                settings['teamName' + i] = document.getElementById('team-name-' + i)?.value || '';
+                settings['teamSize' + i] = document.getElementById('team-size-' + i)?.value || '4';
+            }
+            localStorage.setItem('quiz_arena_settings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('quiz_arena_settings');
+            if (!saved) return;
+            try {
+                const s = JSON.parse(saved);
+                if (s.apiKey) document.getElementById('api-key').value = s.apiKey;
+                if (s.qCount) { document.getElementById('q-count-input').value = s.qCount; document.getElementById('q-count-val').innerText = s.qCount; document.getElementById('diff-total-target').innerText = s.qCount; }
+                if (s.teamCount) { document.getElementById('team-count-input').value = s.teamCount; document.getElementById('team-count-val').innerText = s.teamCount; }
+                if (s.ptsCorrect) document.getElementById('pts-correct').value = s.ptsCorrect;
+                if (s.ptsWrong) document.getElementById('pts-wrong').value = s.ptsWrong;
+                if (s.ptsFirstCorrect) document.getElementById('pts-first-correct').value = s.ptsFirstCorrect;
+                if (s.ptsFirstWrong) document.getElementById('pts-first-wrong').value = s.ptsFirstWrong;
+                if (s.easyCount) document.getElementById('easy-count').value = s.easyCount;
+                if (s.mediumCount) document.getElementById('medium-count').value = s.mediumCount;
+                if (s.hardCount) document.getElementById('hard-count').value = s.hardCount;
+                if (s.multEasy) document.getElementById('mult-easy').value = s.multEasy;
+                if (s.multMedium) document.getElementById('mult-medium').value = s.multMedium;
+                if (s.multHard) document.getElementById('mult-hard').value = s.multHard;
+                if (s.shuffleDifficulty !== undefined) document.getElementById('shuffle-difficulty').checked = s.shuffleDifficulty;
+                if (s.timerEnabled !== undefined) {
+                    document.getElementById('timer-enabled').checked = s.timerEnabled;
+                    document.getElementById('timer-seconds-group').classList.toggle('hidden', !s.timerEnabled);
+                }
+                if (s.timerSeconds) { document.getElementById('timer-seconds-input').value = s.timerSeconds; document.getElementById('timer-seconds-val').innerText = s.timerSeconds; }
+                const tc = parseInt(s.teamCount || 3);
+                renderTeamSetupInputs(tc);
+                for (let i = 1; i <= tc; i++) {
+                    const nameEl = document.getElementById('team-name-' + i);
+                    const sizeEl = document.getElementById('team-size-' + i);
+                    if (nameEl && s['teamName' + i]) nameEl.value = s['teamName' + i];
+                    if (sizeEl && s['teamSize' + i]) sizeEl.value = s['teamSize' + i];
+                }
+                validateDiffSum();
+            } catch(e) { /* ignore */ }
+        }
+
+        // ========== MANUAL SCORE ADJUSTMENT ==========
+        function adjustTeamScore(idx, delta) {
+            teams[idx].score += delta;
+            renderLiveScores();
+        }
+
+        function renderLiveScores() {
+            document.getElementById('live-scores').innerHTML = teams.map((t, i) => `
+                <div class="bg-gray-800 text-white px-4 py-3 rounded-2xl font-black text-2xl border-b-8 border-yellow-500 shadow-xl flex items-center gap-2">
+                    <button onclick="adjustTeamScore(${i}, -1)" class="w-7 h-7 bg-red-500 rounded-full text-lg leading-none hover:bg-red-400 flex-shrink-0" title="手动扣分">−</button>
+                    <span class="whitespace-nowrap">${t.name}: ${t.score}</span>
+                    <button onclick="adjustTeamScore(${i}, 1)" class="w-7 h-7 bg-green-500 rounded-full text-lg leading-none hover:bg-green-400 flex-shrink-0" title="手动加分">+</button>
+                </div>
+            `).join('');
+        }
+
+        // ========== ANSWER SUMMARY ==========
+        function renderAnswerSummary(ans) {
+            const grid = document.getElementById('answer-summary-grid');
+            if (!grid) return;
+            const diffMult = getDiffMultiplier(scenes[curIdx].difficulty || 'medium');
+            grid.innerHTML = teams.map(t => {
+                const choiceLabel = t.selection !== null && t.selection >= 0 ? String.fromCharCode(65 + t.selection) : (t.selection === -1 ? '超时' : '未作答');
+                const isCorrect = t.selection === ans;
+                const isTimeout = t.selection === -1;
+                let pointsChange = 0;
+                if (isCorrect) {
+                    pointsChange = ((t.isFirst && !t.isRandom) ? config.ptsFirstCorrect : config.ptsCorrect) * diffMult;
+                } else {
+                    pointsChange = -((t.isFirst && !t.isRandom) ? config.ptsFirstWrong : config.ptsWrong) * diffMult;
+                }
+                const ptsStr = pointsChange > 0 ? `+${pointsChange}` : `${pointsChange}`;
+                let bgClass, icon;
+                if (isCorrect) { bgClass = 'bg-green-100 border-green-400'; icon = '✅'; }
+                else if (isTimeout) { bgClass = 'bg-gray-200 border-gray-400'; icon = '⏰'; }
+                else { bgClass = 'bg-red-100 border-red-400'; icon = '❌'; }
+                return `<div class="${bgClass} p-5 rounded-2xl border-2 text-center">
+                    <p class="font-black text-3xl">${t.name}</p>
+                    <p class="text-4xl font-black">${icon} ${choiceLabel}</p>
+                    <p class="text-3xl font-black ${pointsChange >= 0 ? 'text-green-700' : 'text-red-600'}">${ptsStr} 分</p>
+                    <p class="text-2xl font-black text-gray-700 mt-2 pt-2 border-t border-gray-300">总分: ${t.score}</p>
+                </div>`;
+            }).join('');
+            document.getElementById('answer-summary').classList.remove('hidden');
+        }
+
+        // ========== PROGRESS DOTS ==========
+        function renderProgressDots() {
+            const container = document.getElementById('progress-dots');
+            if (!container) return;
+            container.innerHTML = scenes.map((s, i) => {
+                const isCurrent = i === curIdx, isDone = i < curIdx;
+                let cls = 'w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border-2 ';
+                if (isCurrent) cls += 'bg-blue-600 text-white border-blue-800 scale-125';
+                else if (isDone) cls += 'bg-green-500 text-white border-green-700';
+                else cls += 'bg-gray-200 text-gray-400 border-gray-300';
+                return `<div class="${cls}">${i + 1}</div>`;
+            }).join('');
         }
     </script>
 </body>
