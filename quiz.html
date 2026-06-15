@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 全能竞技场 - 终极至尊版</title>
+    <title>AI 全能竞技场 · 组别竞技版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <!-- 引入文档解析库 -->
@@ -13,47 +13,110 @@
         :root {
             --theme-color: #3b82f6;
             --accent-color: #fbbf24;
-            --bg-color: #f3f4f6;
+            --bg-page: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border-style: 2px solid rgba(255, 255, 255, 0.1);
+            --radius: 30px;
+            --shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+            --text-main: #ffffff;
         }
+
+        .theme-cute {
+            --theme-color: #ff9ebb;
+            --accent-color: #a0d8ef;
+            --bg-page: #fcf6ec;
+            --card-bg: #ffffff;
+            --border-style: 4px solid #f0e6d2;
+            --radius: 40px;
+            --shadow: 0 12px 0px #f0e6d2;
+            --text-main: #5c5246;
+        }
+        .theme-cute h1, .theme-cute h2, .theme-cute #round-title, .theme-cute .text-gray-800 { color: var(--text-main) !important; }
+        .theme-cute .bg-white\/95 { background-color: var(--card-bg) !important; }
+        .theme-cute .bg-gray-50 { background-color: rgba(0,0,0,0.02) !important; }
 
         body {
             font-family: 'Noto Sans SC', sans-serif;
-            background-color: var(--bg-color);
-            transition: background 1.2s ease;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            transition: all 0.5s ease;
             min-height: 100vh;
         }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--card-bg);
             backdrop-filter: blur(10px);
-            border: 2px solid var(--theme-color);
-            border-radius: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            border: var(--border-style);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
 
         .text-giant { font-size: 5rem; font-weight: 900; }
         .text-mega { font-size: 3.5rem; font-weight: 900; }
         
-        .setup-input {
+        /* 科技风背景覆盖 */
+        :not(.theme-cute) .bg-white, :not(.theme-cute) .bg-white\/95 { background-color: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; }
+        :not(.theme-cute) .bg-green-50, :not(.theme-cute) .bg-yellow-50, :not(.theme-cute) .bg-red-50, 
+        :not(.theme-cute) .bg-blue-50, :not(.theme-cute) .bg-gray-50 { 
+            background-color: rgba(0,0,0,0.2) !important; 
+            border-color: rgba(255,255,255,0.1) !important;
+        }
+        :not(.theme-cute) .text-green-700, :not(.theme-cute) .text-green-800 { color: #4ade80 !important; }
+        :not(.theme-cute) .text-yellow-700, :not(.theme-cute) .text-yellow-800 { color: #fbbf24 !important; }
+        :not(.theme-cute) .text-red-700, :not(.theme-cute) .text-red-800 { color: #f87171 !important; }
+        :not(.theme-cute) .text-blue-900, :not(.theme-cute) .text-gray-500, :not(.theme-cute) .text-gray-700, :not(.theme-cute) .text-gray-800, :not(.theme-cute) #q-text, :not(.theme-cute) h4 { color: #ffffff !important; }
+
+        .setup-input, #team-names-grid input, .score-input, .grid input[type="number"] {
             width: 100%;
             padding: 1rem;
-            border: 2px solid #ddd;
+            border: 2px solid rgba(255,255,255,0.1);
             border-radius: 15px;
             font-size: 1.2rem;
             outline: none;
             transition: border 0.3s;
+            background: rgba(0, 0, 0, 0.2) !important;
+            color: #ffffff !important;
         }
-        .setup-input:focus { border-color: var(--theme-color); }
+        .setup-input:focus, #team-names-grid input:focus, .score-input:focus, .grid input[type="number"]:focus { border-color: var(--theme-color); }
+        .setup-input::placeholder, #team-names-grid input::placeholder { color: rgba(255,255,255,0.3); }
 
-        .score-input {
+        .score-input, .grid input[type="number"] {
             width: 80px;
             text-align: center;
             font-weight: 900;
-            border: 2px solid var(--theme-color);
-            border-radius: 10px;
             padding: 5px;
             font-size: 1.5rem;
         }
+
+        /* 奶油风输入框适配 */
+        .theme-cute .setup-input, .theme-cute #team-names-grid input, .theme-cute .score-input, .theme-cute .grid input[type="number"] {
+            background: #ffffff !important;
+            color: #5c5246 !important;
+            border-color: #f0e6d2;
+        }
+        .theme-cute .setup-input::placeholder, .theme-cute #team-names-grid input::placeholder { color: #a0a0a0; }
+        
+        .theme-cute .bg-white { background-color: #ffffff !important; }
+        .theme-cute .bg-gray-50 { background-color: #f9fafb !important; }
+        .theme-cute .text-gray-700, .theme-cute .text-blue-900, .theme-cute .text-gray-800 { color: #5c5246 !important; }
+        .theme-cute .text-gray-500 { color: #888888 !important; }
+        .theme-cute h4 { color: #5c5246 !important; }
+
+        /* 科技风作答汇总卡片适配 */
+        .theme-tech #answer-summary-grid div { color: white !important; }
+        .theme-tech #answer-summary-grid div.bg-green-100 { background-color: #064e3b !important; border-color: #22c55e !important; }
+        .theme-tech #answer-summary-grid div.bg-red-100 { background-color: #7f1d1d !important; border-color: #ef4444 !important; }
+        .theme-tech #answer-summary-grid div.bg-gray-200 { background-color: #1f2937 !important; border-color: rgba(255, 255, 255, 0.2) !important; }
+        .theme-tech #answer-summary-grid .text-green-700 { color: #4ade80 !important; }
+        .theme-tech #answer-summary-grid .text-red-600 { color: #f87171 !important; }
+        .theme-tech #answer-summary-grid .text-gray-700 { color: #ffffff !important; opacity: 0.9; }
+        .theme-tech #answer-summary-grid .border-gray-300 { border-color: rgba(255, 255, 255, 0.1) !important; }
+
+        /* 科技风结果排行榜适配 */
+        .theme-tech #result-view table { color: white !important; }
+        .theme-tech #ranking-body tr { border-color: rgba(255,255,255,0.1) !important; }
+        .theme-tech #ranking-body .text-blue-600 { color: #60a5fa !important; }
+        .theme-tech #ranking-body td { color: white !important; }
 
         .btn-primary {
             background: var(--theme-color);
@@ -78,6 +141,12 @@
             font-weight: 900;
             display: flex;
             align-items: center;
+            color: #1e293b;
+        }
+        :not(.theme-cute) .option-card {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+            color: white;
         }
         .option-card:hover { transform: scale(1.02); border-color: var(--theme-color); }
         .option-card.correct { background: #dcfce7; border-color: #22c55e; }
@@ -117,7 +186,7 @@
         }
     </style>
 </head>
-<body>
+<body onclick="initAudio()">
 
     <!-- Loading Screen -->
     <div id="loading" class="fixed inset-0 bg-black/95 flex flex-col items-center justify-center text-white z-[9999] hidden text-center">
@@ -134,13 +203,19 @@
 
     <!-- Step 0: Setup View -->
     <div id="setup-view" class="container mx-auto p-8 max-w-6xl">
-        <h1 class="text-center text-giant mb-12" style="color: var(--theme-color)">AI 全能竞技场</h1>
+        <h1 class="text-center text-giant mb-12" style="color: var(--theme-color)">AI 全能竞技场 · 组别竞技版</h1>
         
         <div class="glass-panel p-10 space-y-10">
             <!-- API & Model -->
             <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                    <label class="block text-2xl font-bold mb-2 text-gray-700">🔑 API Key (Gemini)</label>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-2xl font-bold text-gray-700">🔑 API Key (Gemini)</label>
+                        <button onclick="toggleHelpModal(true)" class="text-blue-500 hover:text-blue-600 font-bold flex items-center gap-1 transition-all">
+                            <span class="w-6 h-6 rounded-full border-2 border-current flex items-center justify-center text-sm">?</span>
+                            使用说明
+                        </button>
+                    </div>
                     <div class="flex gap-4">
                         <input type="password" id="api-key" class="setup-input" placeholder="粘贴你的 API Key...">
                         <button onclick="fetchModels()" class="bg-blue-600 text-white px-8 rounded-xl font-bold whitespace-nowrap text-xl">检测模型</button>
@@ -167,7 +242,7 @@
                 <textarea id="source-text" class="setup-input h-64 text-lg" placeholder="在这里输入你的教学材料，或者通过上方按钮上传文档..."></textarea>
                 <div class="mt-8 flex items-center gap-8 bg-gray-50 p-6 rounded-2xl">
                     <span class="text-2xl font-black">出题数量：</span>
-                    <input type="range" id="q-count-input" min="1" max="30" value="10" class="flex-grow h-4" oninput="document.getElementById('q-count-val').innerText = this.value; document.getElementById('diff-total-target').innerText = this.value; validateDiffSum()">
+                    <input type="range" id="q-count-input" min="1" max="40" value="10" class="flex-grow h-4" oninput="document.getElementById('q-count-val').innerText = this.value; document.getElementById('diff-total-target').innerText = this.value; validateDiffSum()">
                     <span id="q-count-val" class="text-5xl font-black text-blue-600 w-20 text-center">10</span>
                 </div>
             </section>
@@ -184,7 +259,7 @@
                         </div>
                         <div class="flex items-center justify-center gap-3 mb-3">
                             <button onclick="adjustDiffCount('easy',-1)" class="w-10 h-10 bg-green-200 rounded-full text-xl font-black hover:bg-green-300">−</button>
-                            <input type="number" id="easy-count" value="3" min="0" max="30" class="w-16 text-center text-2xl font-black border-2 border-green-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            <input type="number" id="easy-count" value="3" min="0" max="40" class="w-16 text-center text-2xl font-black border-2 border-green-300 rounded-lg py-1" onchange="validateDiffSum()">
                             <button onclick="adjustDiffCount('easy',1)" class="w-10 h-10 bg-green-200 rounded-full text-xl font-black hover:bg-green-300">+</button>
                         </div>
                         <div class="flex justify-center items-center gap-2">
@@ -200,7 +275,7 @@
                         </div>
                         <div class="flex items-center justify-center gap-3 mb-3">
                             <button onclick="adjustDiffCount('medium',-1)" class="w-10 h-10 bg-yellow-200 rounded-full text-xl font-black hover:bg-yellow-300">−</button>
-                            <input type="number" id="medium-count" value="5" min="0" max="30" class="w-16 text-center text-2xl font-black border-2 border-yellow-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            <input type="number" id="medium-count" value="5" min="0" max="40" class="w-16 text-center text-2xl font-black border-2 border-yellow-300 rounded-lg py-1" onchange="validateDiffSum()">
                             <button onclick="adjustDiffCount('medium',1)" class="w-10 h-10 bg-yellow-200 rounded-full text-xl font-black hover:bg-yellow-300">+</button>
                         </div>
                         <div class="flex justify-center items-center gap-2">
@@ -216,7 +291,7 @@
                         </div>
                         <div class="flex items-center justify-center gap-3 mb-3">
                             <button onclick="adjustDiffCount('hard',-1)" class="w-10 h-10 bg-red-200 rounded-full text-xl font-black hover:bg-red-300">−</button>
-                            <input type="number" id="hard-count" value="2" min="0" max="30" class="w-16 text-center text-2xl font-black border-2 border-red-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            <input type="number" id="hard-count" value="2" min="0" max="40" class="w-16 text-center text-2xl font-black border-2 border-red-300 rounded-lg py-1" onchange="validateDiffSum()">
                             <button onclick="adjustDiffCount('hard',1)" class="w-10 h-10 bg-red-200 rounded-full text-xl font-black hover:bg-red-300">+</button>
                         </div>
                         <div class="flex justify-center items-center gap-2">
@@ -307,8 +382,8 @@
             </div>
         </div>
 
-        <div class="glass-panel p-6 max-w-7xl mx-auto shadow-2xl bg-white/95">
-            <div class="flex justify-between items-center mb-4 border-b-4 border-gray-100 pb-4">
+        <div class="glass-panel p-6 max-w-7xl mx-auto shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b-4 border-white/10 pb-4">
                 <div>
                     <h2 id="round-title" class="text-4xl font-black text-gray-800">第一关</h2>
                     <div class="flex items-center gap-4 mt-2">
@@ -381,6 +456,33 @@
         </div>
     </div>
 
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-2xl w-full p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                <h2 class="text-3xl font-black" style="color: var(--theme-color)">📖 组别竞技使用指南</h2>
+                <button onclick="toggleHelpModal(false)" class="text-3xl font-bold hover:scale-110 transition-transform">✕</button>
+            </div>
+            <div class="space-y-6 text-lg leading-relaxed">
+                <section>
+                    <h3 class="text-xl font-black mb-2 flex items-center gap-2">⚔️ 组别大战怎么玩？</h3>
+                    <ul class="list-disc list-inside space-y-2 opacity-90">
+                        <li><b>战队配置：</b>设定战队数量（最高10组）并输入响亮的战队名。</li>
+                        <li><b>规则设定：</b>自定义答对、答错的分数，以及“首位抢答组”的额外奖惩分。</li>
+                        <li><b>题目生成：</b>粘贴文本或上传文档，AI 会自动按难度分布生成题目。</li>
+                        <li><b>抽签与作答：</b>老师可以手动点选战队，或点击“随机抽组”让系统决定。</li>
+                        <li><b>实时锁定：</b>战队选择答案后即被锁定。所有组答完后点击“揭晓答案”看谁是赢家！</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3 class="text-xl font-black mb-2 flex items-center gap-2">🔑 如何申请 Google API？</h3>
+                    <p class="opacity-90">1. 访问 Google AI Studio。 2. 登录 Google 账号。 3. 点击 "Get API key" 并创建。 4. 将生成的 Key 粘贴到输入框即可。</p>
+                </section>
+            </div>
+            <button onclick="toggleHelpModal(false)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xl btn-primary">进入战斗！</button>
+        </div>
+    </div>
+
     <script>
         let config = { ptsCorrect: 1, ptsWrong: 0, ptsFirstCorrect: 2, ptsFirstWrong: 1, qCount: 10, easyCount: 3, mediumCount: 5, hardCount: 2, multEasy: 1, multMedium: 2, multHard: 3, shuffleDifficulty: false, timerEnabled: false, timerSeconds: 15 };
         let teams = [], scenes = [], curIdx = 0, activeTeamIdx = -1, firstResponderIdx = -1, lockedCount = 0;
@@ -396,11 +498,28 @@
         };
         sounds.bgm.loop = true;
 
+        let audioCtx = null;
+        function initAudio() {
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                sounds.click.play().catch(() => {});
+            }
+        }
+
         window.onload = () => {
+            // Apply Theme
+            const style = localStorage.getItem('quiz_style') || 'tech';
+            document.body.className = 'theme-' + style;
+
             const savedKey = localStorage.getItem('gemini_api_key');
             if(savedKey) document.getElementById('api-key').value = savedKey;
+            
             renderTeamSetupInputs(3);
             loadSettings();
+
+            // 如果有 Key，自动加载模型列表
+            if(document.getElementById('api-key').value) fetchModels();
+
             // Auto-save settings whenever any input changes
             document.querySelectorAll('#setup-view input, #setup-view select, #setup-view textarea').forEach(el => {
                 el.addEventListener('change', saveSettings);
@@ -429,21 +548,41 @@
 
         async function fetchModels() {
             const key = document.getElementById('api-key').value.trim();
-            if(!key) return alert("请输入 API Key");
+            if(!key) return;
+            const select = document.getElementById('model-select');
+            select.innerHTML = '<option>正在加载模型...</option>';
+            
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
-                const data = await res.json();
-                if(!res.ok) throw new Error(data.error.message);
-                const select = document.getElementById('model-select');
+                // 尝试 v1 接口
+                let res = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
+                let data = await res.json();
+                
+                // 如果 v1 失败，尝试 v1beta
+                if(!res.ok) {
+                    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                    data = await res.json();
+                }
+                
+                if(!res.ok) throw new Error(data.error?.message || "无法获取模型列表");
+                
                 select.innerHTML = '';
-                data.models.filter(m => m.supportedGenerationMethods.includes('generateContent') && m.name.includes('gemini')).forEach(m => {
+                const models = data.models.filter(m => m.name.includes('gemini'));
+                
+                if(models.length === 0) throw new Error("该 API Key 下未找到可用模型");
+
+                models.forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = m.name; opt.innerText = m.displayName || m.name;
-                    if(m.name.includes('1.5-flash')) opt.selected = true;
+                    if(m.name.includes('2.5-flash')) opt.selected = true;
+                    else if(m.name.includes('2.0-flash') && !select.querySelector('option[selected]')) opt.selected = true;
+                    else if(m.name.includes('flash') && !select.querySelector('option[selected]')) opt.selected = true;
                     select.appendChild(opt);
                 });
                 localStorage.setItem('gemini_api_key', key);
-            } catch(e) { alert(e.message); }
+            } catch(e) { 
+                select.innerHTML = '<option value="">加载失败，请检查 Key</option>';
+                console.error(e);
+            }
         }
 
         function adjustDiffCount(diff, delta) {
@@ -550,7 +689,9 @@
         }
 
         async function launchAI() {
-            const apiKey = document.getElementById('api-key').value.trim(), text = document.getElementById('source-text').value.trim(), model = document.getElementById('model-select').value, qCount = document.getElementById('q-count-input').value;
+            const apiKey = document.getElementById('api-key').value.trim(), text = document.getElementById('source-text').value.trim(), qCount = document.getElementById('q-count-input').value;
+            let model = document.getElementById('model-select').value;
+            if(!model) model = localStorage.getItem('gemini_model') || 'gemini-2.0-flash';
             if(!apiKey || !text || !model) return alert("请补全所有必填项！");
             
             config = {
@@ -820,6 +961,10 @@ Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid
             curIdx++;
             if(curIdx < scenes.length) loadRound();
             else showResults();
+        }
+
+        function toggleHelpModal(show) {
+            document.getElementById('help-modal').classList.toggle('hidden', !show);
         }
 
         function showResults() {

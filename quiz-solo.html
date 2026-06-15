@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 全能竞技场 - 个人挑战版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Orbitron:wght@700&family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-page: #0f172a; --primary: #3b82f6; --accent: #fbbf24;
+            --card-bg: rgba(255, 255, 255, 0.05); --text-main: #ffffff;
+            --border-main: 2px solid rgba(255,255,255,0.1); --radius: 30px;
+            --shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+        }
+        .theme-cute {
+            --bg-page: #fcf6ec; --primary: #ff9ebb; --accent: #a0d8ef;
+            --card-bg: #ffffff; --text-main: #5c5246;
+            --border-main: 4px solid #f0e6d2; --radius: 40px;
+            --shadow: 0 12px 0px #f0e6d2;
+            --btn-pink: #ff9ebb; --btn-pink-border: #e07b99;
+            --btn-blue: #a0d8ef; --btn-blue-border: #7cbcd6;
+        }
+        .theme-cute h1, .theme-cute h2, .theme-cute label { color: var(--text-main) !important; }
+        .theme-cute .bg-white { background-color: var(--card-bg) !important; }
+        .theme-cute .bg-gray-50 { background-color: rgba(0,0,0,0.02) !important; }
+        .theme-cute .text-gray-700 { color: var(--text-main) !important; }
+        
+        body { background-color: var(--bg-page); color: var(--text-main); font-family: 'Noto Sans SC', sans-serif; transition: background 0.5s; min-height: 100vh; }
+        .glass-panel { background: var(--card-bg); border: var(--border-main); border-radius: var(--radius); box-shadow: var(--shadow); }
+        
+        /* 科技风背景覆盖 */
+        .theme-tech .bg-white { background-color: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; }
+        .theme-tech .bg-green-50, .theme-tech .bg-yellow-50, .theme-tech .bg-red-50, 
+        .theme-tech .bg-blue-50\/50, .theme-tech .bg-orange-50\/50, .theme-tech .bg-gray-50 { 
+            background-color: rgba(0,0,0,0.2) !important; 
+            border-color: rgba(255,255,255,0.1) !important;
+        }
+        .theme-tech .text-green-700, .theme-tech .text-green-600 { color: #4ade80 !important; }
+        .theme-tech .text-yellow-700, .theme-tech .text-yellow-600 { color: #fbbf24 !important; }
+        .theme-tech .text-red-700, .theme-tech .text-red-600 { color: #f87171 !important; }
+        .theme-tech .text-purple-900, .theme-tech .text-gray-500, .theme-tech .text-gray-700 { color: #cbd5e1 !important; }
+        .theme-tech #q-text { color: #ffffff !important; }
+        .theme-tech #options-grid button { 
+            background: rgba(255,255,255,0.1) !important; 
+            color: #ffffff !important; 
+            border-color: rgba(255,255,255,0.1) !important;
+        }
+        .theme-tech #options-grid button:hover { background: var(--primary) !important; border-color: #ffffff !important; }
+        .theme-tech button.correct-anim { background: #22c55e !important; color: white !important; box-shadow: 0 0 30px #22c55e !important; border-color: #ffffff !important; }
+        .theme-tech button.wrong-anim { background: #ef4444 !important; color: white !important; box-shadow: 0 0 30px #ef4444 !important; border-color: #ffffff !important; opacity: 1 !important; }
+        .theme-tech .leaderboard-row td { color: white !important; }
+        .theme-tech .leaderboard-row .text-blue-600 { color: #60a5fa !important; }
+
+        .setup-input, #student-list, .grid input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            font-size: 1.2rem;
+            outline: none;
+            transition: border 0.3s;
+            background: rgba(0, 0, 0, 0.2) !important;
+            color: #ffffff !important;
+        }
+        .setup-input:focus, #student-list:focus, .grid input:focus { border-color: var(--primary); }
+        .setup-input::placeholder, #student-list::placeholder { color: rgba(255,255,255,0.3); }
+
+        /* 奶油风输入框适配 */
+        .theme-cute .setup-input, .theme-cute #student-list, .theme-cute .grid input {
+            background: #ffffff !important;
+            color: #5c5246 !important;
+            border-color: #f0e6d2;
+        }
+        .theme-cute .setup-input::placeholder, .theme-cute #student-list::placeholder { color: #a0a0a0; }
+
+        .theme-cute .bg-white { background-color: #ffffff !important; }
+        .theme-cute .text-gray-700 { color: #5c5246 !important; }
+        .theme-cute .bg-gray-50 { background-color: #f9fafb !important; }
+
+        /* 奶油风样式增强 */
+        .theme-cute .btn-action {
+            background: var(--btn-pink);
+            border: 3px solid var(--btn-pink-border);
+            box-shadow: 0 6px 0px var(--btn-pink-border);
+            color: white;
+        }
+        .theme-cute .btn-action:active { transform: translateY(4px); box-shadow: 0 2px 0px var(--btn-pink-border); }
+        .theme-cute .glass-panel { border-width: 4px; }
+
+        /* 抽签卡牌样式 */
+        .quest-card { 
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            perspective: 1000px;
+            width: 100%;
+            aspect-ratio: 4/5;
+        }
+        .quest-card:hover { transform: translateY(-10px) scale(1.05); }
+        .quest-card.used { 
+            opacity: 0.6; 
+            filter: grayscale(0.5); 
+            pointer-events: none;
+            position: relative;
+        }
+        .quest-card.used::after {
+            content: "✅ 已完成";
+            position: absolute;
+            bottom: 1rem;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .btn-action {
+            background: var(--primary); color: white; font-weight: 900;
+            padding: 1rem 2rem; border-radius: 20px; transition: all 0.2s;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+        }
+        .btn-action:active { transform: translateY(4px); box-shadow: none; }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .floating { animation: float 4s infinite ease-in-out; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .animate-shake { animation: shake 0.3s ease-in-out 2; }
+
+        @keyframes bounce-in {
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        /* 排行榜美化 */
+        .leaderboard-row {
+            transition: all 0.3s;
+            border-radius: 15px;
+        }
+        .leaderboard-row:hover { background: rgba(0,0,0,0.05); transform: scale(1.01); }
+        .rank-badge {
+            width: 40px; h-40px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-weight: 900;
+        }
+        .rank-1 { background: #fbbf24; color: white; }
+        .rank-2 { background: #94a3b8; color: white; }
+        .rank-3 { background: #92400e; color: white; }
+    </style>
+</head>
+<body class="theme-tech" onclick="initAudio()">
+
+    <!-- BGM Widget -->
+    <div id="bgm-widget" class="fixed top-5 right-5 bg-white/90 backdrop-blur rounded-full px-6 py-3 shadow-xl hidden z-[2000] flex items-center gap-4 border-2 border-pink-200">
+        <span onclick="toggleBGM()" id="bgm-icon" class="cursor-pointer text-3xl hover:scale-110 transition-transform">🎵</span>
+        <input type="range" id="bgm-vol" min="0" max="100" step="1" value="30" oninput="updateVolume(this.value)" class="w-32 accent-pink-400 h-2 bg-pink-100 rounded-lg appearance-none cursor-pointer">
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="fixed inset-0 bg-black/90 z-[9999] hidden flex flex-col items-center justify-center text-white text-center">
+        <div class="w-24 h-24 border-8 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <h2 class="text-4xl font-black">AI 正在编织挑战...</h2>
+        <p class="text-xl opacity-70 mt-4">正在注入萌萌能量与智慧火花</p>
+    </div>
+
+    <!-- Step 1: Setup -->
+    <div id="setup-view" class="container mx-auto p-8 max-w-5xl">
+        <div class="glass-panel p-10 space-y-10">
+            <h1 class="text-5xl font-black text-center mb-8" style="color: var(--primary)">AI 萌趣竞技场 · 个人挑战版</h1>
+            
+            <!-- API & Model -->
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-2xl font-bold text-gray-700">🔑 API Key (Gemini)</label>
+                        <button onclick="toggleHelpModal(true)" class="text-blue-500 hover:text-blue-600 font-bold flex items-center gap-1 transition-all">
+                            <span class="w-6 h-6 rounded-full border-2 border-current flex items-center justify-center text-sm">?</span>
+                            使用说明
+                        </button>
+                    </div>
+                    <div class="flex gap-4">
+                        <input type="password" id="api-key" class="setup-input" placeholder="粘贴你的 API Key...">
+                        <button onclick="fetchModels()" class="bg-blue-600 text-white px-8 rounded-xl font-bold whitespace-nowrap text-xl">检测模型</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-2xl font-bold mb-2 text-gray-700">🤖 选择 AI 模型</label>
+                    <select id="model-select" class="setup-input text-xl font-bold"></select>
+                </div>
+            </section>
+
+            <!-- Text & Count -->
+            <section>
+                <div class="flex justify-between items-end mb-4">
+                    <label class="block text-2xl font-bold text-gray-700">📖 粘贴资料 或 上传文档</label>
+                    <div class="flex items-center gap-4">
+                        <span id="upload-status" class="text-lg font-bold text-blue-600 hidden">⌛ 正在解析文档...</span>
+                        <button onclick="document.getElementById('file-upload').click()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-xl border-2 border-gray-300 font-bold flex items-center gap-2 transition-all">
+                            📂 上传 PDF / Word
+                        </button>
+                        <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx" onchange="handleFileUpload(this)">
+                    </div>
+                </div>
+                <textarea id="source-text" class="setup-input h-64 text-lg" placeholder="在这里输入你的教学材料，或者通过上方按钮上传文档..."></textarea>
+                <div class="mt-8 flex items-center gap-8 bg-gray-50 p-6 rounded-2xl">
+                    <span class="text-2xl font-black">出题数量：</span>
+                    <input type="range" id="q-count-input" min="1" max="40" value="10" class="flex-grow h-4" oninput="document.getElementById('q-count-val').innerText = this.value; document.getElementById('diff-total-target').innerText = this.value; validateDiffSum()">
+                    <span id="q-count-val" class="text-5xl font-black text-blue-600 w-20 text-center">10</span>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Difficulty Distribution -->
+                <section class="p-8 bg-white border-4 border-dashed border-purple-200 rounded-3xl">
+                    <h3 class="text-2xl font-black mb-4 text-center text-purple-900 underline decoration-purple-400">🎯 难度与分数分配</h3>
+                    <p class="text-lg text-gray-500 mb-6 text-center">题数总和须等于 <span id="diff-total-target" class="font-black text-blue-600">10</span></p>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-3 gap-4 items-center bg-green-50 p-3 rounded-2xl border-2 border-green-200">
+                            <span class="font-black text-green-700 text-center">简单</span>
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-green-600 font-bold">数量</span>
+                                <input type="number" id="easy-count" value="3" min="0" max="40" class="w-full text-center text-xl font-black border-2 border-green-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-green-600 font-bold">分数</span>
+                                <input type="number" id="easy-score" value="10" min="1" max="100" class="w-full text-center text-xl font-black border-2 border-green-300 rounded-lg py-1">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 items-center bg-yellow-50 p-3 rounded-2xl border-2 border-yellow-200">
+                            <span class="font-black text-yellow-700 text-center">中等</span>
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-yellow-600 font-bold">数量</span>
+                                <input type="number" id="medium-count" value="5" min="0" max="40" class="w-full text-center text-xl font-black border-2 border-yellow-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-yellow-600 font-bold">分数</span>
+                                <input type="number" id="medium-score" value="20" min="1" max="100" class="w-full text-center text-xl font-black border-2 border-yellow-300 rounded-lg py-1">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 items-center bg-red-50 p-3 rounded-2xl border-2 border-red-200">
+                            <span class="font-black text-red-700 text-center">困难</span>
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-red-600 font-bold">数量</span>
+                                <input type="number" id="hard-count" value="2" min="0" max="40" class="w-full text-center text-xl font-black border-2 border-red-300 rounded-lg py-1" onchange="validateDiffSum()">
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-red-600 font-bold">分数</span>
+                                <input type="number" id="hard-score" value="30" min="1" max="100" class="w-full text-center text-xl font-black border-2 border-red-300 rounded-lg py-1">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="diff-sum-error" class="hidden mt-4 bg-red-100 text-red-700 p-3 rounded-xl text-center font-black text-sm"></div>
+                </section>
+
+                <!-- Student List & Settings -->
+                <section class="space-y-4">
+                    <div class="bg-blue-50/50 p-6 rounded-3xl border-2 border-dashed border-blue-200">
+                        <label class="block text-xl font-black mb-2">👥 参与学生名单</label>
+                        <textarea id="student-list" class="w-full h-24 p-3 border-2 rounded-xl text-sm" placeholder="每行一个名字，或用空格分开..."></textarea>
+                        <div class="flex items-center gap-3 mt-4">
+                            <input type="checkbox" id="allow-repeat" class="w-5 h-5">
+                            <label for="allow-repeat" class="font-bold text-sm">允许同一个学生重复抽中</label>
+                        </div>
+                    </div>
+
+                    <div class="bg-orange-50/50 p-6 rounded-3xl border-2 border-dashed border-orange-200">
+                        <label class="block text-xl font-black mb-4">⏱️ 倒计时设置</label>
+                        <div class="flex items-center gap-6">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="timer-enabled" class="w-6 h-6" checked>
+                                <span class="font-bold text-lg">开启倒计时</span>
+                            </div>
+                            <div class="flex items-center gap-2 flex-grow">
+                                <span class="font-bold">秒数:</span>
+                                <input type="number" id="timer-seconds" value="20" min="5" max="30" class="w-20 text-center text-xl font-black border-2 border-orange-300 rounded-lg py-1 bg-white">
+                                <span class="text-sm text-gray-500">(最高30s)</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <button onclick="generateQuiz()" class="w-full py-6 bg-blue-600 text-white text-3xl font-black rounded-3xl shadow-2xl hover:scale-105 transition-transform btn-action">🚀 生成 AI 挑战并开始</button>
+        </div>
+    </div>
+
+    <!-- Step 2: Wheel View -->
+    <div id="wheel-view" class="hidden container mx-auto p-8 flex flex-col items-center">
+        <h2 class="text-6xl font-black mb-12 text-center text-white drop-shadow-lg">🍭 谁是下一个勇士？</h2>
+        <div class="relative w-[700px] h-[700px] mb-12">
+            <div class="absolute -top-10 left-1/2 -translate-x-1/2 text-7xl z-10 drop-shadow-xl">👇</div>
+            <canvas id="wheelCanvas" width="1000" height="1000" class="w-full h-full rounded-full border-[10px] border-white shadow-[0_0_50px_rgba(255,255,255,0.3)]"></canvas>
+            <button onclick="spinWheel()" id="spin-btn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-red-500 border-8 border-white rounded-full text-white font-black text-3xl shadow-2xl hover:scale-110 active:scale-95 transition-all z-20">转动</button>
+        </div>
+        <div id="lucky-one" class="text-7xl font-black text-yellow-400 opacity-0 transition-opacity drop-shadow-lg">恭喜勇士：<span id="lucky-name" class="underline">XXX</span></div>
+    </div>
+
+    <!-- Step 3: Card Selection -->
+    <div id="card-view" class="hidden container mx-auto p-8">
+        <div class="flex justify-between items-center mb-12 text-white">
+            <div class="flex items-center gap-6">
+                <div class="w-20 h-20 bg-yellow-400 rounded-3xl flex items-center justify-center text-4xl shadow-lg border-4 border-white">⭐</div>
+                <div>
+                    <h2 class="text-5xl font-black">请 <span id="current-challenger" class="text-yellow-400">xxx</span> 抽取挑战卡</h2>
+                    <p class="text-xl opacity-80 mt-2">点击任意卡牌开启你的考验</p>
+                </div>
+            </div>
+            <div class="text-4xl font-black bg-black/30 border-4 border-white/20 px-8 py-4 rounded-3xl">能量积分: <span id="challenger-score" class="text-green-400">0</span></div>
+        </div>
+        <div id="card-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
+    </div>
+
+    <!-- Step 4: Quiz Arena -->
+    <div id="quiz-view" class="hidden container mx-auto p-8 max-w-6xl">
+        <div class="glass-panel p-16 space-y-12 animate-bounce-in">
+            <div id="timer-bar" class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+                <div id="timer-progress" class="bg-blue-500 h-full w-full transition-all duration-1000 linear"></div>
+            </div>
+            <div class="flex justify-between items-center">
+                <span id="q-diff-badge" class="px-6 py-3 rounded-2xl font-black text-2xl"></span>
+                <span id="q-timer-text" class="text-5xl font-mono font-black">30s</span>
+            </div>
+            <p id="q-text" class="text-7xl font-black leading-tight"></p>
+            <div id="options-grid" class="grid grid-cols-1 gap-6"></div>
+        </div>
+    </div>
+
+    <!-- Step 5: Knowledge Note -->
+    <div id="note-view" class="hidden container mx-auto p-8 max-w-6xl">
+        <div class="glass-panel p-20 space-y-12 bg-blue-900 text-white text-center">
+            <h2 class="text-5xl font-black text-yellow-400">💡 知识精华总结</h2>
+            <p id="note-text" class="text-5xl font-bold leading-relaxed"></p>
+            <button onclick="showLeaderboard()" class="px-16 py-8 bg-yellow-500 text-black rounded-full text-4xl font-black shadow-2xl hover:scale-110 transition-transform">查看英雄榜 →</button>
+        </div>
+    </div>
+
+    <!-- Step 6: Leaderboard -->
+    <div id="leaderboard-view" class="hidden container mx-auto p-8 max-w-4xl">
+        <h2 class="text-6xl font-black text-center text-white mb-12 drop-shadow-lg">🏆 实时英雄榜</h2>
+        <div class="glass-panel overflow-hidden">
+            <table class="w-full text-left text-3xl">
+                <thead class="bg-gray-800 text-white">
+                    <tr><th class="p-8">排名</th><th class="p-8">勇士</th><th class="p-8 text-right">总积分</th></tr>
+                </thead>
+                <tbody id="leaderboard-body" class="font-black"></tbody>
+            </table>
+        </div>
+        <div class="mt-12 text-center">
+            <button id="next-warrior-btn" onclick="backToWheel()" class="px-16 py-6 bg-blue-600 text-white rounded-full text-3xl font-black shadow-xl hover:scale-105">下一位勇士 →</button>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-2xl w-full p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                <h2 class="text-3xl font-black" style="color: var(--primary)">📖 竞技场使用指南</h2>
+                <button onclick="toggleHelpModal(false)" class="text-3xl font-bold hover:scale-110 transition-transform">✕</button>
+            </div>
+            <div class="space-y-6 text-lg leading-relaxed">
+                <section>
+                    <h3 class="text-xl font-black mb-2 flex items-center gap-2">🕹️ 游戏怎么玩？</h3>
+                    <ul class="list-disc list-inside space-y-2 opacity-90">
+                        <li><b>导入资料：</b>直接在文本框粘贴教学内容，或上传 PDF/Word 文档。</li>
+                        <li><b>个性化配置：</b>设置题目总数，并分配简单、中等、困难的比例及对应分值。</li>
+                        <li><b>开启挑战：</b>AI 将根据资料自动出题。点击“转动”大轮盘随机抽取学生。</li>
+                        <li><b>翻牌选题：</b>被抽中的学生从卡牌阵列中挑选一张。翻过的卡牌将标记为已完成。</li>
+                        <li><b>知识总结：</b>每题结束后，AI 会自动朗读该题的知识精华，帮助学生巩固。</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3 class="text-xl font-black mb-2 flex items-center gap-2">🔑 如何申请 Google API？</h3>
+                    <ol class="list-decimal list-inside space-y-2 opacity-90">
+                        <li>访问 <b>Google AI Studio</b> (aistudio.google.com)。</li>
+                        <li>使用 Google 账号登录。</li>
+                        <li>点击侧边栏的 <b>"Get API key"</b>。</li>
+                        <li>点击 <b>"Create API key in new project"</b> 并复制生成的密钥。</li>
+                        <li>将 Key 粘贴到本页面的输入框，点击“检测模型”即可。</li>
+                    </ol>
+                    <p class="mt-4 text-sm bg-blue-500/10 p-3 rounded-xl border border-blue-500/20 italic">
+                        💡 提示：Gemini 模型目前对个人用户提供免费额度，非常适合教学使用。
+                    </p>
+                </section>
+            </div>
+            <button onclick="toggleHelpModal(false)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xl btn-action">我明白了，开始挑战！</button>
+        </div>
+    </div>
+
+    <script>
+        let students = [], scenes = [], currentStudent = null, curScene = null;
+        let answeredIds = new Set();
+        let config = { 
+            qCount: 10, 
+            repeat: false,
+            scores: { easy: 10, medium: 20, hard: 30 },
+            timer: { enabled: true, seconds: 20 }
+        };
+        let timerInterval = null, timerLeft = 0;
+        let audioCtx = null, bgmOn = false;
+        const sounds = {
+            bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'),
+            click: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'),
+            start: new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'),
+            correct: new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'),
+            wrong: new Audio('https://assets.mixkit.co/active_storage/sfx/256/256-preview.mp3')
+        };
+        sounds.bgm.loop = true;
+
+        window.onload = () => {
+            const style = localStorage.getItem('quiz_style') || 'tech';
+            document.body.className = 'theme-' + style;
+
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if(savedKey) {
+                document.getElementById('api-key').value = savedKey;
+                fetchModels();
+            }
+        };
+
+        function initAudio() {
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                sounds.start.play().catch(() => {});
+            }
+        }
+
+        function toggleBGM() {
+            if(bgmOn) {
+                sounds.bgm.pause();
+                document.getElementById('bgm-icon').innerText = '🔇';
+            } else {
+                sounds.bgm.play();
+                document.getElementById('bgm-icon').innerText = '🎵';
+            }
+            bgmOn = !bgmOn;
+        }
+
+        function updateVolume(val) {
+            sounds.bgm.volume = val / 100;
+        }
+
+        function playSynthSound(freq, type, vol, duration) {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSpinTick() { playSynthSound(523.25, 'sine', 0.1, 0.1); }
+        function playCorrect() { sounds.correct.currentTime=0; sounds.correct.play(); }
+        function playWrong() { sounds.wrong.currentTime=0; sounds.wrong.play(); }
+        
+        function playUrgentBeep() {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.value = 800;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function speakText(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        async function fetchModels() {
+            const key = document.getElementById('api-key').value.trim();
+            if(!key) return;
+            const select = document.getElementById('model-select');
+            select.innerHTML = '<option>正在加载模型...</option>';
+            
+            try {
+                let res = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
+                let data = await res.json();
+                
+                if(!res.ok) {
+                    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                    data = await res.json();
+                }
+                
+                if(!res.ok) throw new Error(data.error?.message || "获取失败");
+                
+                select.innerHTML = '';
+                const models = data.models.filter(m => m.name.includes('gemini'));
+                
+                models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.name; opt.innerText = m.displayName || m.name;
+                    if(m.name.includes('2.5-flash')) opt.selected = true;
+                    else if(m.name.includes('2.0-flash') && !select.querySelector('option[selected]')) opt.selected = true;
+                    else if(m.name.includes('flash') && !select.querySelector('option[selected]')) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                localStorage.setItem('gemini_api_key', key);
+            } catch(e) { 
+                select.innerHTML = '<option value="">加载失败，请检查 Key</option>';
+            }
+        }
+
+        function validateDiffSum() {
+            const total = parseInt(document.getElementById('q-count-input').value);
+            const easy = parseInt(document.getElementById('easy-count').value || 0);
+            const medium = parseInt(document.getElementById('medium-count').value || 0);
+            const hard = parseInt(document.getElementById('hard-count').value || 0);
+            const sum = easy + medium + hard;
+            const errorEl = document.getElementById('diff-sum-error');
+            const targetEl = document.getElementById('diff-total-target');
+            if (targetEl) targetEl.innerText = total;
+
+            if (sum !== total) {
+                errorEl.classList.remove('hidden');
+                errorEl.innerText = `⚠️ 当前总和 ${sum}，需等于总题数 ${total}`;
+                return false;
+            } else {
+                errorEl.classList.add('hidden');
+                return true;
+            }
+        }
+
+        // --- Logic: Generation ---
+        async function generateQuiz() {
+            if(!validateDiffSum()) return alert("题目难度分配总和不等于总题数！");
+
+            const key = document.getElementById('api-key').value.trim();
+            const model = document.getElementById('model-select').value;
+            const text = document.getElementById('source-text').value.trim();
+            
+            if(!key || !text || !model) return alert("请补全所有必填项（API Key, 模型, 资料）！");
+            
+            localStorage.setItem('gemini_api_key', key);
+            localStorage.setItem('gemini_model', model);
+            
+            const rawStudents = document.getElementById('student-list').value.split(/[\n\s,]+/).filter(n => n.trim());
+            if(rawStudents.length === 0) return alert("请输入学生名单！");
+            students = rawStudents.map(n => ({ name: n, score: 0, usedCount: 0 }));
+            
+            config.qCount = parseInt(document.getElementById('q-count-input').value);
+            config.repeat = document.getElementById('allow-repeat').checked;
+            config.scores.easy = parseInt(document.getElementById('easy-score').value);
+            config.scores.medium = parseInt(document.getElementById('medium-score').value);
+            config.scores.hard = parseInt(document.getElementById('hard-score').value);
+            config.timer.enabled = document.getElementById('timer-enabled').checked;
+            config.timer.seconds = parseInt(document.getElementById('timer-seconds').value);
+            
+            answeredIds.clear(); // 清空上一局的题目状态
+            
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('bgm-widget').classList.remove('hidden');
+            if(!bgmOn) toggleBGM();
+            
+            const easyN = document.getElementById('easy-count').value;
+            const medN = document.getElementById('medium-count').value;
+            const hardN = document.getElementById('hard-count').value;
+
+            const prompt = `Task: Create EXACTLY ${config.qCount} quiz questions from this text: "${text}".
+
+IMPORTANT RULES:
+- Use the EXACT SAME LANGUAGE as the source text.
+- The 'note' field must be an ACTUAL EXPLANATION of the correct answer (2-3 sentences).
+
+Format: JSON array of objects.
+Keys: q, options (3 strings), ans (0-2 index), note (EXPLAIN the answer), title, emoji, diff (⭐ to ⭐⭐⭐⭐⭐), difficulty (exactly one of: "easy", "medium", "hard").
+
+CRITICAL DIFFICULTY DISTRIBUTION:
+- EXACTLY ${easyN} questions must have difficulty "easy".
+- EXACTLY ${medN} questions must have difficulty "medium".
+- EXACTLY ${hardN} questions must have difficulty "hard".
+
+Output ONLY valid JSON array, no markdown, no code blocks.`;
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1/${model}:generateContent?key=${key}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await res.json();
+                if(!res.ok) throw new Error(data.error?.message || "API 调用失败");
+                const aiTxt = data.candidates[0].content.parts[0].text;
+                const match = aiTxt.match(/\[[\s\S]*\]/);
+                if(!match) throw new Error("AI 返回格式错误");
+                scenes = JSON.parse(match[0]);
+                
+                // 确保每道题都有唯一 ID
+                scenes.forEach((s, idx) => {
+                    if (!s.id) s.id = 'q-' + idx;
+                });
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('setup-view').classList.add('hidden');
+                initWheel();
+                showView('wheel-view');
+            } catch(e) { alert("生成失败: " + e.message); document.getElementById('loading').classList.add('hidden'); }
+        }
+
+        // --- View Controller ---
+        function showView(id) {
+            ['setup-view', 'wheel-view', 'card-view', 'quiz-view', 'note-view', 'leaderboard-view'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        // --- Wheel Logic ---
+        let startAngle = 0;
+        function initWheel() {
+            const canvas = document.getElementById("wheelCanvas"), ctx = canvas.getContext("2d");
+            const avail = config.repeat ? students : students.filter(s => s.usedCount === 0);
+            if(avail.length === 0) { students.forEach(s => s.usedCount = 0); initWheel(); return; }
+            
+            const num = avail.length, arc = (2 * Math.PI) / num, colors = ["#ff9ebb", "#a0d8ef", "#fbbf24", "#3b82f6", "#8b5cf6", "#f472b6", "#fb923c"];
+            ctx.clearRect(0,0,1000,1000);
+            for(let i=0; i<num; i++) {
+                const angle = startAngle + i * arc;
+                ctx.beginPath(); ctx.moveTo(500,500); ctx.arc(500,500,480,angle,angle+arc);
+                ctx.fillStyle = colors[i % colors.length]; ctx.fill(); 
+                ctx.strokeStyle = "white"; ctx.lineWidth = 5; ctx.stroke();
+                ctx.save(); ctx.translate(500,500); ctx.rotate(angle + arc/2);
+                ctx.fillStyle="white"; ctx.font="bold 50px Arial"; ctx.textAlign="right"; 
+                ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = 10;
+                ctx.fillText(avail[i].name, 450, 20); ctx.restore();
+            }
+        }
+
+        function spinWheel() {
+            document.getElementById('spin-btn').disabled = true;
+            let speed = 0.5 + Math.random() * 0.5, duration = 4000, start = null;
+            let lastTick = 0;
+            function animate(time) {
+                if(!start) start = time;
+                const progress = (time - start) / duration;
+                if(progress < 1) {
+                    const step = speed * (1 - progress);
+                    startAngle += step;
+                    
+                    if(startAngle - lastTick > 0.1) { playSpinTick(); lastTick = startAngle; }
+                    
+                    initWheel(); requestAnimationFrame(animate);
+                } else {
+                    const avail = config.repeat ? students : students.filter(s => s.usedCount === 0);
+                    const arc = (2 * Math.PI) / avail.length;
+                    const index = Math.floor((1.5 * Math.PI - (startAngle % (2 * Math.PI)) + 2*Math.PI) % (2*Math.PI) / arc) % avail.length;
+                    currentStudent = avail[index];
+                    currentStudent.usedCount++;
+                    document.getElementById('lucky-name').innerText = currentStudent.name;
+                    document.getElementById('lucky-one').classList.remove('opacity-0');
+                    document.getElementById('spin-btn').disabled = false;
+                    setTimeout(() => showCards(), 2000);
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // --- Card Logic ---
+        function showCards() {
+            const grid = document.getElementById('card-grid'); grid.innerHTML = '';
+            document.getElementById('current-challenger').innerText = currentStudent.name;
+            document.getElementById('challenger-score').innerText = currentStudent.score;
+            
+            scenes.forEach(s => {
+                const card = document.createElement('div');
+                const isUsed = answeredIds.has(s.id);
+                const pts = config.scores[s.difficulty];
+                const color = s.difficulty === 'easy' ? 'bg-green-400' : (s.difficulty === 'hard' ? 'bg-red-400' : 'bg-yellow-400');
+                
+                card.className = `quest-card rounded-2xl ${color} flex flex-col items-center justify-center text-white p-2 shadow-lg border-4 border-white/30 ${isUsed ? 'used' : 'hover:scale-105 transition-all'}`;
+                
+                // Hide emoji/title, show score and mystery icon
+                card.innerHTML = `
+                    <span class="text-4xl mb-1">${isUsed ? '🔒' : '❓'}</span>
+                    <span class="text-2xl font-black">${pts}</span>
+                    <span class="text-[10px] font-bold opacity-60 uppercase">${s.difficulty}</span>
+                `;
+                
+                if(!isUsed) card.onclick = () => { playSynthSound(800, 'square', 0.1, 0.2); startQuiz(s); };
+                grid.appendChild(card);
+            });
+            showView('card-view');
+        }
+
+        // --- Quiz Logic ---
+        function startQuiz(s) {
+            curScene = s;
+            document.getElementById('q-text').innerText = s.q;
+            speakText(s.q);
+            document.getElementById('q-diff-badge').innerText = s.difficulty.toUpperCase() + " (" + config.scores[s.difficulty] + "pts)";
+            const opts = document.getElementById('options-grid'); opts.innerHTML = '';
+            s.options.forEach((o, i) => {
+                const b = document.createElement('button');
+                b.className = "p-6 bg-gray-100 hover:bg-blue-100 rounded-2xl text-3xl font-bold text-left transition-all border-4 border-transparent hover:border-blue-500 shadow-sm";
+                b.innerText = `${String.fromCharCode(65+i)}. ${o}`;
+                b.onclick = () => { playSynthSound(600, 'sine', 0.1, 0.1); checkAns(i, b); };
+                opts.appendChild(b);
+            });
+            showView('quiz-view');
+            if(config.timer.enabled) startTimer();
+            else {
+                document.getElementById('timer-bar').classList.add('hidden');
+                document.getElementById('q-timer-text').innerText = '∞';
+            }
+        }
+
+        function startTimer() {
+            document.getElementById('timer-bar').classList.remove('hidden');
+            timerLeft = config.timer.seconds; updateTimer();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timerLeft--; updateTimer();
+                if(timerLeft <= 10 && timerLeft > 0) playUrgentBeep();
+                if(timerLeft <= 0) { clearInterval(timerInterval); checkAns(-1); }
+            }, 1000);
+        }
+        function updateTimer() {
+            document.getElementById('q-timer-text').innerText = timerLeft + 's';
+            document.getElementById('timer-progress').style.width = (timerLeft/config.timer.seconds)*100 + '%';
+        }
+
+        function checkAns(idx, btn) {
+            clearInterval(timerInterval);
+            const isCorrect = idx === curScene.ans;
+            if(isCorrect) {
+                playCorrect();
+                const pts = config.scores[curScene.difficulty];
+                currentStudent.score += pts;
+                if(btn) btn.classList.add('correct-anim', 'animate-bounce');
+            } else {
+                playWrong();
+                if(btn) btn.classList.add('wrong-anim', 'animate-shake');
+            }
+            answeredIds.add(curScene.id);
+            setTimeout(() => {
+                document.getElementById('note-text').innerText = curScene.note;
+                speakText("知识精华总结：" + curScene.note);
+                
+                const noteBtn = document.querySelector('#note-view button');
+                if(answeredIds.size === scenes.length) {
+                    noteBtn.innerText = "🏆 查看最终英雄榜 →";
+                } else {
+                    noteBtn.innerText = "查看英雄榜 →";
+                }
+                
+                showView('note-view');
+            }, 2000);
+        }
+
+        function showLeaderboard() {
+            const body = document.getElementById('leaderboard-body'); body.innerHTML = '';
+            const sorted = [...students].sort((a,b) => b.score - a.score);
+            sorted.forEach((s, i) => {
+                const rankClass = i < 3 ? `rank-${i+1}` : 'bg-gray-100';
+                body.innerHTML += `
+                    <tr class="leaderboard-row">
+                        <td class="p-8 text-center"><div class="rank-badge ${rankClass} mx-auto text-2xl">${i+1}</div></td>
+                        <td class="p-8 text-4xl">${s.name}</td>
+                        <td class="p-8 text-right text-5xl font-black text-blue-600">${s.score} <span class="text-xl">pts</span></td>
+                    </tr>`;
+            });
+
+            // 检查是否所有题目都已回答完
+            const nextBtn = document.getElementById('next-warrior-btn');
+            if(answeredIds.size === scenes.length) {
+                nextBtn.innerText = "🏁 竞技圆满结束 (返回主页)";
+                nextBtn.onclick = () => location.href = 'quiz-start.html';
+                nextBtn.classList.add('!bg-yellow-500', '!text-black');
+            } else {
+                nextBtn.innerText = "下一位勇士 →";
+                nextBtn.onclick = backToWheel;
+                nextBtn.className = "px-16 py-6 bg-blue-600 text-white rounded-full text-3xl font-black shadow-xl hover:scale-105 btn-action";
+            }
+
+            showView('leaderboard-view');
+        }
+
+        function backToWheel() {
+            document.getElementById('lucky-one').classList.add('opacity-0');
+            initWheel(); showView('wheel-view');
+        }
+
+        function toggleHelpModal(show) {
+            document.getElementById('help-modal').classList.toggle('hidden', !show);
+        }
+
+        // --- File Upload ---
+        async function handleFileUpload(input) {
+            const file = input.files[0]; if(!file) return;
+            try {
+                if(file.type === "application/pdf") {
+                    const arrayBuffer = await file.arrayBuffer();
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+                    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                    let fullText = "";
+                    for(let i=1; i<=pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        fullText += content.items.map(item => item.str).join(' ') + "\n";
+                    }
+                    document.getElementById('source-text').value = fullText;
+                } else if(file.name.endsWith('.docx')) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
+                    document.getElementById('source-text').value = result.value;
+                }
+            } catch(e) { alert("文档解析失败"); }
+        }
+    </script>
+</body>
+</html>

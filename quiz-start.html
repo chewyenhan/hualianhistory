@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 全能竞技场 - 入口门户</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Orbitron:wght@700&family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0f172a;
+            --primary: #3b82f6;
+            --accent: #fbbf24;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-main: #ffffff;
+            --border-style: 2px solid rgba(255, 255, 255, 0.1);
+            --radius: 30px;
+            --shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+        }
+
+        .theme-cute {
+            --bg-page: #fcf6ec;
+            --primary: #ff9ebb;
+            --accent: #a0d8ef;
+            --card-bg: #ffffff;
+            --text-main: #5c5246;
+            --border-style: 4px solid #f0e6d2;
+            --radius: 40px;
+            --shadow: 0 10px 0px #f0e6d2;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: all 0.5s ease;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: var(--border-style);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .mode-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            border-color: var(--primary);
+        }
+
+        .style-btn {
+            border: 4px solid transparent;
+            transition: all 0.3s;
+        }
+        .style-btn.active {
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .floating { animation: float 3s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    </style>
+</head>
+<body class="theme-tech">
+
+    <div class="container mx-auto px-6 py-12 flex flex-col items-center justify-center min-h-screen">
+        
+        <header class="text-center mb-16">
+            <h1 class="text-7xl font-black mb-4 tracking-tighter italic opacity-90" style="font-family: 'Orbitron', sans-serif;">AI QUIZ ARENA</h1>
+            <p class="text-2xl font-bold opacity-60 uppercase tracking-widest">让每一堂历史课都成为传奇</p>
+        </header>
+
+        <!-- Style Selection Section -->
+        <div class="glass-card p-8 mb-16 w-full max-w-2xl">
+            <div class="flex flex-col items-center gap-6">
+                <label class="block text-sm font-black uppercase tracking-widest opacity-70">🎨 选择视觉风格</label>
+                <div class="flex gap-8 w-full">
+                    <button onclick="setStyle('tech')" id="btn-tech" class="style-btn active glass-card flex-grow py-6 font-black text-2xl transition-all hover:scale-105">🟦 未来科技</button>
+                    <button onclick="setStyle('cute')" id="btn-cute" class="style-btn glass-card flex-grow py-6 font-black text-2xl text-pink-500 transition-all hover:scale-105">🌸 萌趣奶油</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode Selection -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-6xl">
+            
+            <!-- Group Mode -->
+            <div onclick="enterMode('group')" class="glass-card mode-card p-12 cursor-pointer flex flex-col items-center text-center">
+                <div class="text-8xl mb-8 floating">🛡️</div>
+                <h2 class="text-5xl font-black mb-4">组别竞技模式</h2>
+                <p class="text-xl opacity-70 leading-relaxed mb-8">适合全班对战。支持战队分组、抢答机制与实时总分排行榜。</p>
+                <div class="mt-auto px-10 py-4 bg-blue-600 rounded-full text-2xl font-black shadow-xl">开启班级大战</div>
+            </div>
+
+            <!-- Solo Mode -->
+            <div onclick="enterMode('solo')" class="glass-card mode-card p-12 cursor-pointer flex flex-col items-center text-center">
+                <div class="text-8xl mb-8 floating">🏆</div>
+                <h2 class="text-5xl font-black mb-4 text-yellow-400">个人挑战模式</h2>
+                <p class="text-xl opacity-70 leading-relaxed mb-8">适合勇士闯关。包含大转轮抽签、卡牌选题与个人光荣榜。</p>
+                <div class="mt-auto px-10 py-4 bg-yellow-500 text-black rounded-full text-2xl font-black shadow-xl">开启个人闯关</div>
+            </div>
+
+        </div>
+
+        <footer class="mt-20 text-center opacity-40 font-bold text-sm tracking-widest">
+            TAIPING HUA LIAN HIGH SCHOOL HISTORY PORTAL &copy; 2026
+        </footer>
+    </div>
+
+    <script>
+        const sounds = {
+            click: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'),
+            hover: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3')
+        };
+
+        function playSound(name) {
+            sounds[name].currentTime = 0;
+            sounds[name].play().catch(() => {});
+        }
+
+        function setStyle(style) {
+            playSound('click');
+            document.body.className = 'theme-' + style;
+            localStorage.setItem('quiz_style', style);
+            document.getElementById('btn-tech').classList.toggle('active', style === 'tech');
+            document.getElementById('btn-cute').classList.toggle('active', style === 'cute');
+        }
+
+        function enterMode(mode) {
+            playSound('click');
+            const file = mode === 'group' ? 'quiz.html' : 'quiz-solo.html';
+            setTimeout(() => {
+                location.href = file;
+            }, 200)
+        }
+
+        // Initialize from storage
+        window.onload = () => {
+            const savedStyle = localStorage.getItem('quiz_style') || 'tech';
+            setStyle(savedStyle);
+
+            // Add hover sounds to cards
+            document.querySelectorAll('.mode-card, .style-btn').forEach(el => {
+                el.addEventListener('mouseenter', () => playSound('hover'));
+            });
+        };
+    </script>
+</body>
+</html>
