@@ -210,20 +210,19 @@
             <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <label class="block text-2xl font-bold text-gray-700">🔑 API Key (Gemini)</label>
+                        <label class="block text-2xl font-bold text-gray-700">🔑 AI 服务状态</label>
                         <button onclick="toggleHelpModal(true)" class="text-blue-500 hover:text-blue-600 font-bold flex items-center gap-1 transition-all">
                             <span class="w-6 h-6 rounded-full border-2 border-current flex items-center justify-center text-sm">?</span>
                             使用说明
                         </button>
                     </div>
                     <div class="flex gap-4">
-                        <input type="password" id="api-key" class="setup-input" placeholder="粘贴你的 API Key...">
-                        <button onclick="fetchModels()" class="bg-blue-600 text-white px-8 rounded-xl font-bold whitespace-nowrap text-xl">检测模型</button>
+                        <p id="model-status" class="setup-input text-xl font-bold flex items-center">正在自动连接 AI 服务...</p>
                     </div>
                 </div>
                 <div>
                     <label class="block text-2xl font-bold mb-2 text-gray-700">🤖 选择 AI 模型</label>
-                    <select id="model-select" class="setup-input text-xl font-bold"></select>
+                    <select id="model-select" class="setup-input text-xl font-bold" style="display: none;"></select>
                 </div>
             </section>
 
@@ -506,19 +505,19 @@
             }
         }
 
+        const WORKER_URL = 'https://hualianhistory-ai.chewyenhan.workers.dev';
+        let customApiKey = 'worker';   // ⚠️ 必须是 truthy 值，防止旧代码的 !customApiKey 检查阻断
+        let selectedModel = 'models/gemini-2.5-flash';
+
         window.onload = () => {
             // Apply Theme
             const style = localStorage.getItem('quiz_style') || 'tech';
             document.body.className = 'theme-' + style;
-
-            const savedKey = localStorage.getItem('gemini_api_key');
-            if(savedKey) document.getElementById('api-key').value = savedKey;
             
             renderTeamSetupInputs(3);
             loadSettings();
 
-            // 如果有 Key，自动加载模型列表
-            if(document.getElementById('api-key').value) fetchModels();
+            detectModels();
 
             // Auto-save settings whenever any input changes
             document.querySelectorAll('#setup-view input, #setup-view select, #setup-view textarea').forEach(el => {
@@ -546,42 +545,42 @@
             }
         }
 
-        async function fetchModels() {
-            const key = document.getElementById('api-key').value.trim();
-            if(!key) return;
-            const select = document.getElementById('model-select');
-            select.innerHTML = '<option>正在加载模型...</option>';
-            
+        async function detectModels() {
+            const sel = document.getElementById('model-select');
+            const status = document.getElementById('model-status');
             try {
-                // 尝试 v1 接口
-                let res = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
-                let data = await res.json();
-                
-                // 如果 v1 失败，尝试 v1beta
-                if(!res.ok) {
-                    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-                    data = await res.json();
+                const res = await fetch(`${WORKER_URL}/models`);
+                const data = await res.json();
+                sel.innerHTML = '';
+                if (data.models) {
+                    data.models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.name;
+                        opt.textContent = m.displayName || m.name;
+                        sel.appendChild(opt);
+                    });
                 }
-                
-                if(!res.ok) throw new Error(data.error?.message || "无法获取模型列表");
-                
-                select.innerHTML = '';
-                const models = data.models.filter(m => m.name.includes('gemini'));
-                
-                if(models.length === 0) throw new Error("该 API Key 下未找到可用模型");
-
-                models.forEach(m => {
+                if (sel.options.length > 0) {
+                    sel.selectedIndex = 0;
+                    selectedModel = sel.value;
+                    if (status) status.innerText = '✅ AI 服务连接成功';
+                    sel.style.display = 'block';
+                } else {
+                    throw new Error('No models returned');
+                }
+            } catch (e) {
+                console.warn('模型加载失败，使用默认列表', e);
+                if (status) status.innerText = '⚠️ 自动连接失败，使用内置线路';
+                sel.innerHTML = '';
+                ['models/gemini-2.5-flash', 'models/gemini-2.5-pro', 'models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-1.5-pro'].forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m.name; opt.innerText = m.displayName || m.name;
-                    if(m.name.includes('2.5-flash')) opt.selected = true;
-                    else if(m.name.includes('2.0-flash') && !select.querySelector('option[selected]')) opt.selected = true;
-                    else if(m.name.includes('flash') && !select.querySelector('option[selected]')) opt.selected = true;
-                    select.appendChild(opt);
+                    opt.value = m;
+                    opt.textContent = m.replace('models/', '');
+                    sel.appendChild(opt);
                 });
-                localStorage.setItem('gemini_api_key', key);
-            } catch(e) { 
-                select.innerHTML = '<option value="">加载失败，请检查 Key</option>';
-                console.error(e);
+                sel.selectedIndex = 0;
+                selectedModel = sel.value;
+                sel.style.display = 'block';
             }
         }
 
@@ -689,10 +688,10 @@
         }
 
         async function launchAI() {
-            const apiKey = document.getElementById('api-key').value.trim(), text = document.getElementById('source-text').value.trim(), qCount = document.getElementById('q-count-input').value;
+            const apiKey = customApiKey, text = document.getElementById('source-text').value.trim(), qCount = document.getElementById('q-count-input').value;
             let model = document.getElementById('model-select').value;
             if(!model) model = localStorage.getItem('gemini_model') || 'gemini-2.0-flash';
-            if(!apiKey || !text || !model) return alert("请补全所有必填项！");
+            if(!text || !model) return alert("请补全所有必填项！");
             
             config = {
                 ptsCorrect: parseInt(document.getElementById('pts-correct').value),
@@ -735,10 +734,13 @@ ${ config.shuffleDifficulty ? '- Randomly shuffle the order of difficulty levels
 Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid JSON array, no markdown, no code blocks.`;
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1/${model}:generateContent?key=${apiKey}`, { 
+                const res = await fetch(`${WORKER_URL}/gemini`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+                    body: JSON.stringify({
+                        model: model,
+                        contents: [{ parts: [{ text: prompt }] }]
+                    }) 
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error?.message || "API 失败");
