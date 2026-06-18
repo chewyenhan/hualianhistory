@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>太平华联中学历史科 - 互动学习门户</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind 自定义金色
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: { 500: '#d4af37', 600: '#b8960f' }
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,295 +25,296 @@
             --accent-blue: #2563eb;
         }
 
+        * { box-sizing: border-box; }
+
         body {
             background-color: #0f172a;
             color: #f1f5f9;
             font-family: 'Noto Serif SC', serif;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
+            scroll-behavior: smooth;
         }
 
+        /* ── Header ── */
         .header-bg {
-            background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=2000');
+            position: relative;
+            background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)),
+                        url('https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=2000');
             background-size: cover;
             background-position: center;
-            padding: 100px 20px;
+            padding: 100px 20px 80px;
             text-align: center;
             border-bottom: 4px solid var(--primary-gold);
-        }
-
-        .section-title {
-            font-size: 2.5rem;
-            font-weight: 900;
-            margin-bottom: 3rem;
-            text-align: center;
-            position: relative;
-        }
-        .section-title::after {
-            content: '';
-            display: block;
-            width: 80px;
-            height: 4px;
-            background: var(--primary-gold);
-            margin: 1rem auto;
-        }
-
-        .game-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 20px;
             overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
         }
-        .game-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            border-color: var(--primary-gold);
+        #particle-canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
         }
+        .header-bg > .container { position: relative; z-index: 1; }
 
-        .btn-play {
-            background: var(--deep-red);
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 10px;
-            font-weight: bold;
-            display: inline-block;
-            transition: background 0.3s;
-        }
-        .btn-play:hover { background: #b91c1c; }
-
-        .btn-info {
-            background: transparent;
-            border: 2px solid #64748b;
-            color: #94a3b8;
-            padding: 0.8rem 1.5rem;
-            border-radius: 10px;
-            font-weight: bold;
-            margin-left: 10px;
-            transition: all 0.3s;
-        }
-        .btn-info:hover { border-color: white; color: white; }
-
-        .resource-item {
-            background: #1e293b;
-            padding: 1.5rem;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            border-left: 5px solid var(--accent-blue);
-        }
-
-        footer {
-            padding: 50px 20px;
-            text-align: center;
-            border-top: 1px solid #334155;
-            margin-top: 100px;
-        }
-
-        /* Hide scrollbar for a cleaner look */
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* For IE, Edge and Firefox */
-        .scrollbar-hide {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
-
-        .scroll-container {
-            position: relative;
-        }
-
-        .scroll-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(212, 175, 55, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.3s;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .scroll-arrow:hover {
-            background: rgba(212, 175, 55, 1);
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .scroll-arrow.left {
-            left: 10px;
-        }
-
-        .scroll-arrow.right {
-            right: 10px;
-        }
-
-        .tool-card {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 2px solid #334155;
-            border-radius: 20px;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        .tool-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(212, 175, 55, 0.2);
-            border-color: var(--primary-gold);
-        }
-
-        .section-subtitle {
-            font-size: 1.1rem;
-            color: #94a3b8;
-            text-align: center;
-            margin-bottom: 3rem;
-            font-style: italic;
-        }
-
-        /* Enhanced animations */
+        /* ── Animations ── */
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(212,175,55,0.3); }
+            50%      { box-shadow: 0 0 35px rgba(212,175,55,0.6); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50%      { transform: translateY(-8px); }
         }
 
+        .animate-in {
+            animation: fadeInUp 0.7s ease-out both;
+        }
         section {
             animation: fadeInUp 0.6s ease-out;
         }
 
+        /* ── Section Titles ── */
+        .section-title {
+            font-size: 2.5rem; font-weight: 900;
+            margin-bottom: 0.5rem; text-align: center; position: relative;
+        }
+        .section-title::after {
+            content: ''; display: block;
+            width: 80px; height: 4px;
+            background: var(--primary-gold);
+            margin: 1rem auto;
+        }
+        .section-subtitle {
+            font-size: 1.1rem; color: #94a3b8;
+            text-align: center; margin-bottom: 3rem;
+        }
+
+        /* ── Cards ── */
         .game-card, .tool-card {
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 22px; overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+        }
+        .game-card:hover, .tool-card:hover {
+            transform: translateY(-12px);
+            border-color: var(--primary-gold);
+            box-shadow: 0 20px 50px rgba(212,175,55,0.25);
         }
 
-        /* Enhanced button styles */
+        /* ── Buttons ── */
         .btn-play {
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
+            background: var(--deep-red); color: white;
+            padding: 0.75rem 1.4rem; border-radius: 12px;
+            font-weight: 700; display: inline-block;
+            transition: all 0.3s; letter-spacing: 0.5px;
         }
-
+        .btn-play:hover { background: #b91c1c; transform: scale(1.04); }
         .btn-play::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255,255,255,0.2);
+            content: ''; position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255,255,255,0.15);
             border-radius: 50%;
             transform: translate(-50%, -50%);
             transition: width 0.6s, height 0.6s;
         }
+        .btn-play:hover::before { width: 350px; height: 350px; }
 
-        .btn-play:hover::before {
-            width: 300px;
-            height: 300px;
+        .btn-info {
+            background: transparent;
+            border: 2px solid #475569;
+            color: #cbd5e1; padding: 0.75rem 1.4rem;
+            border-radius: 12px; font-weight: 700;
+            margin-left: 10px; transition: all 0.3s;
+        }
+        .btn-info:hover { border-color: #f1f5f9; color: #f1f5f9; }
+
+        /* ── Resource items ── */
+        .resource-item {
+            background: #1e293b; padding: 1.5rem;
+            border-radius: 15px; display: flex;
+            align-items: center; justify-content: space-between;
+            margin-bottom: 1rem;
+            border-left: 5px solid var(--accent-blue);
         }
 
-        /* Enhanced footer */
-        footer {
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.8) 100%);
-        }
-
-        /* Scrolling hint animation */
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 0.6;
-            }
-            50% {
-                opacity: 1;
-            }
-        }
-
+        /* ── Scroll arrows ── */
+        .scroll-container { position: relative; }
         .scroll-arrow {
-            animation: pulse 2s infinite;
+            position: absolute; top: 50%;
+            transform: translateY(-50%);
+            background: rgba(212, 175, 55, 0.85); color: #0f172a;
+            border: none; border-radius: 50%;
+            width: 48px; height: 48px;
+            font-size: 20px; cursor: pointer;
+            transition: all 0.3s; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            animation: glowPulse 3s infinite;
+        }
+        .scroll-arrow:hover { background: rgba(212, 175, 55, 1); transform: translateY(-50%) scale(1.1); }
+        .scroll-arrow.left  { left: 8px; }
+        .scroll-arrow.right { right: 8px; }
+
+        /* ── Scrollbar hide ── */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ── Back to Top ── */
+        #back-to-top {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 50px; height: 50px;
+            background: var(--primary-gold); color: #0f172a;
+            border: none; border-radius: 50%;
+            font-size: 24px; cursor: pointer;
+            z-index: 999;
+            opacity: 0; visibility: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(212,175,55,0.4);
+        }
+        #back-to-top.show { opacity: 1; visibility: visible; }
+        #back-to-top:hover { transform: scale(1.1); }
+
+        /* ── Badge ── */
+        .badge-builtin {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(212, 175, 55, 0.15);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            color: var(--primary-gold);
+            padding: 6px 16px; border-radius: 20px;
+            font-size: 0.9rem; font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 50px 20px; text-align: center;
+            border-top: 1px solid #334155; margin-top: 100px;
+        }
+
+        /* ── Mode highlight cards ── */
+        .mode-badge {
+            display: inline-block;
+            padding: 4px 12px; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 700;
+        }
+        .mode-group  { background: rgba(139, 0, 0, 0.2);  color: #f87171; }
+        .mode-solo   { background: rgba(37, 99, 235, 0.2); color: #60a5fa; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-bg { padding: 60px 16px 50px; }
+            .header-bg h1 { font-size: 2.2rem; }
+            .section-title { font-size: 1.8rem; }
         }
     </style>
 </head>
 <body>
 
     <header class="header-bg">
+        <canvas id="particle-canvas"></canvas>
         <div class="container mx-auto px-4">
-            <p class="text-xl uppercase tracking-widest text-gold-500 mb-4 opacity-80">Taiping Hua Lian High School</p>
-            <h1 class="text-6xl font-black mb-6">历史科互动学习门户</h1>
-            
-            <!-- 网站简介 -->
-            <div class="max-w-3xl mx-auto mb-10 bg-black/30 backdrop-blur-md p-8 rounded-3xl border border-white/10">
-                <h3 class="text-2xl font-bold text-gold-500 mb-4">🌐 网站简介</h3>
+            <p class="text-base uppercase tracking-[0.3em] text-[#d4af37] mb-4 opacity-75">Taiping Hua Lian High School · History Department</p>
+            <h1 class="text-5xl md:text-6xl font-black mb-6 tracking-tight">
+                历史科互动学习门户
+            </h1>
+
+            <!-- 简介 -->
+            <div class="max-w-3xl mx-auto mb-8 bg-black/40 backdrop-blur-lg p-8 rounded-3xl border border-white/10">
+                <div class="badge-builtin mb-5">
+                    ⚡ AI 已内置 · 打开即用
+                </div>
                 <p class="text-xl leading-relaxed text-gray-200">
-                    本网站由 <span class="text-white font-bold">朱彦翰 (Chew Yen Han)</span> 倾力打造，旨在通过最前沿的 <span class="text-gold-500">AI 技术</span> 赋能历史教学。
-                    我们通过“AI 智能竞技”与“沉浸式角色扮演”，打破传统的照本宣科，让历史课堂转变为跨越时空的探索之旅。
-                    在这里，历史不再是冰冷的文字，而是鲜活的体验。
+                    由 <span class="text-white font-bold">朱彦翰 (Chew Yen Han)</span> 倾力打造，涵盖
+                    <span class="text-[#d4af37] font-bold">🛡️ 组别竞技</span> 与
+                    <span class="text-[#d4af37] font-bold">🏆 个人挑战</span> 双模 Quiz，
+                    以及多款沉浸式历史角色扮演游戏。
+                    无需手动配置 API Key，打开浏览器即可体验 AI 驱动的新型历史课堂。
                 </p>
+            </div>
+
+            <!-- 快速导航 -->
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="#quiz-section"    class="px-6 py-3 bg-[#d4af37] text-[#0f172a] rounded-full font-bold hover:scale-105 transition-transform">🎯 AI 竞技场</a>
+                <a href="#games-section"   class="px-6 py-3 bg-white/10 text-white rounded-full font-bold hover:bg-white/20 transition-all border border-white/20">⚔️ 历史游戏</a>
+                <a href="#resources-section" class="px-6 py-3 bg-white/10 text-white rounded-full font-bold hover:bg-white/20 transition-all border border-white/20">📚 教学资源</a>
             </div>
         </div>
     </header>
 
-    <!-- API 教程弹窗 -->
-    <div id="api-modal" class="fixed inset-0 bg-black/90 z-[9999] hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border-2 border-gold-500 rounded-[40px] max-w-2xl w-full p-10 relative shadow-2xl">
-            <button onclick="toggleModal(false)" class="absolute top-6 right-8 text-4xl text-gray-400 hover:text-white">&times;</button>
-            <h2 class="text-4xl font-black text-gold-500 mb-8 title-font">🔑 获取免费 API Key 指南</h2>
-            <div class="space-y-6 text-gray-300 text-lg">
-                <div class="flex gap-4">
-                    <span class="bg-gold-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">1</span>
-                    <p>使用 Google 账号登录 <a href="https://aistudio.google.com/" target="_blank" class="text-blue-400 underline">Google AI Studio</a>。</p>
-                </div>
-                <div class="flex gap-4">
-                    <span class="bg-gold-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">2</span>
-                    <p>在左侧菜单点击 <b>"Get API key"</b>。</p>
-                </div>
-                <div class="flex gap-4">
-                    <span class="bg-gold-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">3</span>
-                    <p>点击 <b>"Create API key in new project"</b> 并复制那一串字符。</p>
-                </div>
-                <div class="flex gap-4">
-                    <span class="bg-gold-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">4</span>
-                    <p>回到游戏界面，粘贴 Key 即可开启 AI 互动。请放心，Key 仅保存在您的浏览器本地，安全无忧。</p>
-                </div>
-            </div>
-            <button onclick="toggleModal(false)" class="mt-10 w-full bg-gold-500 text-white py-4 rounded-2xl font-black text-xl hover:scale-105 transition-transform">我明白了，去尝试！</button>
-        </div>
-    </div>
-
     <main class="container mx-auto px-6 py-20">
-        
-        <!-- Section: Teacher Tools -->
-        <section class="mb-32">
+
+        <!-- ═══════════════ Section 1: AI 全能竞技场 ═══════════════ -->
+        <section id="quiz-section" class="mb-32">
+            <h2 class="section-title">🎯 AI 全能竞技场</h2>
+            <p class="section-subtitle" style="font-size:1.2rem; color:#cbd5e1; font-style:normal;">
+                双模 Quiz 系统 —
+                <span class="mode-badge mode-group">🛡️ 组别对战</span>
+                <span style="margin:0 6px;">+</span>
+                <span class="mode-badge mode-solo">🏆 个人挑战</span>
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+
+                <!-- 组别竞技模式 -->
+                <div class="game-card p-8 flex flex-col" style="border-top: 4px solid #8b0000;">
+                    <div class="text-5xl mb-4">🛡️</div>
+                    <h3 class="text-2xl font-black mb-2">组别竞技模式</h3>
+                    <p class="text-sm text-red-300 mb-5 font-semibold">quiz.html — 全班分组，团队对抗</p>
+                    <ul class="text-gray-400 text-sm space-y-2 mb-6 leading-relaxed">
+                        <li>• 支持最多 <b class="text-white">10 组</b> 同时竞技</li>
+                        <li>• 自定义战队名称与人数</li>
+                        <li>• 随机抽组 + 实时锁定答案</li>
+                        <li>• 抢答机制 · 专属奖惩分</li>
+                        <li>• 动态总分排行榜</li>
+                    </ul>
+                    <div class="mt-auto">
+                        <a href="quiz.html" class="btn-play">🛡️ 组别对战</a>
+                    </div>
+                </div>
+
+                <!-- 个人挑战模式 -->
+                <div class="game-card p-8 flex flex-col" style="border-top: 4px solid #2563eb;">
+                    <div class="text-5xl mb-4">🏆</div>
+                    <h3 class="text-2xl font-black mb-2">个人挑战模式</h3>
+                    <p class="text-sm text-blue-300 mb-5 font-semibold">quiz-solo.html — 勇士闯关，个人荣耀</p>
+                    <ul class="text-gray-400 text-sm space-y-2 mb-6 leading-relaxed">
+                        <li>• <b class="text-white">700px 幸运大转轮</b> 随机抽人</li>
+                        <li>• 卡牌式题库 · 隐藏难度自选</li>
+                        <li>• 实时金🥇银🥈铜🥉个人英雄榜</li>
+                        <li>• AI 语音朗读题目 + 精华总结</li>
+                        <li>• 拖入 PDF/Word 课件秒速出题</li>
+                    </ul>
+                    <div class="mt-auto">
+                        <a href="quiz-solo.html" class="btn-play" style="background:#2563eb;">🏆 个人挑战</a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 统一入口 -->
+            <div class="text-center mt-10">
+                <p class="text-gray-500 text-sm mb-3">首次使用？从统一入口开始，选择风格与模式</p>
+                <a href="quiz-start.html" class="btn-info" style="border-color: #d4af37; color: #d4af37;">🚪 进入统一入口 (quiz-start.html)</a>
+            </div>
+        </section>
+
+        <!-- ═══════════════ Section 2: 教师辅助工具 ═══════════════ -->
+        <section id="tools-section" class="mb-32">
             <h2 class="section-title">📚 教师辅助工具库</h2>
             <p class="section-subtitle">让教学变得更轻松、更高效——AI 助力的智能教学伙伴</p>
             <div class="scroll-container">
                 <div class="flex overflow-x-auto space-x-8 pb-4 scrollbar-hide">
-                
-                <!-- Tool 1: AI Quiz Generator -->
-                <div class="tool-card flex-none w-80 flex flex-col">
-                    <img src="quiz.png" class="h-48 w-full object-cover">
-                    <div class="p-6 flex-grow">
-                        <h3 class="text-2xl font-bold mb-2">AI 全能竞技场</h3>
-                        <p class="text-sm text-blue-400 mb-4 font-semibold">无需手机设备的课堂互动竞赛系统</p>
-                        <p class="text-gray-400 mb-6 text-sm">• 一键生成课堂竞赛题｜自定义学生组别与人数｜实时计分与排名｜随机抽组与抽人｜零设备成本</p>
-                        <div class="mt-auto">
-                            <a href="quiz-start.html" class="btn-play">进入竞技</a>
-                            <a href="https://github.com/chewyenhan/hualianhistory/blob/main/README.md" target="_blank" class="btn-info">📖 使用指南</a>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Tool 2: Snaptext OCR -->
+                <!-- Snaptext OCR -->
                 <div class="tool-card flex-none w-80 flex flex-col">
                     <img src="https://images.unsplash.com/photo-1611532736579-6b16e2b50449?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Snaptext OCR" class="h-48 w-full object-cover">
                     <div class="p-6 flex-grow">
@@ -316,18 +329,18 @@
                 </div>
 
                 </div>
-                <button class="scroll-arrow left" onclick="scrollContainer(event, -1)">❮</button>
+                <button class="scroll-arrow left"  onclick="scrollContainer(event, -1)">❮</button>
                 <button class="scroll-arrow right" onclick="scrollContainer(event, 1)">❯</button>
             </div>
         </section>
 
-        <!-- Section: Immersive Games -->
-        <section class="mb-32">
+        <!-- ═══════════════ Section 3: 沉浸式历史游戏 ═══════════════ -->
+        <section id="games-section" class="mb-32">
             <h2 class="section-title">⚔️ 沉浸式历史游戏</h2>
             <p class="section-subtitle">穿越时空，体验历史——沉浸式互动角色扮演体验</p>
             <div class="scroll-container">
                 <div class="flex overflow-x-auto space-x-8 pb-4 scrollbar-hide">
-                
+
                 <!-- Game 1: Malacca -->
                 <div class="game-card flex-none w-80 flex flex-col">
                     <img src="melaka.png" class="h-48 w-full object-cover">
@@ -381,19 +394,14 @@
                 </div>
 
                 </div>
-                <button class="scroll-arrow left" onclick="scrollContainer(event, -1)">❮</button>
+                <button class="scroll-arrow left"  onclick="scrollContainer(event, -1)">❮</button>
                 <button class="scroll-arrow right" onclick="scrollContainer(event, 1)">❯</button>
-
-            <div class="text-center mt-16">
-                <button onclick="toggleModal(true)" class="bg-blue-600 hover:bg-blue-500 text-white px-12 py-4 rounded-full font-black text-xl transition-all shadow-xl flex items-center gap-3 mx-auto">
-                    🔑 如何获取免费 API Key 体验游戏？
-                </button>
             </div>
         </section>
 
-        <!-- Section: Resources -->
-        <section>
-            <h2 class="section-title">教学资源中心</h2>
+        <!-- ═══════════════ Section 4: 教学资源 ═══════════════ -->
+        <section id="resources-section">
+            <h2 class="section-title">📚 教学资源中心</h2>
             <div class="max-w-4xl mx-auto">
                 <div class="resource-item">
                     <div>
@@ -407,30 +415,167 @@
 
     </main>
 
+    <!-- 回到顶部 -->
+    <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+
     <footer>
         <p class="text-gray-500 mb-2 tracking-widest">DEVELOPED BY</p>
-        <p class="text-3xl font-black text-gold-500">Chew Yen Han</p>
-        <p class="mt-4 text-gray-600">© 2026 Taiping Hua Lian High School - History Department</p>
+        <p class="text-3xl font-black text-[#d4af37]">Chew Yen Han</p>
+        <p class="mt-2 text-gray-500 text-sm">朱彦翰 · 太平华联中学历史科</p>
+        <p class="mt-4 text-gray-600 text-xs">© 2026 Taiping Hua Lian High School — History Department</p>
     </footer>
+
     <script>
-        function toggleModal(show) {
-            const modal = document.getElementById('api-modal');
-            if(show) {
-                modal.classList.remove('hidden');
-            } else {
-                modal.classList.add('hidden');
-            }
+        // ═══════════════ 音效系统 ═══════════════
+        let audioCtx = null;
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+        function playSound(type) {
+            try {
+                const ctx = getAudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+
+                if (type === 'hover') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.08);
+                } else if (type === 'click') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.12);
+                } else if (type === 'page') {
+                    // 双音入门铃
+                    [523.25, 659.25].forEach((freq, i) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.15);
+                        g.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.15);
+                        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
+                        o.connect(g); g.connect(ctx.destination);
+                        o.start(ctx.currentTime + i * 0.15);
+                        o.stop(ctx.currentTime + i * 0.15 + 0.3);
+                    });
+                }
+            } catch(e) { /* 静默失败 */ }
         }
 
+        // 交互元素音效绑定
+        document.addEventListener('mouseover', e => {
+            const el = e.target.closest('.btn-play, .btn-info, .game-card, .tool-card, a[href]');
+            if (el) playSound('hover');
+        });
+        document.addEventListener('click', e => {
+            const el = e.target.closest('.btn-play, .btn-info, .scroll-arrow, #back-to-top, a[href^="#"]');
+            if (el) playSound('click');
+        });
+
+        // 页面加载完成音效
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => playSound('page'), 400);
+        });
+
+        // ═══════════════ 粒子背景 ═══════════════
+        (function initParticles() {
+            const canvas = document.getElementById('particle-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const GOLD = '#d4af37';
+
+            function resize() {
+                const header = document.querySelector('.header-bg');
+                canvas.width = header.offsetWidth;
+                canvas.height = header.offsetHeight;
+            }
+
+            function createParticles() {
+                particles = [];
+                const count = Math.min(60, Math.floor(canvas.width * canvas.height / 15000));
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        r: Math.random() * 2 + 0.8,
+                        dx: (Math.random() - 0.5) * 0.5,
+                        dy: (Math.random() - 0.5) * 0.5,
+                        alpha: Math.random() * 0.5 + 0.15,
+                    });
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.dx;
+                    p.y += p.dy;
+                    if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(212,175,55,${p.alpha})`;
+                    ctx.fill();
+
+                    // 连线近距离粒子
+                    particles.forEach(p2 => {
+                        const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.strokeStyle = `rgba(212,175,55,${0.06 * (1 - dist/100)})`;
+                            ctx.stroke();
+                        }
+                    });
+                });
+                requestAnimationFrame(animate);
+            }
+
+            resize(); createParticles(); animate();
+            window.addEventListener('resize', () => { resize(); createParticles(); });
+        })();
+
+        // ═══════════════ 回到顶部按钮 ═══════════════
+        const backBtn = document.getElementById('back-to-top');
+        window.addEventListener('scroll', () => {
+            backBtn.classList.toggle('show', window.scrollY > 500);
+        });
+
+        // ═══════════════ 卡片横向滚动 ═══════════════
         function scrollContainer(event, direction) {
             const button = event.target.closest('.scroll-arrow');
             const container = button.closest('.scroll-container').querySelector('.flex.overflow-x-auto');
-            const scrollAmount = 340;
-            container.scrollBy({
-                left: direction * scrollAmount,
-                behavior: 'smooth'
-            });
+            container.scrollBy({ left: direction * 340, behavior: 'smooth' });
         }
+
+        // ═══════════════ 滚动渐显动画 ═══════════════
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.game-card, .tool-card, .resource-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'all 0.6s ease-out';
+            observer.observe(el);
+        });
     </script>
 </body>
 </html>
