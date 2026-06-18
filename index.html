@@ -262,48 +262,47 @@
                 <span class="mode-badge mode-solo">🏆 个人挑战</span>
             </p>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <!-- 统一入口卡片 -->
+            <div class="max-w-2xl mx-auto">
+                <div class="game-card p-8" style="border-top: 4px solid #d4af37;">
 
-                <!-- 组别竞技模式 -->
-                <div class="game-card p-8 flex flex-col" style="border-top: 4px solid #8b0000;">
-                    <div class="text-5xl mb-4">🛡️</div>
-                    <h3 class="text-2xl font-black mb-2">组别竞技模式</h3>
-                    <p class="text-sm text-red-300 mb-5 font-semibold">quiz.html — 全班分组，团队对抗</p>
-                    <ul class="text-gray-400 text-sm space-y-2 mb-6 leading-relaxed">
-                        <li>• 支持最多 <b class="text-white">10 组</b> 同时竞技</li>
-                        <li>• 自定义战队名称与人数</li>
-                        <li>• 随机抽组 + 实时锁定答案</li>
-                        <li>• 抢答机制 · 专属奖惩分</li>
-                        <li>• 动态总分排行榜</li>
+                    <!-- 双模徽章 -->
+                    <div class="flex flex-wrap justify-center gap-3 mb-6">
+                        <span class="mode-badge mode-group text-base px-4 py-1.5">🛡️ 组别竞技</span>
+                        <span class="mode-badge mode-solo text-base px-4 py-1.5">🏆 个人挑战</span>
+                    </div>
+
+                    <h3 class="text-3xl font-black mb-2 text-center">双模 Quiz · 双重风格</h3>
+                    <p class="text-center text-gray-400 mb-6">一套题库，两种玩法 — 先选风格，再选模式</p>
+
+                    <!-- 风格预览 -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-slate-800/70 rounded-xl p-4 text-center border border-slate-700">
+                            <div class="text-2xl mb-1">🟦</div>
+                            <p class="font-bold text-white text-sm">未来科技</p>
+                            <p class="text-xs text-gray-500">暗蓝基调 · 玻璃质感 · 发光边框</p>
+                        </div>
+                        <div class="bg-slate-800/70 rounded-xl p-4 text-center border border-slate-700">
+                            <div class="text-2xl mb-1">🌸</div>
+                            <p class="font-bold text-white text-sm">萌趣奶油</p>
+                            <p class="text-xs text-gray-500">米黄配色 · 圆润卡通 · 柔和反馈</p>
+                        </div>
+                    </div>
+
+                    <!-- 亮点摘要 -->
+                    <ul class="text-gray-400 text-sm space-y-1.5 mb-7 leading-relaxed text-center">
+                        <li>🛡️ 组别对战：最高 10 组 · 抢答机制 · 动态排行榜</li>
+                        <li>🏆 个人挑战：幸运大转轮 · 卡牌选题 · 英雄榜</li>
+                        <li>🎤 AI 语音朗读 + 知识精华 TTS 总结</li>
+                        <li>📄 拖入 PDF / Word 课件，AI 秒速出题</li>
                     </ul>
-                    <div class="mt-auto">
-                        <a href="quiz.html" class="btn-play">🛡️ 组别对战</a>
+
+                    <div class="text-center">
+                        <a href="quiz-start.html" class="btn-play" style="font-size:1.1rem; padding:0.9rem 2.5rem;">
+                            🚪 进入 AI 竞技场
+                        </a>
                     </div>
                 </div>
-
-                <!-- 个人挑战模式 -->
-                <div class="game-card p-8 flex flex-col" style="border-top: 4px solid #2563eb;">
-                    <div class="text-5xl mb-4">🏆</div>
-                    <h3 class="text-2xl font-black mb-2">个人挑战模式</h3>
-                    <p class="text-sm text-blue-300 mb-5 font-semibold">quiz-solo.html — 勇士闯关，个人荣耀</p>
-                    <ul class="text-gray-400 text-sm space-y-2 mb-6 leading-relaxed">
-                        <li>• <b class="text-white">700px 幸运大转轮</b> 随机抽人</li>
-                        <li>• 卡牌式题库 · 隐藏难度自选</li>
-                        <li>• 实时金🥇银🥈铜🥉个人英雄榜</li>
-                        <li>• AI 语音朗读题目 + 精华总结</li>
-                        <li>• 拖入 PDF/Word 课件秒速出题</li>
-                    </ul>
-                    <div class="mt-auto">
-                        <a href="quiz-solo.html" class="btn-play" style="background:#2563eb;">🏆 个人挑战</a>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- 统一入口 -->
-            <div class="text-center mt-10">
-                <p class="text-gray-500 text-sm mb-3">首次使用？从统一入口开始，选择风格与模式</p>
-                <a href="quiz-start.html" class="btn-info" style="border-color: #d4af37; color: #d4af37;">🚪 进入统一入口 (quiz-start.html)</a>
             </div>
         </section>
 
