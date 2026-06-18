@@ -573,38 +573,133 @@
             const medN = document.getElementById('medium-count').value;
             const hardN = document.getElementById('hard-count').value;
 
-            const prompt = `Task: Create EXACTLY ${config.qCount} quiz questions from this text: "${text}".
+            const prompt = `你是一位出题专家。根据以下资料生成 ${config.qCount} 道选择题。
 
-IMPORTANT RULES:
-- Use the EXACT SAME LANGUAGE as the source text.
-- The 'note' field must be an ACTUAL EXPLANATION of the correct answer (2-3 sentences).
+资料内容：
+"""
+${text}
+"""
 
-Format: JSON array of objects.
-Keys: q, options (3 strings), ans (0-2 index), note (EXPLAIN the answer), title, emoji, diff (⭐ to ⭐⭐⭐⭐⭐), difficulty (exactly one of: "easy", "medium", "hard").
+出题要求：
+- 题目语言必须和资料语言一致
+- 每题 3 个选项（A/B/C），只有 1 个正确答案
+- note 字段写 2-3 句知识讲解（真实解释，不要废话）
+- 难度分布：简单 ${easyN} 题、中等 ${medN} 题、困难 ${hardN} 题
+- 简单题 = 资料中直接提及的事实
+- 中等题 = 需要理解+推理
+- 困难题 = 需要深层次分析或跨段落关联`;
 
-CRITICAL DIFFICULTY DISTRIBUTION:
-- EXACTLY ${easyN} questions must have difficulty "easy".
-- EXACTLY ${medN} questions must have difficulty "medium".
-- EXACTLY ${hardN} questions must have difficulty "hard".
-
-Output ONLY valid JSON array, no markdown, no code blocks.`;
+            const responseSchema = {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        q: { type: "string", description: "题目内容" },
+                        options: {
+                            type: "array",
+                            items: { type: "string" },
+                            minItems: 3, maxItems: 3,
+                            description: "3个选项"
+                        },
+                        ans: { type: "integer", minimum: 0, maximum: 2, description: "正确答案索引 0/1/2" },
+                        note: { type: "string", description: "2-3句知识讲解" },
+                        difficulty: { type: "string", enum: ["easy", "medium", "hard"], description: "难度等级" }
+                    },
+                    required: ["q", "options", "ans", "note", "difficulty"]
+                }
+            };
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1/${model}:generateContent?key=${key}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${key}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            response_mime_type: "application/json",
+                            response_schema: responseSchema
+                        }
+                    })
                 });
                 const data = await res.json();
                 if(!res.ok) throw new Error(data.error?.message || "API 调用失败");
                 const aiTxt = data.candidates[0].content.parts[0].text;
-                const match = aiTxt.match(/\[[\s\S]*\]/);
-                if(!match) throw new Error("AI 返回格式错误");
-                scenes = JSON.parse(match[0]);
-                
-                // 确保每道题都有唯一 ID
+                // response_schema 保证输出是合法 JSON，直接 parse
+                scenes = JSON.parse(aiTxt);
+
+                // --- 后处理：验证难度字段 + 强制分布 + 唯一 ID ---
+                const VALID_DIFF = ['easy', 'medium', 'hard'];
+                const targetEasy = parseInt(easyN), targetMed = parseInt(medN), targetHard = parseInt(hardN);
+
+                // 1. 规范化每个 scene 的 difficulty
                 scenes.forEach((s, idx) => {
                     if (!s.id) s.id = 'q-' + idx;
+                    // 转小写并去空格
+                    let raw = (s.difficulty || '').toString().trim().toLowerCase();
+                    // 尝试模糊匹配
+                    if (raw.includes('easy') || raw.includes('简单') || raw.includes('簡')) {
+                        s.difficulty = 'easy';
+                    } else if (raw.includes('hard') || raw.includes('困难') || raw.includes('困難') || raw.includes('难')) {
+                        s.difficulty = 'hard';
+                    } else if (raw.includes('medium') || raw.includes('中等') || raw.includes('普通')) {
+                        s.difficulty = 'medium';
+                    } else {
+                        // 无法识别，默认 medium
+                        s.difficulty = 'medium';
+                    }
                 });
+
+                // 2. 如果 AI 的难度分布不符合配置，强制重新分配
+                const aiEasy = scenes.filter(s => s.difficulty === 'easy').length;
+                const aiMed = scenes.filter(s => s.difficulty === 'medium').length;
+                const aiHard = scenes.filter(s => s.difficulty === 'hard').length;
+
+                console.log('🤖 AI 原始难度分布:', { easy: aiEasy, medium: aiMed, hard: aiHard });
+                console.log('🎯 设定难度分布:', { easy: targetEasy, medium: targetMed, hard: targetHard });
+
+                if (aiEasy !== targetEasy || aiMed !== targetMed || aiHard !== targetHard) {
+                    console.warn('⚠️ 难度分布不符，自动修正中...');
+                    // 构建目标难度数组并打乱
+                    const targetDiffs = [
+                        ...Array(targetEasy).fill('easy'),
+                        ...Array(targetMed).fill('medium'),
+                        ...Array(targetHard).fill('hard')
+                    ];
+                    // Fisher-Yates shuffle
+                    for (let i = targetDiffs.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [targetDiffs[i], targetDiffs[j]] = [targetDiffs[j], targetDiffs[i]];
+                    }
+                    // 优先保留 AI 原本的难度（按原顺序），多余/不足的用打乱后的补
+                    const used = { easy: 0, medium: 0, hard: 0 };
+                    scenes.forEach(s => {
+                        const d = s.difficulty;
+                        if (used[d] < (d === 'easy' ? targetEasy : d === 'medium' ? targetMed : targetHard)) {
+                            used[d]++;
+                        } else {
+                            // 该难度已满，从 targetDiffs 取一个未满的
+                            for (let k = 0; k < targetDiffs.length; k++) {
+                                const td = targetDiffs[k];
+                                if (used[td] < (td === 'easy' ? targetEasy : td === 'medium' ? targetMed : targetHard)) {
+                                    s.difficulty = td;
+                                    used[td]++;
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    console.log('✅ 修正后难度分布:', {
+                        easy: scenes.filter(s => s.difficulty === 'easy').length,
+                        medium: scenes.filter(s => s.difficulty === 'medium').length,
+                        hard: scenes.filter(s => s.difficulty === 'hard').length
+                    });
+                } else {
+                    console.log('✅ AI 难度分布完全符合设定，无需修正');
+                }
+
+                // 3. 确保 config.scores 有 fallback（防止 NaN）
+                if (!config.scores.easy) config.scores.easy = 10;
+                if (!config.scores.medium) config.scores.medium = 20;
+                if (!config.scores.hard) config.scores.hard = 30;
                 
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('setup-view').classList.add('hidden');
@@ -678,7 +773,7 @@ Output ONLY valid JSON array, no markdown, no code blocks.`;
             scenes.forEach(s => {
                 const card = document.createElement('div');
                 const isUsed = answeredIds.has(s.id);
-                const pts = config.scores[s.difficulty];
+                const pts = config.scores[s.difficulty] || config.scores.medium || 20;
                 const color = s.difficulty === 'easy' ? 'bg-green-400' : (s.difficulty === 'hard' ? 'bg-red-400' : 'bg-yellow-400');
                 
                 card.className = `quest-card rounded-2xl ${color} flex flex-col items-center justify-center text-white p-2 shadow-lg border-4 border-white/30 ${isUsed ? 'used' : 'hover:scale-105 transition-all'}`;
@@ -701,7 +796,8 @@ Output ONLY valid JSON array, no markdown, no code blocks.`;
             curScene = s;
             document.getElementById('q-text').innerText = s.q;
             speakText(s.q);
-            document.getElementById('q-diff-badge').innerText = s.difficulty.toUpperCase() + " (" + config.scores[s.difficulty] + "pts)";
+            const displayPts = config.scores[s.difficulty] || config.scores.medium || 20;
+            document.getElementById('q-diff-badge').innerText = (s.difficulty || 'medium').toUpperCase() + " (" + displayPts + "pts)";
             const opts = document.getElementById('options-grid'); opts.innerHTML = '';
             s.options.forEach((o, i) => {
                 const b = document.createElement('button');
@@ -738,7 +834,7 @@ Output ONLY valid JSON array, no markdown, no code blocks.`;
             const isCorrect = idx === curScene.ans;
             if(isCorrect) {
                 playCorrect();
-                const pts = config.scores[curScene.difficulty];
+                const pts = config.scores[curScene.difficulty] || config.scores.medium || 20;
                 currentStudent.score += pts;
                 if(btn) btn.classList.add('correct-anim', 'animate-bounce');
             } else {
