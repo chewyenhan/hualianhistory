@@ -42,9 +42,9 @@
 访问 `quiz-start.html`，选择您喜欢的视觉风格，点击对应的竞技模式。
 
 ### 第二步：智能出题配置
-1.  **输入 API Key**：输入申请到的 Google Gemini 密钥。
+1.  **⚡ 无需配置 Key**：AI 已通过 Cloudflare Worker 内置，打开即用！
 2.  **配置题库**：粘贴历史资料，设定总题数。
-3.  **难度分配**：手动设置“简单、中等、困难”题目的比例，并设定每种难度的积分分值。
+3.  **难度分配**：手动设置”简单、中等、困难”题目的比例，并设定每种难度的积分分值。
 4.  **开始竞技**：AI 将生成符合要求的 JSON 题目数组。
 
 ### 第三步：竞技与总结
@@ -54,11 +54,11 @@
 
 ---
 
-## 🔑 如何申请 API Key (Gemini)
-1.  访问 [Google AI Studio](https://aistudio.google.com/)。
-2.  登录 Google 账号并点击左侧的 **"Get API key"**。
-3.  创建并复制生成的密钥粘贴到平台即可。
-    *   *提示：Gemini 模型目前对个人教育用途提供充裕的免费额度。*
+## 🔑 关于 API Key
+本项目已通过 **Cloudflare Worker 安全代理** 内置 Google Gemini API，学生打开即用，**无需**手动申请或输入 Key。这确保了：
+- 🔒 **安全**：API Key 藏在云端，不被暴露
+- 🎯 **专注**：学生零配置，进入即对战
+- 🛡️ **防滥用**：Worker 仅放行本校域名，防止外部盗用
 
 ---
 **开发者 (Developer):** [Chew Yen Han](https://github.com/chewyenhan)  
