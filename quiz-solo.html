@@ -278,9 +278,20 @@
                             </div>
                             <div class="flex items-center gap-2 flex-grow">
                                 <span class="font-bold">秒数:</span>
-                                <input type="number" id="timer-seconds" value="20" min="5" max="30" class="w-20 text-center text-xl font-black border-2 border-orange-300 rounded-lg py-1 bg-white">
-                                <span class="text-sm text-gray-500">(最高30s)</span>
+                                <input type="number" id="timer-seconds" value="20" min="5" max="60" class="w-20 text-center text-xl font-black border-2 border-orange-300 rounded-lg py-1 bg-white">
+                                <span class="text-sm text-gray-500">(最高60s)</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-purple-50/50 p-6 rounded-3xl border-2 border-dashed border-purple-200">
+                        <label class="block text-xl font-black mb-4">🔊 语音设置</label>
+                        <div class="flex items-center gap-6">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="voice-enabled" class="w-6 h-6" checked>
+                                <span class="font-bold text-lg">开启语音朗读</span>
+                            </div>
+                            <span class="text-sm text-gray-500">关闭后不再朗读题目和知识总结</span>
                         </div>
                     </div>
                 </section>
@@ -395,11 +406,12 @@
     <script>
         let students = [], scenes = [], currentStudent = null, curScene = null;
         let answeredIds = new Set();
-        let config = { 
-            qCount: 10, 
+        let config = {
+            qCount: 10,
             repeat: false,
             scores: { easy: 10, medium: 20, hard: 30 },
-            timer: { enabled: true, seconds: 20 }
+            timer: { enabled: true, seconds: 20 },
+            voice: true
         };
         let timerInterval = null, timerLeft = 0;
         let audioCtx = null, bgmOn = false;
@@ -475,6 +487,7 @@
         }
 
         function speakText(text) {
+            if (!config.voice) return;
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-CN';
@@ -564,6 +577,7 @@
             config.scores.hard = parseInt(document.getElementById('hard-score').value);
             config.timer.enabled = document.getElementById('timer-enabled').checked;
             config.timer.seconds = parseInt(document.getElementById('timer-seconds').value);
+            config.voice = document.getElementById('voice-enabled').checked;
             
             answeredIds.clear(); // 清空上一局的题目状态
             
@@ -892,6 +906,29 @@ ${text}
             document.getElementById('lucky-one').classList.add('opacity-0');
             initWheel(); showView('wheel-view');
         }
+
+        // --- 键盘快捷键 ---
+        document.addEventListener('keydown', (e) => {
+            // 不在输入框中触发
+            const tag = e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+            if (e.code === 'Space' || e.key === ' ') {
+                e.preventDefault(); // 阻止页面滚动
+
+                // 知识精华总结 → 排行榜
+                const noteView = document.getElementById('note-view');
+                if (!noteView.classList.contains('hidden')) {
+                    showLeaderboard();
+                }
+
+                // 排行榜 → 下一位勇士 / 结束
+                const lbView = document.getElementById('leaderboard-view');
+                if (!lbView.classList.contains('hidden')) {
+                    document.getElementById('next-warrior-btn').click();
+                }
+            }
+        });
 
         function toggleHelpModal(show) {
             document.getElementById('help-modal').classList.toggle('hidden', !show);
