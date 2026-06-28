@@ -17,7 +17,7 @@
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Outfit:wght@300;500;600;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-gold: #d4af37;
@@ -30,7 +30,8 @@
         body {
             background-color: #0f172a;
             color: #f1f5f9;
-            font-family: 'Noto Serif SC', serif;
+            font-family: 'Noto Serif SC', 'SimSun', 'STSong', 'Microsoft YaHei', serif;
+            font-weight: 500;
             margin: 0; padding: 0;
             scroll-behavior: smooth;
         }
@@ -91,7 +92,7 @@
             margin: 1rem auto;
         }
         .section-subtitle {
-            font-size: 1.1rem; color: #94a3b8;
+            font-size: 1.25rem; font-weight: 500; color: #94a3b8;
             text-align: center; margin-bottom: 3rem;
         }
 
@@ -102,6 +103,9 @@
             border-radius: 22px; overflow: hidden;
             transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+        }
+        .game-card p, .tool-card p {
+            font-weight: 500; font-size: 0.95rem;
         }
         .game-card:hover, .tool-card:hover {
             transform: translateY(-12px);
@@ -139,6 +143,7 @@
         .btn-info:hover { border-color: #f1f5f9; color: #f1f5f9; }
 
         /* ── Resource items ── */
+        .resource-item p { font-weight: 500; font-size: 0.95rem; }
         .resource-item {
             background: #1e293b; padding: 1.5rem;
             border-radius: 15px; display: flex;
