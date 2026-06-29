@@ -729,6 +729,8 @@
 IMPORTANT RULES:
 - Use the EXACT SAME LANGUAGE as the source text. If the text is in Chinese, ALL questions/options/notes MUST be in Chinese. If English, then English.
 - The 'note' field must be an ACTUAL EXPLANATION of the correct answer (2-3 sentences). Explain WHY it is correct, with key facts from the source text. Never write meta-phrases like "考察学生对XX的理解" or "测试XX知识" — that is useless. Explain the CONTENT, not the question design.
+- ⚠️ RANDOMIZE the correct answer position (ans): the correct answer MUST be evenly distributed across positions 0/1/2. Do NOT always put it at index 0.
+- ⚠️ BALANCE option lengths: all 3 options should be roughly the same length. Do NOT make the correct option longer or more detailed than wrong options.
 
 Format: JSON array of objects.
 Keys: q (the question), options (3 strings), ans (0-2 index of correct option), note (EXPLAIN the answer), title, emoji, diff (⭐ to ⭐⭐⭐⭐⭐), difficulty (exactly one of: "easy", "medium", "hard").
@@ -757,6 +759,9 @@ Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid
                 if (!match) throw new Error("AI 格式错误，请尝试减少字数或重试。");
                 
                 scenes = JSON.parse(match[0]);
+
+                // 🔀 随机打乱每题选项顺序（防止正确答案总是在A位置 + 总是最长选项）
+                shuffleOptions(scenes);
 
                 // Normalize difficulty: fallback if AI response doesn't match distribution
                 const diffOrder = [];
@@ -1002,6 +1007,23 @@ Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid
             const u = new SpeechSynthesisUtterance(t);
             u.lang = 'zh-CN'; u.rate = 0.9;
             window.speechSynthesis.speak(u);
+        }
+
+        // 🔀 Fisher-Yates 打乱每题的选项顺序，并同步更新正确答案索引
+        function shuffleOptions(scenes) {
+            scenes.forEach(s => {
+                const oldAns = s.ans;
+                // 创建 [选项文本, 原始索引] 对
+                const pairs = s.options.map((opt, i) => ({ opt, i }));
+                // Fisher-Yates shuffle
+                for (let i = pairs.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+                }
+                // 更新 options 数组和 ans 索引
+                s.options = pairs.map(p => p.opt);
+                s.ans = pairs.findIndex(p => p.i === oldAns);
+            });
         }
 
         // --- 文档解析逻辑 ---
