@@ -85,8 +85,8 @@
         </div>
 
         <!-- Mode Selection -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-6xl">
-            
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 w-full max-w-6xl">
+
             <!-- Group Mode -->
             <div onclick="enterMode('group')" class="glass-card mode-card p-12 cursor-pointer flex flex-col items-center text-center">
                 <div class="text-8xl mb-8 floating">🛡️</div>
@@ -101,6 +101,14 @@
                 <h2 class="text-5xl font-black mb-4 text-yellow-400">个人挑战模式</h2>
                 <p class="text-xl opacity-70 leading-relaxed mb-8">适合勇士闯关。包含大转轮抽签、卡牌选题与个人光荣榜。</p>
                 <div class="mt-auto px-10 py-4 bg-yellow-500 text-black rounded-full text-2xl font-black shadow-xl">开启个人闯关</div>
+            </div>
+
+            <!-- Battle Mode (NEW) -->
+            <div onclick="enterMode('battle')" class="glass-card mode-card p-12 cursor-pointer flex flex-col items-center text-center">
+                <div class="text-8xl mb-8 floating">⚔️</div>
+                <h2 class="text-5xl font-black mb-4 text-red-400">大决战模式</h2>
+                <p class="text-xl opacity-70 leading-relaxed mb-8">双人对战！转轮抽签、6种像素勇士、抢答对决，谁才是历史之王？</p>
+                <div class="mt-auto px-10 py-4 bg-red-600 rounded-full text-2xl font-black shadow-xl">开启终极对决</div>
             </div>
 
         </div>
@@ -131,7 +139,7 @@
 
         function enterMode(mode) {
             playSound('click');
-            const file = mode === 'group' ? 'quiz.html' : 'quiz-solo.html';
+            const file = mode === 'group' ? 'quiz.html' : mode === 'solo' ? 'quiz-solo.html' : 'quiz-battle.html';
             setTimeout(() => {
                 location.href = file;
             }, 200)

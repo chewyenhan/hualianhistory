@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 全能竞技场 · 大决战版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Orbitron:wght@700&family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root {
+    --bg-page: #0f172a; --primary: #3b82f6; --accent: #fbbf24;
+    --card-bg: rgba(255,255,255,0.05); --text-main: #ffffff;
+    --border-main: 2px solid rgba(255,255,255,0.1); --radius: 30px;
+    --shadow: 0 0 30px rgba(59,130,246,0.2);
+    --btn-red: #ef4444; --btn-blue: #3b82f6;
+}
+.theme-cute {
+    --bg-page: #fcf6ec; --primary: #ff9ebb; --accent: #a0d8ef;
+    --card-bg: #ffffff; --text-main: #5c5246;
+    --border-main: 4px solid #f0e6d2; --radius: 40px;
+    --shadow: 0 12px 0px #f0e6d2;
+    --btn-red: #ff9ebb; --btn-blue: #a0d8ef;
+}
+body {
+    background-color: var(--bg-page); color: var(--text-main);
+    font-family: 'Noto Sans SC', sans-serif; transition: background 0.5s; min-height: 100vh;
+}
+.glass-panel {
+    background: var(--card-bg); backdrop-filter: blur(10px);
+    border: var(--border-main); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.setup-input, textarea, select, input[type="number"] {
+    width: 100%; padding: 1rem; border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 15px; font-size: 1.2rem; outline: none; transition: border 0.3s;
+    background: rgba(0,0,0,0.2) !important; color: #ffffff !important;
+}
+.setup-input:focus, textarea:focus, select:focus, input[type="number"]:focus { border-color: var(--primary); }
+.setup-input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
+.theme-cute .setup-input, .theme-cute textarea, .theme-cute select, .theme-cute input[type="number"] {
+    background: #ffffff !important; color: #5c5246 !important; border-color: #f0e6d2;
+}
+.theme-cute .setup-input::placeholder, .theme-cute textarea::placeholder { color: #a0a0a0; }
+.theme-cute h1, .theme-cute h2, .theme-cute h3, .theme-cute label { color: var(--text-main) !important; }
+.theme-cute .bg-white { background-color: var(--card-bg) !important; }
+.theme-cute .text-gray-700, .theme-cute .text-gray-800 { color: var(--text-main) !important; }
+
+/* Tech theme overrides */
+.theme-tech .bg-white { background-color: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; }
+.theme-tech .bg-green-50, .theme-tech .bg-yellow-50, .theme-tech .bg-red-50,
+.theme-tech .bg-blue-50 { background-color: rgba(0,0,0,0.2) !important; border-color: rgba(255,255,255,0.1) !important; }
+.theme-tech .text-green-700, .theme-tech .text-green-800 { color: #4ade80 !important; }
+.theme-tech .text-yellow-700, .theme-tech .text-yellow-800 { color: #fbbf24 !important; }
+.theme-tech .text-red-700, .theme-tech .text-red-800 { color: #f87171 !important; }
+.theme-tech .text-purple-900, .theme-tech .text-gray-500, .theme-tech .text-gray-700, .theme-tech .text-gray-800 { color: #cbd5e1 !important; }
+.theme-tech .text-blue-900 { color: #60a5fa !important; }
+
+.btn-primary {
+    background: var(--primary); color: white; font-weight: 900;
+    padding: 1.5rem 3rem; border-radius: 20px; box-shadow: 0 10px 0 #00000022;
+    transition: all 0.2s; cursor: pointer; border: none;
+}
+.btn-primary:active { transform: translateY(4px); box-shadow: none; }
+
+/* Battle-specific styles */
+#battle-view { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+#battle-view.hidden { display: none; }
+#battle-canvas { width: 100%; height: 100%; display: block; }
+.battle-arena { position: relative; height: 38vh; min-height: 250px; background: #1a1a2e; overflow: hidden; }
+.question-zone { position: relative; padding: 0.4rem 85px 0.4rem 85px; display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-height: 0; }
+
+/* Floating side buzzer buttons */
+.buzzer-side {
+    position: absolute; top: 0; bottom: 0; width: 80px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: none; cursor: pointer; transition: all 0.15s;
+    font-size: 1.1rem; font-weight: 900; gap: 0.3rem;
+    user-select: none; -webkit-user-select: none; z-index: 10;
+}
+.buzzer-side:active { transform: scale(0.93); }
+.buzzer-side-left {
+    left: 0; border-radius: 0 12px 12px 0;
+    background: rgba(239,68,68,0.25);
+    color: rgba(255,255,255,0.85); border-left: 3px solid rgba(239,68,68,0.4);
+}
+.buzzer-side-left:hover, .buzzer-side-left.active-buzz {
+    background: rgba(239,68,68,0.7) !important;
+    border-left-color: #fff; box-shadow: 0 0 40px rgba(239,68,68,0.7);
+}
+.buzzer-side-right {
+    right: 0; border-radius: 12px 0 0 12px;
+    background: rgba(59,130,246,0.25);
+    color: rgba(255,255,255,0.85); border-right: 3px solid rgba(59,130,246,0.4);
+}
+.buzzer-side-right:hover, .buzzer-side-right.active-buzz {
+    background: rgba(59,130,246,0.7) !important;
+    border-right-color: #fff; box-shadow: 0 0 40px rgba(59,130,246,0.7);
+}
+.buzzer-side:disabled { opacity: 0.15; pointer-events: none; }
+.buzzer-side .buzzer-emoji { font-size: 1.8rem; }
+.buzzer-side .buzzer-name { font-size: 0.85rem; text-align: center; line-height: 1.2; }
+
+.option-btn {
+    display: block; width: 100%; padding: 0.8rem 1.2rem; margin-bottom: 0.4rem;
+    background: rgba(255,255,255,0.08); border: 3px solid rgba(255,255,255,0.12);
+    border-radius: 14px; color: #e2e8f0; font-size: 1.35rem; font-weight: 700;
+    text-align: left; cursor: pointer; transition: all 0.2s;
+}
+.option-btn:hover:not(:disabled) { background: var(--primary); border-color: #fff; transform: scale(1.01); }
+.option-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.option-btn.correct-answer { background: #065f46 !important; border-color: #22c55e !important; color: #fff !important; }
+.option-btn.wrong-choice { background: #7f1d1d !important; border-color: #ef4444 !important; color: #fff !important; }
+
+.char-card {
+    background: var(--card-bg); border: 3px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 1rem; cursor: pointer; text-align: center;
+    transition: all 0.2s; display: flex; flex-direction: column; align-items: center;
+}
+.char-card:hover { transform: scale(1.05); border-color: var(--primary); box-shadow: var(--shadow); }
+.char-card.selected { border-color: var(--accent); box-shadow: 0 0 30px var(--accent); }
+.char-card.taken { opacity: 0.3; pointer-events: none; }
+
+.timer-bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
+.timer-bar-fill { height: 100%; border-radius: 6px; transition: width 1s linear, background 0.5s; background: #22c55e; }
+
+@keyframes pulse-glow { 0%,100%{box-shadow:0 0 20px rgba(251,191,36,0.4)} 50%{box-shadow:0 0 60px rgba(251,191,36,0.9)} }
+@keyframes bounce-in { 0%{transform:scale(0.8);opacity:0} 50%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+.animate-bounce-in { animation: bounce-in 0.5s ease-out; }
+.animate-shake { animation: shake 0.4s ease-in-out; }
+.animate-pulse-glow { animation: pulse-glow 1.5s infinite; }
+
+.streak-flame { color: #f97316; font-size: 1.5rem; animation: float 0.5s infinite ease-in-out; }
+
+/* VS overlay */
+#vs-overlay {
+    position: fixed; inset: 0; z-index: 5000; background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+}
+#vs-overlay.hidden { display: none; }
+#vs-text { font-family: 'Orbitron', sans-serif; font-size: 8rem; font-weight: 900; color: var(--accent); }
+</style>
+</head>
+<body class="theme-tech" onclick="initAudio()">
+
+<!-- Loading -->
+<div id="loading" class="fixed inset-0 bg-black/95 flex flex-col items-center justify-center text-white z-[9999] hidden text-center">
+    <div class="w-32 h-32 border-8 border-yellow-500 border-t-transparent rounded-full animate-spin mb-8"></div>
+    <h2 class="text-5xl font-black mb-4">⚔️ 题库正在生成中...</h2>
+    <p class="text-2xl opacity-70">AI 正在根据资料生成对战题目</p>
+</div>
+
+<!-- BGM Widget -->
+<div id="bgm-widget" class="fixed top-5 right-5 bg-black/80 rounded-full p-4 text-white hidden z-[2000] flex items-center gap-4">
+    <span onclick="toggleBGM()" id="bgm-icon" class="cursor-pointer text-3xl">🎵</span>
+    <input type="range" min="0" max="100" step="1" value="30" oninput="updateVolume(this.value)">
+</div>
+
+<!-- SETUP VIEW -->
+<div id="setup-view" class="container mx-auto p-8 max-w-6xl">
+    <h1 class="text-center text-7xl font-black mb-8" style="color: var(--primary)">⚔️ AI 全能竞技场 · 大决战版</h1>
+    <p class="text-center text-2xl font-bold mb-10 opacity-60">双人对战 · 像素勇士 · 抢答对决</p>
+
+    <div class="glass-panel p-10 space-y-10">
+        <!-- Model -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <label class="block text-2xl font-bold mb-2">🔑 AI 服务状态</label>
+                <p id="model-status" class="setup-input text-xl font-bold flex items-center">正在自动连接 AI 服务...</p>
+            </div>
+            <div>
+                <label class="block text-2xl font-bold mb-2">🤖 选择 AI 模型</label>
+                <select id="model-select" class="setup-input text-xl font-bold" style="display:none;"></select>
+            </div>
+        </section>
+
+        <!-- Source Text + File Upload -->
+        <section>
+            <div class="flex justify-between items-end mb-4">
+                <label class="block text-2xl font-bold">📖 粘贴资料 或 上传文档</label>
+                <div class="flex items-center gap-4">
+                    <span id="upload-status" class="text-lg font-bold text-blue-600 hidden">⌛ 正在解析文档...</span>
+                    <button onclick="document.getElementById('file-upload').click()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-xl border-2 border-gray-300 font-bold">📂 上传 PDF/Word/PPTX</button>
+                    <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx,.pptx" onchange="handleFileUpload(this)">
+                </div>
+            </div>
+            <textarea id="source-text" class="setup-input h-48 text-lg" placeholder="在这里输入教学材料..."></textarea>
+            <div class="mt-6 flex items-center gap-8 bg-gray-50 p-5 rounded-2xl">
+                <span class="text-2xl font-black">出题数量：</span>
+                <input type="range" id="q-count-input" min="1" max="40" value="10" class="flex-grow h-4" oninput="document.getElementById('q-count-val').innerText=this.value;document.getElementById('diff-total-target').innerText=this.value;validateDiffSum()">
+                <span id="q-count-val" class="text-5xl font-black text-blue-600 w-20 text-center">10</span>
+            </div>
+        </section>
+
+        <!-- Difficulty Distribution -->
+        <section class="p-8 border-4 border-dashed border-purple-200 rounded-3xl">
+            <h3 class="text-3xl font-black mb-4 text-center underline decoration-purple-400">🎯 题目难度分配</h3>
+            <p class="text-xl mb-6 text-center">各难度题数总和须等于 <span id="diff-total-target" class="font-black text-blue-600">10</span></p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-green-50 p-6 rounded-2xl border-2 border-green-200">
+                    <div class="text-center mb-3"><span class="text-3xl">🟢</span><h4 class="text-2xl font-black text-green-700">简单</h4></div>
+                    <div class="flex items-center justify-center gap-3">
+                        <button onclick="adjustDiffCount('easy',-1)" class="w-10 h-10 bg-green-200 rounded-full text-xl font-black hover:bg-green-300">−</button>
+                        <input type="number" id="easy-count" value="3" min="0" max="40" class="w-16 text-center text-2xl font-black border-2 border-green-300 rounded-lg py-1" onchange="validateDiffSum()">
+                        <button onclick="adjustDiffCount('easy',1)" class="w-10 h-10 bg-green-200 rounded-full text-xl font-black hover:bg-green-300">+</button>
+                    </div>
+                </div>
+                <div class="bg-yellow-50 p-6 rounded-2xl border-2 border-yellow-200">
+                    <div class="text-center mb-3"><span class="text-3xl">🟡</span><h4 class="text-2xl font-black text-yellow-700">中等</h4></div>
+                    <div class="flex items-center justify-center gap-3">
+                        <button onclick="adjustDiffCount('medium',-1)" class="w-10 h-10 bg-yellow-200 rounded-full text-xl font-black hover:bg-yellow-300">−</button>
+                        <input type="number" id="medium-count" value="5" min="0" max="40" class="w-16 text-center text-2xl font-black border-2 border-yellow-300 rounded-lg py-1" onchange="validateDiffSum()">
+                        <button onclick="adjustDiffCount('medium',1)" class="w-10 h-10 bg-yellow-200 rounded-full text-xl font-black hover:bg-yellow-300">+</button>
+                    </div>
+                </div>
+                <div class="bg-red-50 p-6 rounded-2xl border-2 border-red-200">
+                    <div class="text-center mb-3"><span class="text-3xl">🔴</span><h4 class="text-2xl font-black text-red-700">困难</h4></div>
+                    <div class="flex items-center justify-center gap-3">
+                        <button onclick="adjustDiffCount('hard',-1)" class="w-10 h-10 bg-red-200 rounded-full text-xl font-black hover:bg-red-300">−</button>
+                        <input type="number" id="hard-count" value="2" min="0" max="40" class="w-16 text-center text-2xl font-black border-2 border-red-300 rounded-lg py-1" onchange="validateDiffSum()">
+                        <button onclick="adjustDiffCount('hard',1)" class="w-10 h-10 bg-red-200 rounded-full text-xl font-black hover:bg-red-300">+</button>
+                    </div>
+                </div>
+            </div>
+            <div id="diff-sum-error" class="hidden mt-4 bg-red-100 text-red-700 p-4 rounded-2xl text-center font-black text-xl"></div>
+            <div class="mt-6 pt-4 border-t border-gray-200 flex items-center gap-4">
+                <input type="checkbox" id="shuffle-difficulty" class="w-8 h-8 cursor-pointer" checked>
+                <label for="shuffle-difficulty" class="text-xl font-black cursor-pointer">🔀 随机排题（避免同难度题目扎堆）</label>
+            </div>
+        </section>
+
+        <!-- Timer + Answer Timer -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="p-6 bg-gray-50 rounded-2xl">
+                <div class="flex items-center gap-4 mb-4">
+                    <input type="checkbox" id="timer-enabled" class="w-8 h-8 cursor-pointer" checked onchange="document.getElementById('timer-group').classList.toggle('hidden',!this.checked)">
+                    <label for="timer-enabled" class="text-2xl font-black cursor-pointer">⏱️ 抢答倒计时</label>
+                </div>
+                <div id="timer-group" class="flex items-center gap-4">
+                    <input type="range" id="timer-seconds-input" min="5" max="60" value="20" class="flex-grow h-4" oninput="document.getElementById('timer-val').innerText=this.value">
+                    <span id="timer-val" class="text-4xl font-black text-red-500 w-16 text-center" style="font-family:'Orbitron',sans-serif">20</span>
+                    <span class="text-lg">秒</span>
+                </div>
+            </div>
+            <div class="p-6 bg-gray-50 rounded-2xl">
+                <label class="block text-2xl font-black mb-4">⚡ 答题时限</label>
+                <div class="flex items-center gap-4">
+                    <input type="range" id="answer-seconds-input" min="3" max="15" value="5" class="flex-grow h-4" oninput="document.getElementById('answer-val').innerText=this.value">
+                    <span id="answer-val" class="text-4xl font-black text-blue-500 w-16 text-center" style="font-family:'Orbitron',sans-serif">5</span>
+                    <span class="text-lg">秒</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Student List -->
+        <section class="p-8 border-4 border-dashed border-blue-200 rounded-3xl">
+            <h3 class="text-3xl font-black mb-4 text-center">👥 学生名单</h3>
+            <textarea id="student-list" class="setup-input h-32 text-lg" placeholder="输入学生姓名，用逗号或空格分隔&#10;例如：小明, 小华, 小丽, 小强, ..."></textarea>
+            <div class="mt-4 flex items-center gap-4">
+                <input type="checkbox" id="allow-repeat" class="w-8 h-8 cursor-pointer">
+                <label for="allow-repeat" class="text-xl font-black cursor-pointer">🔄 允许同一学生重复被抽中</label>
+            </div>
+        </section>
+
+        <div class="text-center pt-6">
+            <button onclick="launchBattleAI()" id="launch-btn" class="btn-primary text-5xl px-24 py-10 w-full md:w-auto shadow-2xl">⚔️ 启动 AI 生成对战题目</button>
+            <div id="post-generate-actions" class="hidden mt-8 flex gap-6 justify-center">
+                <button onclick="downloadStandaloneQuiz()" class="bg-emerald-600 text-white font-black px-12 py-8 rounded-2xl shadow-xl text-3xl hover:scale-105 transition-transform border-4 border-emerald-400">📥 下载独立 HTML</button>
+                <button onclick="startBattle()" class="bg-red-600 text-white font-black px-12 py-8 rounded-2xl shadow-xl text-3xl hover:scale-105 transition-transform border-4 border-red-400">⚔️ 开始决战</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WHEEL VIEW -->
+<div id="wheel-view" class="hidden container mx-auto p-8 flex flex-col items-center justify-center min-h-screen">
+    <h2 class="text-5xl font-black mb-4 text-center" id="wheel-label">🔴 左方战士抽选中...</h2>
+    <div class="relative">
+        <canvas id="wheelCanvas" width="600" height="600" class="max-w-full"></canvas>
+        <button id="spin-btn" onclick="spinWheel()" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-black font-black text-3xl px-10 py-6 rounded-full shadow-2xl border-4 border-yellow-200 hover:scale-110 transition-transform z-10">🎯 抽签</button>
+    </div>
+    <div id="wheel-result" class="hidden mt-8 text-center">
+        <p class="text-6xl font-black text-yellow-400" id="wheel-result-name"></p>
+        <p class="text-2xl opacity-70 mt-2">被选中！准备战斗！</p>
+    </div>
+</div>
+
+<!-- CHARACTER SELECT VIEW -->
+<div id="char-select-view" class="hidden container mx-auto p-8 flex flex-col items-center justify-center min-h-screen">
+    <h2 class="text-5xl font-black mb-8 text-center" id="char-select-prompt">选择你的战士！</h2>
+    <div id="char-card-grid" class="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl"></div>
+</div>
+
+<!-- VS COUNTDOWN OVERLAY -->
+<div id="vs-overlay" class="hidden">
+    <div id="vs-text">3</div>
+</div>
+
+<!-- BATTLE VIEW -->
+<div id="battle-view" class="hidden">
+    <!-- Canvas Arena -->
+    <div class="battle-arena" id="arena-container">
+        <canvas id="battle-canvas"></canvas>
+    </div>
+    <!-- Question Zone -->
+    <div class="question-zone" id="question-zone">
+        <!-- Side Buzzer Overlays (floating, semi-transparent) -->
+        <button class="buzzer-side buzzer-side-left" id="buzzer-left-btn" onclick="handleBuzzer('left')">
+            <span class="buzzer-emoji">⚡</span>
+            <span class="buzzer-name" id="buzzer-left-name">左战士</span>
+            <span class="buzzer-name">抢答</span>
+        </button>
+        <button class="buzzer-side buzzer-side-right" id="buzzer-right-btn" onclick="handleBuzzer('right')">
+            <span class="buzzer-emoji">⚡</span>
+            <span class="buzzer-name" id="buzzer-right-name">右战士</span>
+            <span class="buzzer-name">抢答</span>
+        </button>
+
+        <!-- Timer -->
+        <div class="timer-bar-bg" id="timer-bar-container">
+            <div class="timer-bar-fill" id="timer-bar-fill" style="width:100%"></div>
+        </div>
+        <div class="flex justify-between items-center" style="margin-bottom:0.2rem;">
+            <span style="font-size:1rem;font-weight:700;opacity:0.7;" id="timer-label">⏱️ 抢答倒计时</span>
+            <span style="font-size:1.5rem;font-weight:900;font-family:'Orbitron',sans-serif;" id="timer-text">20</span>
+        </div>
+        <!-- Question -->
+        <div class="glass-panel" style="padding:0.5rem 1rem;">
+            <p style="font-size:1.6rem;font-weight:900;line-height:1.4;margin:0;" id="battle-question"></p>
+        </div>
+        <!-- Options -->
+        <div id="battle-options"></div>
+        <!-- Note (shown after round, overlays options) -->
+        <div id="battle-note" class="hidden glass-panel" style="padding:1rem;text-align:center;position:absolute;bottom:10px;left:85px;right:85px;z-index:20;">
+            <p style="font-size:1.5rem;font-weight:900;color:#fbbf24;margin:0 0 0.5rem 0;">💡 知识精华</p>
+            <p style="font-size:1.3rem;line-height:1.5;margin:0 0 0.5rem 0;" id="battle-note-text"></p>
+            <button onclick="proceedAfterRound()" style="background:#eab308;color:#000;padding:0.6rem 3rem;border-radius:999px;font-size:1.3rem;font-weight:900;border:none;cursor:pointer;">
+                <span id="next-round-btn-text">下一场对决 →</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- LEADERBOARD VIEW -->
+<div id="leaderboard-view" class="hidden container mx-auto p-8 text-center">
+    <h1 class="text-7xl font-black mb-12 text-yellow-400 drop-shadow-2xl">🏆 大决战英雄榜</h1>
+    <div class="glass-panel overflow-hidden mb-12">
+        <table class="w-full text-left">
+            <thead class="bg-gray-800 text-white text-3xl">
+                <tr><th class="p-6">排名</th><th class="p-6">战士</th><th class="p-6">角色</th><th class="p-6">胜场</th><th class="p-6">最佳连胜</th><th class="p-6">胜率</th></tr>
+            </thead>
+            <tbody id="leaderboard-body" class="text-3xl font-black"></tbody>
+        </table>
+    </div>
+    <div class="flex flex-wrap justify-center gap-8">
+        <button onclick="location.reload()" class="btn-primary text-3xl px-16 py-8">🔄 再来一局</button>
+        <button onclick="downloadStandaloneQuiz()" class="bg-emerald-600 text-white font-black px-12 py-6 rounded-2xl shadow-xl text-2xl hover:scale-105 transition-transform">📥 下载独立练习版</button>
+    </div>
+</div>
+</body>
+
+<script>
+// ============ SECTION 1: CONSTANTS, CONFIG, STATE, SOUNDS ============
+const WORKER_URL = 'https://hualianhistory-ai.chewyenhan.workers.dev';
+let scenes = [], students = {}, gameState = {}, customApiKey = 'worker', selectedModel = 'models/gemini-2.5-flash';
+let bgmOn = false, audioCtx = null, renderLoopId = null, animations = [];
+let charCache = {};
+
+// Config
+let config = {
+    qCount: 10, easyCount: 3, mediumCount: 5, hardCount: 2,
+    shuffleDifficulty: true, timerEnabled: true, timerSeconds: 20,
+    answerSeconds: 5, allowRepeat: false
+};
+
+// Game state
+let battleState = {
+    phase: 'setup', questionIndex: 0,
+    leftStudent: null, rightStudent: null,
+    leftCharacter: null, rightCharacter: null,
+    leftLevel: 1, rightLevel: 1,
+    buzzerWinner: null, secondChance: false, roundResolved: false,
+    timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null
+};
+
+// Sound system
+const sounds = {
+    start: new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'),
+    click: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'),
+    correct: new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'),
+    wrong: new Audio('https://assets.mixkit.co/active_storage/sfx/256/256-preview.mp3'),
+    hover: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
+    bgm: new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3')
+};
+sounds.bgm.loop = true;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        sounds.click.play().catch(() => {});
+    }
+}
+
+function playSynth(freq, type, vol, dur) {
+    if (!audioCtx) return;
+    try {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(vol, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + dur);
+    } catch (e) {}
+}
+
+function playNoise(dur, vol, filterFreq) {
+    if (!audioCtx) return;
+    try {
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * vol;
+        const src = audioCtx.createBufferSource(), flt = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+        src.buffer = buf; flt.type = 'bandpass'; flt.frequency.value = filterFreq || 1000;
+        g.gain.setValueAtTime(vol, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        src.connect(flt); flt.connect(g); g.connect(audioCtx.destination);
+        src.start(); src.stop(audioCtx.currentTime + dur);
+    } catch (e) {}
+}
+
+// Weapon-specific sounds
+const weaponSounds = {
+    knight:  () => { playSynth(800,'square',0.08,0.15); playNoise(0.12,0.1,3000); },
+    archer:  () => { playNoise(0.25,0.08,1500); setTimeout(()=>playSynth(1500,'sine',0.06,0.1),200); },
+    mage:    () => { playSynth(300,'sine',0.1,0.4); playSynth(600,'sine',0.05,0.35); },
+    ninja:   () => { playSynth(2000,'sine',0.04,0.1); playSynth(2800,'sine',0.03,0.08); },
+    viking:  () => { playSynth(120,'square',0.12,0.25); playNoise(0.1,0.08,500); },
+    samurai: () => { playSynth(1500,'square',0.06,0.08); playSynth(100,'triangle',0.1,0.15); }
+};
+
+function playHitSound()    { playSynth(80,'sine',0.15,0.15); playNoise(0.1,0.12,200); }
+function playMissSound()   { playSynth(500,'sine',0.05,0.2); }
+function playDeathSound()  { playSynth(400,'sawtooth',0.1,0.3); setTimeout(()=>playSynth(100,'sawtooth',0.08,0.3),200); }
+function playLevelUpSound(){ [262,330,392,523].forEach((f,i)=>setTimeout(()=>playSynth(f,'sine',0.1,0.15),i*100)); }
+function playBuzzerSound() { playSynth(880,'square',0.12,0.15); }
+function playCountTick()   { playSynth(660,'sine',0.05,0.08); }
+function playVictorySound(){ [262,330,392,523,659].forEach((f,i)=>setTimeout(()=>playSynth(f,'sine',0.08,0.3),i*150)); }
+function playWheelTick()   { playSynth(523,'sine',0.06,0.08); }
+function playCorrectSound(){ sounds.correct.currentTime=0; sounds.correct.play().catch(()=>{}); }
+function playWrongSound()  { sounds.wrong.currentTime=0; sounds.wrong.play().catch(()=>{}); }
+
+// TTS
+function speak(text) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN'; u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+}
+
+// BGM
+function toggleBGM() {
+    if (bgmOn) { sounds.bgm.pause(); document.getElementById('bgm-icon').innerText = '🔇'; }
+    else { sounds.bgm.play().catch(()=>{}); document.getElementById('bgm-icon').innerText = '🎵'; }
+    bgmOn = !bgmOn;
+}
+function updateVolume(v) { sounds.bgm.volume = v / 100; }
+
+// ============ SECTION 2: PIXEL ART CHARACTERS (48x48, 3 levels) ============
+const CHARACTERS = {
+    knight:  { name:'圣骑士', emoji:'⚔️', colors:['#c0c0c0','#808080','#4169e1'] },
+    archer:  { name:'神箭手', emoji:'🏹', colors:['#228b22','#1a5c1a','#90ee90'] },
+    mage:    { name:'大法师', emoji:'🔮', colors:['#800080','#4b0082','#da70d6'] },
+    ninja:   { name:'暗影忍者', emoji:'🥷', colors:['#2f2f2f','#1a1a1a','#ff4500'] },
+    viking:  { name:'维京战士', emoji:'🪓', colors:['#8b4513','#654321','#ff6347'] },
+    samurai: { name:'武士', emoji:'👺', colors:['#b22222','#8b0000','#ffd700'] }
+};
+
+function getCharacterCanvas(key, level) {
+    const ck = key + '_' + level;
+    if (charCache[ck]) return charCache[ck];
+    const c = document.createElement('canvas'); c.width = 48; c.height = 48;
+    const ctx = c.getContext('2d'), ch = CHARACTERS[key];
+    ctx.clearRect(0, 0, 48, 48);
+
+    const skin = '#ffdab9', eye = '#1a1a1a', main = ch.colors[0], dark = ch.colors[1], accent = ch.colors[2];
+    const silver = '#c0c0c0', gold = '#ffd700';
+
+    // Head (all characters)
+    ctx.fillStyle = skin;
+    ctx.fillRect(16, 4, 16, 14); // head
+    ctx.fillStyle = eye;
+    ctx.fillRect(19, 8, 3, 3); ctx.fillRect(27, 8, 3, 3); // eyes
+    ctx.fillStyle = '#ff9999';
+    ctx.fillRect(20, 13, 2, 1); ctx.fillRect(26, 13, 2, 1); // blush
+
+    // Body
+    ctx.fillStyle = main;
+    ctx.fillRect(14, 18, 20, 16); // torso
+
+    // Arms
+    ctx.fillStyle = skin;
+    ctx.fillRect(8, 19, 6, 3); ctx.fillRect(34, 19, 6, 3); // upper arms
+    ctx.fillStyle = main;
+    ctx.fillRect(7, 22, 7, 4); ctx.fillRect(34, 22, 7, 4); // lower arms
+
+    // Legs
+    ctx.fillStyle = dark;
+    ctx.fillRect(17, 34, 6, 12); ctx.fillRect(25, 34, 6, 12); // legs
+    ctx.fillStyle = '#3a3a3a';
+    ctx.fillRect(16, 42, 8, 4); ctx.fillRect(24, 42, 8, 4); // boots
+
+    // Weapon & character-specific details
+    switch (key) {
+        case 'knight':
+            ctx.fillStyle = silver;
+            ctx.fillRect(12, 16, 4, 16); // sword blade
+            ctx.fillRect(40, 18, 6, 10); // shield
+            ctx.fillStyle = gold; ctx.fillRect(11, 30, 6, 3); // crossguard
+            ctx.fillStyle = silver;
+            ctx.fillRect(18, 5, 12, 3); // helmet
+            break;
+        case 'archer':
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(12, 10, 4, 20); ctx.fillRect(36, 12, 4, 15); // bow
+            ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(14, 20, 10, -Math.PI*0.5, Math.PI*0.5); ctx.stroke(); // bow curve
+            ctx.fillStyle = '#90ee90';
+            ctx.fillRect(16, 5, 4, 4); // hood tip
+            break;
+        case 'mage':
+            ctx.fillStyle = accent;
+            ctx.fillRect(11, 10, 26, 2); // hat brim
+            ctx.fillRect(18, 2, 12, 10); // hat cone
+            ctx.fillStyle = gold;
+            ctx.fillRect(22, 14, 4, 4); // gem
+            ctx.fillStyle = '#da70d6';
+            ctx.fillRect(38, 14, 6, 22); // staff
+            ctx.fillStyle = gold;
+            ctx.fillRect(37, 12, 8, 4); // staff orb
+            break;
+        case 'ninja':
+            ctx.fillStyle = dark;
+            ctx.fillRect(16, 4, 16, 6); // hood top
+            ctx.fillRect(12, 8, 24, 8); // face wrap (only eyes visible)
+            ctx.fillStyle = eye; ctx.fillRect(17, 10, 2, 2); ctx.fillRect(27, 10, 2, 2); // eye slits
+            ctx.fillStyle = accent;
+            ctx.fillRect(36, 20, 8, 3); ctx.fillRect(36, 24, 8, 3); // shuriken
+            break;
+        case 'viking':
+            ctx.fillStyle = '#ddd';
+            ctx.fillRect(14, 1, 5, 6); ctx.fillRect(28, 1, 5, 6); // horns
+            ctx.fillStyle = silver;
+            ctx.fillRect(16, 5, 16, 3); // helmet band
+            // Beard
+            ctx.fillStyle = '#ffa500';
+            ctx.fillRect(15, 16, 5, 4); ctx.fillRect(28, 16, 5, 4);
+            // Axe
+            ctx.fillStyle = silver;
+            ctx.fillRect(37, 12, 4, 18); // handle
+            ctx.fillRect(33, 10, 12, 6); // blade
+            break;
+        case 'samurai':
+            ctx.fillStyle = dark;
+            ctx.fillRect(14, 2, 20, 6); // kabuto top
+            ctx.fillRect(10, 6, 28, 3); // kabuto brim
+            ctx.fillStyle = gold;
+            ctx.fillRect(22, 0, 4, 4); // crest
+            // Cape
+            ctx.fillStyle = '#cc0000';
+            ctx.fillRect(14, 19, 4, 20);
+            // Katana
+            ctx.fillStyle = silver;
+            ctx.fillRect(38, 8, 3, 24); // blade
+            ctx.fillRect(36, 28, 7, 4); // handle
+            break;
+    }
+
+    // Level upgrades
+    if (level >= 2) {
+        // Silver armor trim
+        ctx.fillStyle = silver;
+        ctx.fillRect(13, 18, 2, 16); ctx.fillRect(33, 18, 2, 16); // shoulder armor
+        ctx.fillRect(15, 32, 18, 2); // belt
+        // Cape
+        const capeCol = key === 'samurai' ? '#cc0000' : '#4a5568';
+        ctx.fillStyle = capeCol;
+        ctx.fillRect(8, 20, 5, 14);
+    }
+    if (level >= 3) {
+        // Gold upgrades
+        ctx.fillStyle = gold;
+        ctx.fillRect(18, 2, 12, 3); // crown
+        ctx.fillRect(20, 0, 3, 3); ctx.fillRect(25, 0, 3, 3); // crown jewels
+        ctx.fillRect(13, 18, 3, 16); ctx.fillRect(32, 18, 3, 16); // gold shoulder pads
+        ctx.fillRect(15, 34, 18, 3); // gold belt
+        // Cape bigger
+        const capeCol2 = key === 'samurai' ? '#ff4444' : '#ffd700';
+        ctx.fillStyle = capeCol2;
+        ctx.fillRect(6, 20, 7, 18);
+    }
+
+    charCache[ck] = { canvas: c };
+    return charCache[ck];
+}
+
+// ============ SECTION 3: CANVAS BATTLE ARENA ============
+let canvasW = 1200, canvasH = 500, groundY = 325;
+
+function resizeCanvas() {
+    const container = document.getElementById('arena-container');
+    const canvas = document.getElementById('battle-canvas');
+    if (!container || !canvas) return;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    canvasW = canvas.width; canvasH = canvas.height;
+    groundY = Math.floor(canvasH * 0.65);
+}
+
+function startRenderLoop() {
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    function frame() {
+        const canvas = document.getElementById('battle-canvas');
+        if (!canvas) { stopRenderLoop(); return; }
+        const ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
+        const now = performance.now();
+
+        ctx.clearRect(0, 0, w, h);
+        drawBackground(ctx, w, h);
+        drawCharacterAt(ctx, 'left', battleState.leftCharacter, battleState.leftLevel, now);
+        drawCharacterAt(ctx, 'right', battleState.rightCharacter, battleState.rightLevel, now);
+        drawScores(ctx, w, h, now);
+        drawEffects(ctx, w, h, now);
+        processAnimations(now);
+
+        renderLoopId = requestAnimationFrame(frame);
+    }
+    frame();
+}
+
+function stopRenderLoop() {
+    if (renderLoopId) { cancelAnimationFrame(renderLoopId); renderLoopId = null; }
+    window.removeEventListener('resize', resizeCanvas);
+}
+
+function drawBackground(ctx, w, h) {
+    const gY = groundY;
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, gY);
+    skyGrad.addColorStop(0, '#1a1a4e'); skyGrad.addColorStop(0.5, '#4a6fa5'); skyGrad.addColorStop(1, '#87ceeb');
+    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, w, gY);
+    // Clouds
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    drawCloud(ctx, w*0.12, h*0.08, 50);
+    drawCloud(ctx, w*0.65, h*0.12, 40);
+    drawCloud(ctx, w*0.85, h*0.06, 35);
+    // Ground
+    ctx.fillStyle = '#3a6b2f'; ctx.fillRect(0, gY, w, h - gY);
+    ctx.fillStyle = '#4a7c3f'; ctx.fillRect(0, gY, w, 8);
+    // Grass tufts
+    ctx.fillStyle = '#2d5a1e';
+    for (let x = 0; x < w; x += 25) {
+        ctx.beginPath(); ctx.moveTo(x, gY); ctx.lineTo(x + 4, gY - 8); ctx.lineTo(x + 8, gY); ctx.fill();
+    }
+}
+
+function drawCloud(ctx, x, y, r) {
+    ctx.beginPath(); ctx.arc(x, y, r*0.6, 0, Math.PI*2);
+    ctx.arc(x+r*0.5, y-r*0.2, r*0.5, 0, Math.PI*2);
+    ctx.arc(x+r, y, r*0.55, 0, Math.PI*2);
+    ctx.fill();
+}
+
+function drawCharacterAt(ctx, side, charKey, level, now) {
+    if (!charKey) return;
+    const spriteSize = 144; // 48 * 3
+    const bounce = Math.sin(now * 0.003) * 2;
+    const x = side === 'left' ? canvasW * 0.22 : canvasW * 0.78;
+    const y = groundY - spriteSize + bounce;
+    const sprite = getCharacterCanvas(charKey, level);
+    ctx.imageSmoothingEnabled = false;
+    ctx.save();
+    if (side === 'right') {
+        ctx.translate(x, y); ctx.scale(-1, 1);
+        ctx.drawImage(sprite.canvas, -spriteSize, 0, spriteSize, spriteSize);
+    } else {
+        ctx.drawImage(sprite.canvas, x, y, spriteSize, spriteSize);
+    }
+    ctx.restore();
+    // Name label
+    const name = side === 'left' ? (battleState.leftStudent || '???') : (battleState.rightStudent || '???');
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px "Noto Sans SC"'; ctx.textAlign = 'center';
+    ctx.fillText(name, x + spriteSize/2, groundY + 24);
+}
+
+function drawScores(ctx, w, h, now) {
+    const leftName = battleState.leftStudent, rightName = battleState.rightStudent;
+    const leftScore = leftName && students[leftName] ? students[leftName].wins : 0;
+    const rightScore = rightName && students[rightName] ? students[rightName].wins : 0;
+    const leftStreak = leftName && students[leftName] ? students[leftName].streak : 0;
+    const rightStreak = rightName && students[rightName] ? students[rightName].streak : 0;
+
+    ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 48px "Orbitron", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(leftScore, canvasW * 0.22 + 72, groundY - 160);
+    ctx.fillText(rightScore, canvasW * 0.78 + 72, groundY - 160);
+    // Streak flames
+    if (leftStreak >= 3) {
+        const fy = groundY - 200 + Math.sin(now * 0.008) * 3;
+        ctx.fillStyle = '#f97316'; ctx.font = '24px sans-serif';
+        ctx.fillText('🔥'.repeat(Math.min(leftStreak, 5)), canvasW * 0.22 + 72, fy);
+    }
+    if (rightStreak >= 3) {
+        const fy = groundY - 200 + Math.sin(now * 0.008 + 1) * 3;
+        ctx.fillStyle = '#f97316'; ctx.font = '24px sans-serif';
+        ctx.fillText('🔥'.repeat(Math.min(rightStreak, 5)), canvasW * 0.78 + 72, fy);
+    }
+    // VS
+    ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.font = 'bold 64px "Orbitron", sans-serif';
+    ctx.fillText('VS', canvasW / 2, groundY - 100);
+}
+
+// ============ SECTION 4: ANIMATION ENGINE ============
+const ANIM_TYPES = {
+    ATTACK: 'attack', HIT: 'hit', FALL: 'fall', LEVEL_UP: 'levelUp', VS_COUNTDOWN: 'vsCd'
+};
+
+function addAttackAnimation(fromSide, charKey) {
+    const fromX = fromSide === 'left' ? canvasW * 0.22 + 144 : canvasW * 0.78 - 10;
+    const toX = fromSide === 'left' ? canvasW * 0.78 : canvasW * 0.22 + 144;
+    const y = groundY - 100;
+    animations.push({
+        type: ANIM_TYPES.ATTACK, startTime: performance.now(), duration: 600,
+        fromSide, charKey, fromX, toX, y,
+        onComplete: () => { addHitAnimation(fromSide === 'left' ? 'right' : 'left'); }
+    });
+}
+
+function drawEffects(ctx, w, h, now) {
+    const active = animations.filter(a => {
+        const elapsed = now - a.startTime;
+        if (elapsed >= a.duration) { if (a.onComplete) a.onComplete(); return false; }
+        return true;
+    });
+    animations = active;
+
+    active.forEach(a => {
+        const t = Math.min((now - a.startTime) / a.duration, 1);
+        switch (a.type) {
+            case ANIM_TYPES.ATTACK: {
+                const x = a.fromX + (a.toX - a.fromX) * t;
+                const y = a.y + Math.sin(t * Math.PI) * -30;
+                // Draw projectile based on character
+                ctx.save(); ctx.imageSmoothingEnabled = true;
+                switch (a.charKey) {
+                    case 'knight':
+                        ctx.fillStyle = '#ffd700'; ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 12;
+                        ctx.fillRect(x-2, y-12, 4, 24); break; // sword beam
+                    case 'archer':
+                        ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 3;
+                        ctx.beginPath(); ctx.moveTo(x-15, y); ctx.lineTo(x, y); ctx.stroke();
+                        ctx.fillStyle = '#ccc';
+                        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x-6, y-3); ctx.lineTo(x-6, y+3); ctx.fill();
+                        break;
+                    case 'mage':
+                        const grad = ctx.createRadialGradient(x, y, 0, x, y, 12);
+                        grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#da70d6'); grad.addColorStop(1, 'transparent');
+                        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI*2); ctx.fill();
+                        break;
+                    case 'ninja':
+                        ctx.save(); ctx.translate(x, y); ctx.rotate(t * Math.PI * 4);
+                        ctx.fillStyle = '#ff4500'; ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 8;
+                        drawStar(ctx, 0, 0, 5, 10, 4); ctx.fill(); ctx.restore();
+                        break;
+                    case 'viking':
+                        ctx.save(); ctx.translate(x, y); ctx.rotate(t * Math.PI * 3);
+                        ctx.fillStyle = '#c0c0c0'; ctx.shadowColor = '#888'; ctx.shadowBlur = 6;
+                        ctx.fillRect(-12, -4, 24, 8); // axe head
+                        ctx.fillStyle = '#8B4513'; ctx.fillRect(-2, -14, 4, 10); // handle
+                        ctx.restore();
+                        break;
+                    case 'samurai':
+                        ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 20;
+                        ctx.fillRect(x-1, y-20, 2, 40); // slash line
+                        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                        ctx.fillRect(x-20, y-2, 40, 4); // horizontal flash
+                        break;
+                }
+                ctx.restore();
+                break;
+            }
+            case ANIM_TYPES.HIT: {
+                const targetSide = a.side;
+                const tx = (targetSide === 'right' ? canvasW * 0.78 : canvasW * 0.22) + 72;
+                const ty = groundY - 72;
+                ctx.fillStyle = `rgba(255,0,0,${1-t})`; ctx.fillRect(tx-30, ty-30, 60, 60);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('💥', tx, ty);
+                break;
+            }
+            case ANIM_TYPES.FALL: {
+                const sX = a.side === 'left' ? canvasW * 0.22 : canvasW * 0.78;
+                const sY = groundY - 144;
+                ctx.save(); ctx.translate(sX + 72, sY + 144);
+                ctx.rotate((a.side === 'left' ? 1 : -1) * t * Math.PI/2);
+                const sprite = getCharacterCanvas(a.charKey || 'knight', a.level || 1);
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(sprite.canvas, -72, -144 - t*200, 144, 144);
+                ctx.restore();
+                break;
+            }
+            case ANIM_TYPES.LEVEL_UP: {
+                const lX = (a.side === 'left' ? canvasW * 0.22 : canvasW * 0.78) + 72;
+                const lY = groundY - 160;
+                for (let i = 0; i < 15; i++) {
+                    const pt = (t + i * 0.07) % 1;
+                    const px = lX + Math.cos(i * 1.2) * 40 * pt;
+                    const py = lY - pt * 100 + Math.sin(pt * Math.PI) * 20;
+                    ctx.fillStyle = `rgba(255,215,0,${1-pt})`;
+                    ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.fillStyle = '#ffd700'; ctx.font = 'bold 28px "Orbitron", sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('LEVEL UP!', lX, lY - 60);
+                break;
+            }
+        }
+    });
+}
+
+function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+    let rot = Math.PI / 2 * 3, step = Math.PI / spikes;
+    ctx.beginPath();
+    for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+        rot += step;
+    }
+    ctx.closePath();
+}
+
+function processAnimations(now) { /* animations filtered in drawEffects */ }
+
+function addHitAnimation(side) {
+    animations.push({
+        type: ANIM_TYPES.HIT, startTime: performance.now(), duration: 400, side,
+        onComplete: null
+    });
+}
+
+function addFallAnimation(side, charKey, level) {
+    playDeathSound();
+    animations.push({
+        type: ANIM_TYPES.FALL, startTime: performance.now(), duration: 800,
+        side, charKey, level, onComplete: null
+    });
+}
+
+function checkLevelUp(name) {
+    if (!students[name]) return;
+    var s = students[name];
+    var newLevel = s.streak >= 3 ? 3 : s.streak >= 2 ? 2 : 1;
+    if (newLevel > s.level) {
+        s.level = newLevel;
+        playLevelUpSound();
+        addLevelUpFX(name === battleState.leftStudent ? 'left' : 'right');
+    }
+}
+
+function addLevelUpFX(side) {
+    playLevelUpSound();
+    animations.push({
+        type: ANIM_TYPES.LEVEL_UP, startTime: performance.now(), duration: 2000,
+        side, onComplete: null
+    });
+}
+
+// ============ SECTION 5: AI PIPELINE + SETUP ============
+// Shuffle options (Fisher-Yates, preserves ans index)
+function shuffleOptions(scenesArr) {
+    scenesArr.forEach(s => {
+        const oldAns = s.ans;
+        const pairs = s.options.map((opt, i) => ({ opt, i }));
+        for (let i = pairs.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+        }
+        s.options = pairs.map(p => p.opt);
+        s.ans = pairs.findIndex(p => p.i === oldAns);
+    });
+}
+
+// Force balanced answer position distribution (deterministic)
+function balanceAnswerDistribution(scenesArr) {
+    var total = scenesArr.length;
+    // Target count per position: distribute remainder to first N positions
+    var baseTarget = Math.floor(total / 3);
+    var remainder = total % 3; // 0, 1, or 2 extra slots
+    var targets = [baseTarget, baseTarget, baseTarget];
+    for (var r = 0; r < remainder; r++) targets[r]++;
+
+    var counts = [0, 0, 0];
+    scenesArr.forEach(function(s) { if (s.ans >= 0 && s.ans <= 2) counts[s.ans]++; });
+
+    // Move answers from overrepresented to underrepresented positions
+    for (var overPos = 0; overPos < 3; overPos++) {
+        while (counts[overPos] > targets[overPos]) {
+            // Find an underrepresented position
+            var underPos = -1;
+            for (var u = 0; u < 3; u++) {
+                if (counts[u] < targets[u]) { underPos = u; break; }
+            }
+            if (underPos < 0) break;
+
+            // Find a question with ans at the overrepresented position
+            var qIdx = -1;
+            for (var k = 0; k < scenesArr.length; k++) {
+                if (scenesArr[k].ans === overPos) { qIdx = k; break; }
+            }
+            if (qIdx < 0) break;
+
+            // Swap option text: move correct answer from overPos to underPos
+            var s = scenesArr[qIdx];
+            var temp = s.options[overPos];
+            s.options[overPos] = s.options[underPos];
+            s.options[underPos] = temp;
+            s.ans = underPos;
+
+            counts[overPos]--;
+            counts[underPos]++;
+        }
+    }
+}
+
+function buildFallbackData(text, easyN, medN, hardN, totalQ) {
+    const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+    const questions = [];
+    lines.forEach((line, idx) => {
+        if (questions.length >= totalQ) return;
+        const prefix = line.length > 15 ? line.slice(0, 15) : line;
+        const diff = idx < easyN ? 'easy' : (idx < easyN + medN ? 'medium' : 'hard');
+        const stars = { easy: '⭐', medium: '⭐⭐⭐', hard: '⭐⭐⭐⭐⭐' };
+        questions.push({
+            q: `关于"${prefix}…"的内容，哪一项最准确？`,
+            options: [
+                line.length > 40 ? line.slice(0, 40) + '…' : line,
+                `与"${prefix}"相关的关键概念`,
+                `以下哪项不属于该知识点的范畴？`
+            ],
+            ans: 0, note: `这道题围绕"${prefix}"设计。${line}`,
+            title: `第${idx+1}题`, emoji: '📝', diff: stars[diff], difficulty: diff
+        });
+    });
+    while (questions.length < totalQ) {
+        questions.push({
+            q: `第 ${questions.length+1} 题：请根据资料内容判断`,
+            options: ['选项 A', '选项 B', '选项 C'],
+            ans: 1, note: '离线模式生成的备用题目。连接 AI 服务可获得更精准的题目。',
+            title: '备用题', emoji: '🤖', diff: '⭐⭐⭐', difficulty: 'medium'
+        });
+    }
+    return questions.slice(0, totalQ);
+}
+
+async function launchBattleAI() {
+    const text = document.getElementById('source-text').value.trim();
+    const qCount = parseInt(document.getElementById('q-count-input').value);
+    let model = document.getElementById('model-select').value;
+    if (!model) model = localStorage.getItem('gemini_model') || 'models/gemini-2.5-flash';
+    if (!text || !model) return alert('请补全所有必填项！');
+
+    config = {
+        qCount,
+        easyCount: parseInt(document.getElementById('easy-count').value) || 0,
+        mediumCount: parseInt(document.getElementById('medium-count').value) || 0,
+        hardCount: parseInt(document.getElementById('hard-count').value) || 0,
+        shuffleDifficulty: document.getElementById('shuffle-difficulty').checked,
+        timerEnabled: document.getElementById('timer-enabled').checked,
+        timerSeconds: parseInt(document.getElementById('timer-seconds-input').value) || 20,
+        answerSeconds: parseInt(document.getElementById('answer-seconds-input').value) || 5,
+        allowRepeat: document.getElementById('allow-repeat').checked
+    };
+
+    // Parse students
+    const raw = document.getElementById('student-list').value.trim();
+    if (!raw) return alert('请输入学生名单！');
+    const names = raw.split(/[,，\s\n]+/).filter(Boolean);
+    if (names.length < 2) return alert('至少需要 2 名学生！');
+    students = {};
+    names.forEach(n => {
+        students[n] = { name: n, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
+    });
+
+    document.getElementById('loading').classList.remove('hidden');
+    const easyN = config.easyCount, medN = config.mediumCount, hardN = config.hardCount;
+
+    const prompt = `Task: Create EXACTLY ${qCount} quiz questions from this text: "${text}".
+
+IMPORTANT RULES:
+- Use the EXACT SAME LANGUAGE as the source text.
+- The 'note' field must be an ACTUAL EXPLANATION of the correct answer (2-3 sentences). Explain WHY it is correct, with key facts from the source text. Never write meta-phrases like "考察学生对XX的理解" — explain the CONTENT.
+- ⚠️ RANDOMIZE the correct answer position (ans): the correct answer MUST be evenly distributed across positions 0/1/2. Do NOT always put it at index 0.
+- ⚠️ BALANCE option lengths: all 3 options should be roughly the same length. Do NOT make the correct option longer or more detailed than wrong options.
+
+Format: JSON array of objects.
+Keys: q (the question), options (3 strings), ans (0-2 index of correct option), note (EXPLAIN the answer), title, emoji, diff (⭐ to ⭐⭐⭐⭐⭐), difficulty (exactly one of: "easy", "medium", "hard").
+
+CRITICAL DIFFICULTY DISTRIBUTION:
+- EXACTLY ${easyN} questions must have difficulty "easy". Straightforward recall.
+- EXACTLY ${medN} questions must have difficulty "medium". Some analysis.
+- EXACTLY ${hardN} questions must have difficulty "hard". Challenging, deeper inference.
+${ config.shuffleDifficulty ? '- Randomly shuffle the order of difficulty levels. Do NOT group them together.' : '' }
+
+Output ONLY valid JSON array, no markdown, no code blocks.`;
+
+    let isOffline = false;
+    try {
+        const res = await fetch(`${WORKER_URL}/gemini`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model, contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'API failed');
+        const aiTxt = data.candidates[0].content.parts[0].text;
+        const match = aiTxt.match(/\[[\s\S]*\]/);
+        if (!match) throw new Error('AI format error');
+        scenes = JSON.parse(match[0]);
+        shuffleOptions(scenes);
+    } catch (e) {
+        console.warn('API failed, using fallback', e);
+        scenes = buildFallbackData(text, easyN, medN, hardN, qCount);
+        shuffleOptions(scenes);
+        isOffline = true;
+    }
+
+    // Normalize difficulty (6-step post-processing)
+    const diffOrder = [];
+    for (let i = 0; i < easyN; i++) diffOrder.push('easy');
+    for (let i = 0; i < medN; i++) diffOrder.push('medium');
+    for (let i = 0; i < hardN; i++) diffOrder.push('hard');
+    if (config.shuffleDifficulty) {
+        for (let i = diffOrder.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [diffOrder[i], diffOrder[j]] = [diffOrder[j], diffOrder[i]];
+        }
+    }
+    const diffStars = { easy: '⭐', medium: '⭐⭐⭐', hard: '⭐⭐⭐⭐⭐' };
+    const aiOk = scenes.length === qCount &&
+        scenes.every(s => ['easy','medium','hard'].includes(s.difficulty)) &&
+        scenes.filter(s => s.difficulty === 'easy').length === easyN &&
+        scenes.filter(s => s.difficulty === 'medium').length === medN &&
+        scenes.filter(s => s.difficulty === 'hard').length === hardN;
+    if (!aiOk) {
+        scenes.forEach((s, i) => { s.difficulty = diffOrder[i] || 'medium'; s.diff = diffStars[s.difficulty] || '⭐⭐⭐'; });
+    }
+
+    // Balance answer distribution (after shuffle)
+    balanceAnswerDistribution(scenes);
+
+    // Add IDs
+    scenes.forEach((s, i) => { if (!s.id) s.id = 'q-' + i; });
+
+    sounds.start.play().catch(() => {});
+    sounds.bgm.play().catch(() => {});
+    bgmOn = true;
+    document.getElementById('bgm-widget').classList.remove('hidden');
+
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('launch-btn').classList.add('hidden');
+    document.getElementById('post-generate-actions').classList.remove('hidden');
+}
+
+function startBattle() {
+    document.getElementById('post-generate-actions').classList.add('hidden');
+    battleState = {
+        phase: 'battle', questionIndex: 0,
+        leftStudent: null, rightStudent: null,
+        leftCharacter: null, rightCharacter: null,
+        leftLevel: 1, rightLevel: 1,
+        buzzerWinner: null, secondChance: false, roundResolved: false,
+        timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null
+    };
+    startWheelPhase();
+}
+
+// ============ SECTION 6: WHEEL + CHARACTER SELECT ============
+let wheelState = { startAngle: 0, spinCount: 0, firstStudent: null, secondStudent: null, isSpinning: false, excludeStudent: null };
+let charSelectState = { pickingFor: 'left', leftPick: null, rightPick: null, singlePick: false };
+
+function getWheelCandidateNames() {
+    var names = config.allowRepeat ? Object.keys(students) : Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+    if (wheelState.excludeStudent) {
+        var filtered = names.filter(function(n) { return n !== wheelState.excludeStudent; });
+        if (filtered.length >= 1) names = filtered;
+    }
+    return names;
+}
+
+function initWheel(availableNames) {
+    const canvas = document.getElementById('wheelCanvas'), ctx = canvas.getContext('2d');
+    if (!canvas || !ctx) return;
+    const num = availableNames.length;
+    if (num === 0) return;
+    const arc = (2 * Math.PI) / num;
+    const colors = ['#ff9ebb','#a0d8ef','#fbbf24','#3b82f6','#8b5cf6','#f472b6','#fb923c','#34d399','#f87171','#60a5fa'];
+    ctx.clearRect(0, 0, 600, 600);
+    for (let i = 0; i < num; i++) {
+        const angle = wheelState.startAngle + i * arc;
+        ctx.beginPath(); ctx.moveTo(300, 300); ctx.arc(300, 300, 280, angle, angle + arc);
+        ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.save(); ctx.translate(300, 300); ctx.rotate(angle + arc / 2);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 28px "Noto Sans SC"'; ctx.textAlign = 'right';
+        ctx.fillText(availableNames[i], 270, 10); ctx.restore();
+    }
+}
+
+function spinWheel() {
+    if (wheelState.isSpinning) return;
+    wheelState.isSpinning = true;
+    document.getElementById('spin-btn').disabled = true;
+    document.getElementById('wheel-result').classList.add('hidden');
+
+    const speed = 0.4 + Math.random() * 0.5, duration = 3500;
+    let start = null, lastTick = 0;
+    function animate(time) {
+        if (!start) start = time;
+        const progress = (time - start) / duration;
+        if (progress < 1) {
+            wheelState.startAngle += speed * (1 - progress);
+            if (wheelState.startAngle - lastTick > 0.08) { playWheelTick(); lastTick = wheelState.startAngle; }
+            const avail = getWheelCandidateNames();
+            initWheel(avail);
+            requestAnimationFrame(animate);
+        } else {
+            const avail = getWheelCandidateNames();
+            const arc = (2 * Math.PI) / avail.length;
+            const idx = Math.floor((1.5 * Math.PI - (wheelState.startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / arc) % avail.length;
+            const chosen = avail[idx];
+            wheelState.isSpinning = false;
+            document.getElementById('spin-btn').disabled = false;
+            document.getElementById('wheel-result').classList.remove('hidden');
+            document.getElementById('wheel-result-name').innerText = chosen;
+            onWheelComplete(chosen);
+        }
+    }
+    requestAnimationFrame(animate);
+}
+
+function getAvailableStudents() {
+    const names = Object.keys(students);
+    if (config.allowRepeat) return names;
+    return names.filter(n => !students[n].eliminated);
+}
+
+function getUneliminatedStudents() {
+    if (config.allowRepeat) return Object.keys(students);
+    return Object.keys(students).filter(n => !students[n].eliminated);
+}
+
+function onWheelComplete(name) {
+    playCorrectSound();
+    // Track participation
+    if (students[name]) students[name].usedCount = (students[name].usedCount || 0) + 1;
+
+    if (wheelState.spinCount === 0) {
+        wheelState.firstStudent = name;
+        battleState.leftStudent = name;
+        // Exclude first student from next spin
+        wheelState.excludeStudent = name;
+        document.getElementById('wheel-label').innerText = '🔵 右方战士抽选中...';
+        wheelState.spinCount = 1;
+        const avail = getWheelCandidateNames();
+        initWheel(avail);
+        speak(name + '，准备出战！');
+    } else {
+        wheelState.secondStudent = name;
+        battleState.rightStudent = name;
+        wheelState.excludeStudent = null; // Reset exclusion
+        document.getElementById('wheel-label').innerText = '双方战士已就位！';
+        speak(name + '，准备出战！');
+        setTimeout(startCharacterSelection, 1500);
+    }
+}
+
+function startWheelPhase() {
+    document.getElementById('setup-view').classList.add('hidden');
+    document.getElementById('wheel-view').classList.remove('hidden');
+    document.getElementById('wheel-label').innerText = '🔴 左方战士抽选中...';
+    document.getElementById('wheel-result').classList.add('hidden');
+    wheelState.spinCount = 0; wheelState.firstStudent = null; wheelState.secondStudent = null;
+    wheelState.excludeStudent = null; // Reset exclusion
+    const avail = getWheelCandidateNames();
+    initWheel(avail);
+}
+
+function startSingleCharSelect(slot) {
+    // Only the new challenger picks; the staying winner keeps their character
+    document.getElementById('char-select-view').classList.remove('hidden');
+    var otherChar = slot === 'left' ? battleState.rightCharacter : battleState.leftCharacter;
+    charSelectState = {
+        pickingFor: slot,
+        leftPick: slot === 'left' ? null : otherChar,
+        rightPick: slot === 'right' ? null : otherChar,
+        singlePick: true
+    };
+    renderCharacterGrid();
+}
+
+function startCharacterSelection() {
+    document.getElementById('wheel-view').classList.add('hidden');
+    document.getElementById('char-select-view').classList.remove('hidden');
+    charSelectState = { pickingFor: 'left', leftPick: null, rightPick: null, singlePick: false };
+    renderCharacterGrid();
+}
+
+function renderCharacterGrid() {
+    const grid = document.getElementById('char-card-grid');
+    grid.innerHTML = '';
+    const prompt = document.getElementById('char-select-prompt');
+    const whoPicking = charSelectState.pickingFor === 'left' ? battleState.leftStudent : battleState.rightStudent;
+    prompt.innerText = `${whoPicking} — 选择你的战士！`;
+
+    Object.entries(CHARACTERS).forEach(([key, data]) => {
+        const taken = (charSelectState.pickingFor === 'right' && key === charSelectState.leftPick) ||
+                      (charSelectState.pickingFor === 'left' && charSelectState.singlePick && key === charSelectState.rightPick);
+        const card = document.createElement('div');
+        card.className = 'char-card ' + (taken ? 'taken' : '');
+        const preview = document.createElement('canvas');
+        preview.width = 96; preview.height = 96;
+        const pctx = preview.getContext('2d');
+        const sprite = getCharacterCanvas(key, 1);
+        pctx.imageSmoothingEnabled = false;
+        pctx.drawImage(sprite.canvas, 0, 0, 96, 96);
+        card.appendChild(preview);
+        const nameEl = document.createElement('p');
+        nameEl.className = 'font-black text-xl mt-2';
+        nameEl.innerText = data.emoji + ' ' + data.name;
+        card.appendChild(nameEl);
+        if (!taken) card.onclick = () => selectCharacter(key);
+        grid.appendChild(card);
+    });
+}
+
+function selectCharacter(charKey) {
+    playSynth(800, 'square', 0.1, 0.2);
+    if (charSelectState.pickingFor === 'left') {
+        charSelectState.leftPick = charKey;
+        battleState.leftCharacter = charKey;
+        battleState.leftLevel = 1;
+        if (charSelectState.singlePick) {
+            charSelectState.pickingFor = 'done';
+            document.getElementById('char-select-view').classList.add('hidden');
+            showVSCountdown();
+            return;
+        }
+        charSelectState.pickingFor = 'right';
+        renderCharacterGrid();
+    } else if (charSelectState.pickingFor === 'right') {
+        charSelectState.rightPick = charKey;
+        battleState.rightCharacter = charKey;
+        battleState.rightLevel = 1;
+        if (charSelectState.singlePick) {
+            charSelectState.pickingFor = 'done';
+            document.getElementById('char-select-view').classList.add('hidden');
+            showVSCountdown();
+            return;
+        }
+        charSelectState.pickingFor = 'done';
+        document.getElementById('char-select-view').classList.add('hidden');
+        showVSCountdown();
+    }
+}
+
+function showVSCountdown() {
+    const overlay = document.getElementById('vs-overlay');
+    const text = document.getElementById('vs-text');
+    overlay.classList.remove('hidden');
+    const leftName = battleState.leftStudent, rightName = battleState.rightStudent;
+    const leftChar = CHARACTERS[battleState.leftCharacter].emoji;
+    const rightChar = CHARACTERS[battleState.rightCharacter].emoji;
+
+    [3, 2, 1].forEach((n, i) => {
+        setTimeout(() => {
+            text.innerText = n; text.style.color = n === 1 ? '#ef4444' : '#fbbf24';
+            playCountTick();
+        }, i * 800);
+    });
+    setTimeout(() => {
+        text.innerText = 'FIGHT!';
+        text.style.color = '#ef4444';
+        text.style.fontSize = '6rem';
+        playSynth(1000, 'square', 0.1, 0.3);
+    }, 2400);
+    setTimeout(() => {
+        overlay.classList.add('hidden');
+        text.style.fontSize = '8rem';
+        startBattleRound();
+    }, 3200);
+}
+
+// ============ SECTION 7: BATTLE LOGIC ============
+function startBattleRound() {
+    battleState.buzzerWinner = null;
+    battleState.secondChance = false;
+    battleState.roundResolved = false;
+    battleState.timerPhase = 'waiting';
+    battleState.timerActiveSide = null;
+
+    document.getElementById('battle-view').classList.remove('hidden');
+    document.getElementById('battle-note').classList.add('hidden');
+
+    const leftName = battleState.leftStudent || '左战士';
+    const rightName = battleState.rightStudent || '右战士';
+    document.getElementById('buzzer-left-name').innerText = leftName;
+    document.getElementById('buzzer-right-name').innerText = rightName;
+    document.getElementById('timer-label').innerText = '⏱️ 抢答倒计时';
+
+    if (students[leftName]) battleState.leftLevel = students[leftName].level || 1;
+    if (students[rightName]) battleState.rightLevel = students[rightName].level || 1;
+
+    resizeCanvas();
+    startRenderLoop();
+
+    if (battleState.questionIndex >= scenes.length) {
+        stopRenderLoop();
+        document.getElementById('battle-view').classList.add('hidden');
+        showLeaderboard();
+        return;
+    }
+    const q = scenes[battleState.questionIndex];
+    document.getElementById('battle-question').innerHTML = '<span style="font-size:1rem;opacity:0.5">' + (q.diff||'') + ' ' + (q.emoji||'') + '</span><br>' + q.q;
+    renderBattleOptions(q.options);
+
+    setOptionsEnabled(false);
+    setBuzzersEnabled(true);
+    document.getElementById('buzzer-left-btn').classList.remove('active-buzz');
+    document.getElementById('buzzer-right-btn').classList.remove('active-buzz');
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('correct-answer','wrong-choice'));
+
+    if (config.timerEnabled) startBattleTimer(config.timerSeconds, 'waiting');
+    if (battleState.questionIndex === 0) speak('第一题！' + q.q);
+    else speak(q.q);
+}
+
+function renderBattleOptions(options) {
+    const container = document.getElementById('battle-options');
+    container.innerHTML = '';
+    options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = '<span style="font-weight:900;margin-right:10px">' + String.fromCharCode(65+i) + '.</span> ' + opt;
+        btn.id = 'battle-opt-' + i;
+        btn.disabled = true;
+        btn.onclick = function() { handleAnswerChoice(i); };
+        container.appendChild(btn);
+    });
+}
+
+function setOptionsEnabled(en) {
+    document.querySelectorAll('.option-btn').forEach(function(b) { b.disabled = !en; });
+}
+
+function setBuzzersEnabled(en) {
+    document.getElementById('buzzer-left-btn').disabled = !en;
+    document.getElementById('buzzer-right-btn').disabled = !en;
+}
+
+function handleBuzzer(side) {
+    if (battleState.buzzerWinner !== null) return;
+    if (battleState.roundResolved) return;
+    if (battleState.timerPhase !== 'waiting') return;
+
+    battleState.buzzerWinner = side;
+    playBuzzerSound();
+    stopBattleTimer();
+    setOptionsEnabled(true);
+    setBuzzersEnabled(false);
+
+    var btnId = side === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn';
+    document.getElementById(btnId).classList.add('active-buzz');
+
+    battleState.timerPhase = 'answering';
+    battleState.timerActiveSide = side;
+    startBattleTimer(config.answerSeconds, 'answering', side);
+
+    var name = side === 'left' ? battleState.leftStudent : battleState.rightStudent;
+    document.getElementById('timer-label').innerText = '⚡ ' + name + ' 作答中...';
+    speak(name + '，请作答！');
+}
+
+function handleAnswerChoice(optIdx) {
+    if (battleState.buzzerWinner === null) return;
+    if (battleState.roundResolved) return;
+    if (battleState.timerPhase !== 'answering') return;
+
+    stopBattleTimer();
+    var q = scenes[battleState.questionIndex];
+    var isCorrect = (optIdx === q.ans);
+    var answeringSide = battleState.buzzerWinner;
+    var opponentSide = answeringSide === 'left' ? 'right' : 'left';
+
+    if (isCorrect) {
+        // First student correct → reveal answer + resolve
+        document.querySelectorAll('.option-btn').forEach(function(b, i) {
+            if (i === q.ans) b.classList.add('correct-answer');
+        });
+        resolveRound('correct', answeringSide);
+    } else if (battleState.secondChance) {
+        // Both tried → reveal correct answer + both lose
+        document.querySelectorAll('.option-btn').forEach(function(b, i) {
+            if (i === q.ans) b.classList.add('correct-answer');
+            if (i === optIdx) b.classList.add('wrong-choice');
+        });
+        resolveRound('both_lose');
+    } else {
+        // First student wrong → mark wrong ONLY, do NOT reveal correct answer yet
+        document.querySelectorAll('.option-btn').forEach(function(b, i) {
+            if (i === optIdx) b.classList.add('wrong-choice');
+        });
+        battleState.secondChance = true;
+        var prevSide = battleState.buzzerWinner;
+        battleState.buzzerWinner = opponentSide;
+        document.getElementById(prevSide === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.remove('active-buzz');
+        document.getElementById(opponentSide === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.add('active-buzz');
+        setOptionsEnabled(false);
+        playWrongSound();
+        var oppName = opponentSide === 'left' ? battleState.leftStudent : battleState.rightStudent;
+        setTimeout(function() {
+            // Clear the wrong-choice highlight so second student sees clean options
+            document.querySelectorAll('.option-btn').forEach(function(b) { b.classList.remove('wrong-choice'); });
+            setOptionsEnabled(true);
+            battleState.timerPhase = 'answering';
+            battleState.timerActiveSide = opponentSide;
+            startBattleTimer(config.answerSeconds, 'answering', opponentSide);
+            document.getElementById('timer-label').innerText = '⚡ ' + oppName + ' 作答中...';
+            speak(oppName + '，轮到你了！');
+        }, 800);
+    }
+}
+
+function resolveRound(result, winningSide) {
+    battleState.roundResolved = true;
+    battleState.timerPhase = 'done';
+    stopBattleTimer();
+    setBuzzersEnabled(false);
+    setOptionsEnabled(false);
+
+    var q = scenes[battleState.questionIndex];
+    document.querySelectorAll('.option-btn').forEach(function(b, i) {
+        b.disabled = true;
+        if (i === q.ans) b.classList.add('correct-answer');
+    });
+
+    var leftName = battleState.leftStudent, rightName = battleState.rightStudent;
+    var leftChar = battleState.leftCharacter, rightChar = battleState.rightCharacter;
+
+    if (result === 'correct' && winningSide) {
+        var winnerName = winningSide === 'left' ? leftName : rightName;
+        var loserName = winningSide === 'left' ? rightName : leftName;
+        var winnerChar = winningSide === 'left' ? leftChar : rightChar;
+        var loserChar = winningSide === 'left' ? rightChar : leftChar;
+
+        if (students[winnerName]) {
+            students[winnerName].wins++;
+            students[winnerName].streak++;
+            students[winnerName].correctAnswers++;
+            students[winnerName].totalQuestions++;
+            students[winnerName].character = winnerChar;
+            students[winnerName].eliminated = false; // Winner stays alive
+            if (students[winnerName].streak > students[winnerName].bestStreak) students[winnerName].bestStreak = students[winnerName].streak;
+            checkLevelUp(winnerName);
+        }
+        if (students[loserName]) {
+            students[loserName].losses++;
+            students[loserName].streak = 0;
+            students[loserName].level = 1;
+            students[loserName].totalQuestions++;
+            students[loserName].eliminated = true;
+            students[loserName].character = loserChar;
+        }
+
+        playCorrectSound();
+        addAttackAnimation(winningSide, winnerChar);
+        setTimeout(function() {
+            addFallAnimation(winningSide === 'left' ? 'right' : 'left', loserChar, winningSide === 'left' ? battleState.rightLevel : battleState.leftLevel);
+        }, 700);
+
+    } else if (result === 'both_lose') {
+        if (students[leftName]) {
+            students[leftName].losses++; students[leftName].streak = 0; students[leftName].level = 1; students[leftName].totalQuestions++;
+            students[leftName].eliminated = true; students[leftName].character = leftChar;
+        }
+        if (students[rightName]) {
+            students[rightName].losses++; students[rightName].streak = 0; students[rightName].level = 1; students[rightName].totalQuestions++;
+            students[rightName].eliminated = true; students[rightName].character = rightChar;
+        }
+        playWrongSound();
+        addFallAnimation('left', leftChar, battleState.leftLevel);
+        setTimeout(function() { addFallAnimation('right', rightChar, battleState.rightLevel); }, 300);
+    }
+
+    setTimeout(function() {
+        document.getElementById('battle-note').classList.remove('hidden');
+        document.getElementById('battle-note-text').innerText = q.note || '';
+        document.getElementById('timer-label').innerText = '✅ 回合结束';
+        var nextBtn = document.getElementById('next-round-btn-text');
+        if (battleState.questionIndex + 1 >= scenes.length) {
+            nextBtn.innerText = '🏆 查看最终英雄榜 →';
+        } else {
+            nextBtn.innerText = '下一场对决 →';
+        }
+    }, 1500);
+}
+
+function proceedAfterRound() {
+    document.getElementById('battle-note').classList.add('hidden');
+    battleState.questionIndex++;
+
+    if (battleState.questionIndex >= scenes.length) {
+        stopRenderLoop();
+        document.getElementById('battle-view').classList.add('hidden');
+        showLeaderboard();
+        return;
+    }
+
+    var leftName = battleState.leftStudent, rightName = battleState.rightStudent;
+    var leftAlive = students[leftName] && !students[leftName].eliminated;
+    var rightAlive = students[rightName] && !students[rightName].eliminated;
+
+    stopRenderLoop();
+
+    if (leftAlive && !rightAlive) {
+        battleState.leftStudent = leftName;
+        battleState.leftCharacter = (students[leftName] && students[leftName].character) || battleState.leftCharacter;
+        battleState.leftLevel = (students[leftName] && students[leftName].level) || 1;
+        spinForSlot('right');
+    } else if (!leftAlive && rightAlive) {
+        battleState.rightStudent = rightName;
+        battleState.rightCharacter = (students[rightName] && students[rightName].character) || battleState.rightCharacter;
+        battleState.rightLevel = (students[rightName] && students[rightName].level) || 1;
+        spinForSlot('left');
+    } else {
+        spinForBoth();
+    }
+}
+
+function spinForSlot(slot) {
+    // Reset eliminated flags if no challengers available
+    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+    if (uneliminated.length < 2) {
+        Object.keys(students).forEach(function(n) { students[n].eliminated = false; });
+    }
+    document.getElementById('battle-view').classList.add('hidden');
+    document.getElementById('wheel-view').classList.remove('hidden');
+    document.getElementById('wheel-label').innerText = slot === 'left' ? '🔴 左方新战士抽选中...' : '🔵 右方新战士抽选中...';
+    document.getElementById('wheel-result').classList.add('hidden');
+    wheelState.spinCount = 1; // Single spin
+    wheelState._spinForSlot = slot;
+    var winnerName = slot === 'left' ? battleState.rightStudent : battleState.leftStudent;
+    wheelState.excludeStudent = winnerName; // Exclude winner from wheel
+
+    var avail = getWheelCandidateNames();
+    initWheel(avail);
+
+    var origComplete = onWheelComplete;
+    onWheelComplete = function(name) {
+        playCorrectSound();
+        if (students[name]) students[name].usedCount = (students[name].usedCount || 0) + 1;
+        if (wheelState._spinForSlot === 'left') {
+            battleState.leftStudent = name;
+        } else {
+            battleState.rightStudent = name;
+        }
+        wheelState.excludeStudent = null;
+        document.getElementById('wheel-view').classList.add('hidden');
+        onWheelComplete = origComplete;
+        var pickSlot = wheelState._spinForSlot;
+        delete wheelState._spinForSlot;
+        // Let challenger pick their character
+        startSingleCharSelect(pickSlot);
+    };
+}
+
+function spinForBoth() {
+    document.getElementById('battle-view').classList.add('hidden');
+    wheelState.spinCount = 0;
+    wheelState.firstStudent = null;
+    wheelState.secondStudent = null;
+    // Reset eliminated for all students if none available
+    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+    if (uneliminated.length < 2) {
+        Object.keys(students).forEach(function(n) { students[n].eliminated = false; });
+    }
+    startWheelPhase();
+}
+
+// ============ SECTION 8: TIMER ============
+function startBattleTimer(seconds, phase, side) {
+    stopBattleTimer();
+    battleState.timerRemaining = seconds;
+    battleState.timerPhase = phase;
+    battleState.timerActiveSide = side || null;
+    updateTimerDisplay(seconds, seconds);
+    battleState.timerInterval = setInterval(function() {
+        battleState.timerRemaining--;
+        updateTimerDisplay(battleState.timerRemaining, seconds);
+        if (battleState.timerRemaining <= 5 && battleState.timerRemaining > 0) playCountTick();
+        if (battleState.timerRemaining <= 0) {
+            stopBattleTimer();
+            handleTimerExpired(phase, side);
+        }
+    }, 1000);
+}
+
+function stopBattleTimer() {
+    if (battleState.timerInterval) { clearInterval(battleState.timerInterval); battleState.timerInterval = null; }
+}
+
+function updateTimerDisplay(remaining, total) {
+    var pct = (remaining / total) * 100;
+    var fill = document.getElementById('timer-bar-fill');
+    var text = document.getElementById('timer-text');
+    fill.style.width = pct + '%';
+    text.innerText = remaining;
+    if (remaining <= 3) fill.style.background = '#ef4444';
+    else if (remaining <= 5) fill.style.background = '#eab308';
+    else fill.style.background = '#22c55e';
+}
+
+function handleTimerExpired(phase, side) {
+    if (phase === 'waiting') {
+        // Both failed to buzz
+        resolveRound('both_lose');
+        speak('时间到！双方都未抢答！');
+    } else if (phase === 'answering') {
+        if (!battleState.secondChance) {
+            battleState.secondChance = true;
+            var oppSide = side === 'left' ? 'right' : 'left';
+            battleState.buzzerWinner = oppSide;
+            document.getElementById(side === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.remove('active-buzz');
+            document.getElementById(oppSide === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.add('active-buzz');
+            setOptionsEnabled(false);
+            var oppName = oppSide === 'left' ? battleState.leftStudent : battleState.rightStudent;
+            setTimeout(function() {
+                setOptionsEnabled(true);
+                battleState.timerPhase = 'answering';
+                battleState.timerActiveSide = oppSide;
+                startBattleTimer(config.answerSeconds, 'answering', oppSide);
+                document.getElementById('timer-label').innerText = '⚡ ' + oppName + ' 作答中...';
+                speak(oppName + '，轮到你了！');
+            }, 500);
+        } else {
+            resolveRound('both_lose');
+            speak('时间到！双方都未答对！');
+        }
+    }
+}
+
+// ============ SECTION 9: LEADERBOARD ============
+function showLeaderboard() {
+    stopRenderLoop();
+    playVictorySound();
+    document.getElementById('battle-view').classList.add('hidden');
+
+    var sorted = Object.values(students).sort(function(a, b) {
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        if (b.bestStreak !== a.bestStreak) return b.bestStreak - a.bestStreak;
+        var rateA = a.totalQuestions > 0 ? a.correctAnswers / a.totalQuestions : 0;
+        var rateB = b.totalQuestions > 0 ? b.correctAnswers / b.totalQuestions : 0;
+        return rateB - rateA;
+    });
+
+    var body = document.getElementById('leaderboard-body');
+    body.innerHTML = sorted.map(function(s, i) {
+        var badge = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+        var winRate = s.totalQuestions > 0 ? Math.round(s.correctAnswers / s.totalQuestions * 100) : 0;
+        var charEmoji = s.character ? CHARACTERS[s.character].emoji : '❓';
+        var charName = s.character ? CHARACTERS[s.character].name : '-';
+        var levelStars = '⭐'.repeat(s.level || 1);
+
+        return '<tr class="border-b border-white/10 ' + (i < 3 ? 'bg-yellow-50/10' : '') + '">' +
+            '<td class="p-6 text-center text-4xl font-black">' + badge + ' #' + (i+1) + '</td>' +
+            '<td class="p-6 text-3xl font-black">' + s.name + '</td>' +
+            '<td class="p-6 text-center text-2xl">' + charEmoji + ' ' + charName + ' ' + levelStars + '</td>' +
+            '<td class="p-6 text-center text-3xl font-black text-yellow-400">' + s.wins + '</td>' +
+            '<td class="p-6 text-center text-2xl font-black text-orange-400">🔥 ' + s.bestStreak + '</td>' +
+            '<td class="p-6 text-center text-2xl">' + winRate + '%</td></tr>';
+    }).join('');
+
+    document.getElementById('leaderboard-view').classList.remove('hidden');
+    speak('决战结束！恭喜获胜者！');
+}
+
+// ============ SECTION 10: STANDALONE HTML DOWNLOAD ============
+function buildStandaloneHtml(scenesData, title) {
+    var safeQuestions = JSON.stringify(scenesData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+    return '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>' + (title||'互动 Quiz') + '</title>\n' +
+'<style>\n' +
+'*{box-sizing:border-box;margin:0;padding:0}\n' +
+'body{font-family:"Noto Sans SC","Segoe UI",sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}\n' +
+'.card{background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.1);border-radius:24px;padding:2rem;max-width:700px;width:100%;box-shadow:0 0 40px rgba(59,130,246,0.15)}\n' +
+'h1{font-size:1.8rem;font-weight:900;color:#fbbf24;margin-bottom:.5rem}\n' +
+'h2{font-size:1.3rem;font-weight:700;margin-bottom:1.5rem;line-height:1.5}\n' +
+'.opt-btn{display:block;width:100%;padding:1rem 1.25rem;margin-bottom:.75rem;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.12);border-radius:16px;color:#e2e8f0;font-size:1.1rem;text-align:left;cursor:pointer;transition:all .2s;font-weight:600}\n' +
+'.opt-btn:hover{background:rgba(59,130,246,0.2);border-color:#3b82f6}\n' +
+'.opt-btn.correct{background:#065f46;border-color:#22c55e;color:#fff}\n' +
+'.opt-btn.wrong{background:#7f1d1d;border-color:#ef4444;color:#fff}\n' +
+'.opt-btn:disabled{pointer-events:none;opacity:.7}\n' +
+'.feedback{margin-top:1rem;padding:1rem;border-radius:12px;font-weight:700;display:none}\n' +
+'.feedback.show{display:block}\n' +
+'.feedback.correct{background:rgba(34,197,94,0.15);border:2px solid #22c55e;color:#4ade80}\n' +
+'.feedback.wrong{background:rgba(239,68,68,0.15);border:2px solid #ef4444;color:#f87171}\n' +
+'.next-btn{display:none;margin-top:1rem;padding:.75rem 2rem;background:#3b82f6;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer}\n' +
+'.next-btn.show{display:inline-block}\n' +
+'.progress{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:1.5rem;overflow:hidden}\n' +
+'.progress-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#fbbf24);border-radius:4px;transition:width .3s}\n' +
+'.score{text-align:center;font-size:1.2rem;font-weight:700;color:#fbbf24;margin-bottom:1rem}\n' +
+'.badge{display:inline-block;padding:.25rem .75rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-left:.5rem}\n' +
+'.badge.easy{background:#065f46;color:#4ade80}\n' +
+'.badge.medium{background:#713f12;color:#fbbf24}\n' +
+'.badge.hard{background:#7f1d1d;color:#f87171}\n' +
+'.subtitle{color:#94a3b8;font-size:.9rem;margin-bottom:1.5rem}\n' +
+'.restart-btn{margin-top:1rem;padding:.75rem 2rem;background:#fbbf24;color:#000;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer}\n' +
+'</style>\n</head>\n<body>\n<div class="card" id="app">\n' +
+'<div id="intro"><h1>' + (title||'互动 Quiz') + '</h1><p class="subtitle">共 ' + scenesData.length + ' 题 · ⚔️ 大决战模式导出 · 离线可玩</p>\n' +
+'<button class="opt-btn" onclick="startQuiz()" style="text-align:center;font-size:1.2rem">🚀 开始答题</button></div>\n' +
+'<div id="quiz" style="display:none"><div class="progress"><div class="progress-bar" id="prog"></div></div>\n' +
+'<div class="score">📝 第 <span id="qIdx">1</span> / ' + scenesData.length + ' 题 &nbsp;|&nbsp; ⭐ <span id="pts">0</span> 分</div>\n' +
+'<span class="badge" id="diffBadge"></span><h2 id="qText"></h2><div id="opts"></div>\n' +
+'<div class="feedback" id="fb"></div><button class="next-btn" id="nextBtn" onclick="nextQuestion()">下一题 →</button></div>\n' +
+'<div id="end" style="display:none" class="result"><h1>🏆 答题完成</h1>\n' +
+'<p class="score-big" id="finalScore" style="font-size:4rem;font-weight:900"></p>\n' +
+'<p style="opacity:.7;margin:.5rem 0 1.5rem" id="finalMsg"></p>\n' +
+'<button class="restart-btn" onclick="location.reload()">🔄 再来一次</button></div>\n</div>\n' +
+'<script>\n' +
+'var questions=' + safeQuestions + ';\n' +
+'var idx=0,score=0,diffs={easy:10,medium:20,hard:30};\n' +
+'function startQuiz(){document.getElementById("intro").style.display="none";document.getElementById("quiz").style.display="block";renderQ()}\n' +
+'function renderQ(){\n' +
+'if(idx>=questions.length){endQuiz();return}\n' +
+'var q=questions[idx],pct=((idx)/questions.length*100)+"%";\n' +
+'document.getElementById("prog").style.width=pct;\n' +
+'document.getElementById("qIdx").innerText=idx+1;\n' +
+'document.getElementById("pts").innerText=score;\n' +
+'document.getElementById("qText").innerText=q.q;\n' +
+'var db=document.getElementById("diffBadge"),d=q.difficulty||"medium";\n' +
+'db.innerText=d==="easy"?"🟢 简单":d==="hard"?"🔴 困难":"🟡 中等";\n' +
+'db.className="badge "+(d||"medium");\n' +
+'document.getElementById("fb").className="feedback";document.getElementById("fb").innerText="";\n' +
+'document.getElementById("nextBtn").className="next-btn";\n' +
+'var oDiv=document.getElementById("opts");oDiv.innerHTML="";\n' +
+'q.options.forEach(function(o,i){\n' +
+'var b=document.createElement("button");b.className="opt-btn";\n' +
+'b.innerText=String.fromCharCode(65+i)+". "+o;\n' +
+'b.onclick=function(){checkAns(i)};oDiv.appendChild(b);});}\n' +
+'function checkAns(sel){\n' +
+'var q=questions[idx],correct=sel===q.ans,pts=diffs[q.difficulty]||20;\n' +
+'var btns=document.querySelectorAll("#opts .opt-btn");\n' +
+'btns.forEach(function(b,i){b.disabled=true;if(i===q.ans)b.classList.add("correct");if(i===sel&&!correct)b.classList.add("wrong")});\n' +
+'if(correct){score+=pts;document.getElementById("fb").className="feedback correct show";document.getElementById("fb").innerText="✅ 正确！+"+pts+"分"}\n' +
+'else{document.getElementById("fb").className="feedback wrong show";document.getElementById("fb").innerText="❌ 错了。正确答案是 "+String.fromCharCode(65+q.ans)+"。"}\n' +
+'if(q.note){document.getElementById("fb").innerText+="\\n\\n💡 "+q.note}\n' +
+'document.getElementById("nextBtn").className="next-btn show";document.getElementById("pts").innerText=score;}\n' +
+'function nextQuestion(){idx++;renderQ()}\n' +
+'function endQuiz(){\n' +
+'document.getElementById("quiz").style.display="none";document.getElementById("end").style.display="block";\n' +
+'var max=questions.length*Math.max.apply(null,Object.values(diffs));\n' +
+'document.getElementById("finalScore").innerText=score+" / "+max;\n' +
+'var pct=Math.round(score/max*100);\n' +
+'document.getElementById("finalMsg").innerText=pct>=80?"🌟 太棒了！":pct>=50?"👍 继续加油！":"📚 多多练习，下次更好！";}\n' +
+'<\/script>\n</body>\n</html>';
+}
+
+function downloadStandaloneQuiz() {
+    if (!scenes || scenes.length === 0) { alert('没有可下载的题目！'); return; }
+    var title = document.querySelector('h1') ? document.querySelector('h1').innerText : '互动 Quiz';
+    var html = buildStandaloneHtml(scenes, title);
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = (title.replace(/\s+/g, '_') || 'quiz') + '_大决战.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ============ SECTION 11: UTILITIES (Model, FileUpload, Setup) ============
+async function detectModels() {
+    var sel = document.getElementById('model-select'), status = document.getElementById('model-status');
+    try {
+        var res = await fetch(WORKER_URL + '/models');
+        var data = await res.json();
+        sel.innerHTML = '';
+        if (data.models) {
+            data.models.forEach(function(m) {
+                var opt = document.createElement('option');
+                opt.value = m.name; opt.textContent = m.displayName || m.name;
+                sel.appendChild(opt);
+            });
+        }
+        if (sel.options.length > 0) { sel.selectedIndex = 0; selectedModel = sel.value; status.innerText = '✅ AI 服务连接成功'; sel.style.display = 'block'; }
+        else throw new Error('No models');
+    } catch (e) {
+        console.warn('Model detection failed', e);
+        status.innerText = '⚠️ 自动连接失败，使用内置线路';
+        sel.innerHTML = '';
+        ['models/gemini-2.5-flash','models/gemini-2.5-pro','models/gemini-2.0-flash','models/gemini-1.5-flash','models/gemini-1.5-pro'].forEach(function(m) {
+            var opt = document.createElement('option'); opt.value = m; opt.textContent = m.replace('models/',''); sel.appendChild(opt);
+        });
+        sel.selectedIndex = 0; selectedModel = sel.value; sel.style.display = 'block';
+    }
+}
+
+function adjustDiffCount(diff, delta) {
+    var input = document.getElementById(diff + '-count');
+    input.value = Math.max(0, Math.min(30, parseInt(input.value || 0) + delta));
+    validateDiffSum();
+}
+
+function validateDiffSum() {
+    var total = parseInt(document.getElementById('q-count-input').value);
+    var easy = parseInt(document.getElementById('easy-count').value || 0);
+    var medium = parseInt(document.getElementById('medium-count').value || 0);
+    var hard = parseInt(document.getElementById('hard-count').value || 0);
+    var sum = easy + medium + hard;
+    var errorEl = document.getElementById('diff-sum-error');
+    if (sum !== total) {
+        errorEl.classList.remove('hidden');
+        errorEl.innerText = '⚠️ 当前总和 ' + sum + '，需等于总题数 ' + total + '（' + (sum < total ? '还差 ' + (total-sum) + ' 题' : '多出 ' + (sum-total) + ' 题') + '）';
+    } else {
+        errorEl.classList.add('hidden');
+    }
+}
+
+async function extractPptxText(file) {
+    var zip = new JSZip();
+    var zipContent = await zip.loadAsync(file);
+    var text = '';
+    var slideFiles = Object.keys(zipContent.files).filter(function(name) { return name.startsWith('ppt/slides/slide') && name.endsWith('.xml'); }).sort();
+    for (var i = 0; i < slideFiles.length; i++) {
+        var slideXml = await zipContent.file(slideFiles[i]).async('text');
+        var matches = slideXml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
+        matches.forEach(function(match) { var content = match.replace(/<\/?a:t>/g, ''); if (content.trim()) text += content + '\n'; });
+    }
+    return text;
+}
+
+async function handleFileUpload(input) {
+    var file = input.files[0]; if (!file) return;
+    try {
+        var statusEl = document.getElementById('upload-status');
+        statusEl.classList.remove('hidden');
+        if (file.type === 'application/pdf') {
+            var arrayBuffer = await file.arrayBuffer();
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+            var pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            var fullText = '';
+            for (var i = 1; i <= pdf.numPages; i++) {
+                var page = await pdf.getPage(i);
+                var content = await page.getTextContent();
+                fullText += content.items.map(function(item) { return item.str; }).join(' ') + '\n';
+            }
+            document.getElementById('source-text').value = fullText;
+        } else if (file.name.endsWith('.docx')) {
+            var ab = await file.arrayBuffer();
+            var result = await mammoth.extractRawText({ arrayBuffer: ab });
+            document.getElementById('source-text').value = result.value;
+        } else if (file.name.endsWith('.pptx')) {
+            var t = await extractPptxText(file);
+            document.getElementById('source-text').value = t;
+        }
+        statusEl.classList.add('hidden');
+    } catch (e) { alert('文档解析失败：' + e.message); document.getElementById('upload-status').classList.add('hidden'); }
+}
+
+// ============ SECTION 12: KEYBOARD + INIT ============
+document.addEventListener('keydown', function(e) {
+    if (battleState.phase !== 'battle' && document.getElementById('battle-view').classList.contains('hidden')) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+    if (e.key === 'q' || e.key === 'Q') { e.preventDefault(); handleBuzzer('left'); }
+    else if (e.key === 'p' || e.key === 'P') { e.preventDefault(); handleBuzzer('right'); }
+    else if (e.key === '1' || e.key === 'a' || e.key === 'A') { e.preventDefault(); if (battleState.timerPhase === 'answering') handleAnswerChoice(0); }
+    else if (e.key === '2' || e.key === 'b' || e.key === 'B') { e.preventDefault(); if (battleState.timerPhase === 'answering') handleAnswerChoice(1); }
+    else if (e.key === '3' || e.key === 'c' || e.key === 'C') { e.preventDefault(); if (battleState.timerPhase === 'answering') handleAnswerChoice(2); }
+    else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        var noteEl = document.getElementById('battle-note');
+        if (noteEl && !noteEl.classList.contains('hidden')) proceedAfterRound();
+    }
+});
+
+window.onload = function() {
+    var style = localStorage.getItem('quiz_style') || 'tech';
+    document.body.className = 'theme-' + style;
+    detectModels();
+    loadSettings();
+    // Auto-save config
+    document.querySelectorAll('#setup-view input, #setup-view select, #setup-view textarea').forEach(function(el) {
+        el.addEventListener('change', saveSettings);
+        el.addEventListener('input', saveSettings);
+    });
+};
+
+function saveSettings() {
+    try {
+        var s = {
+            qCount: document.getElementById('q-count-input').value,
+            easyCount: document.getElementById('easy-count').value,
+            mediumCount: document.getElementById('medium-count').value,
+            hardCount: document.getElementById('hard-count').value,
+            shuffleDifficulty: document.getElementById('shuffle-difficulty').checked,
+            timerEnabled: document.getElementById('timer-enabled').checked,
+            timerSeconds: document.getElementById('timer-seconds-input').value,
+            answerSeconds: document.getElementById('answer-seconds-input').value,
+            allowRepeat: document.getElementById('allow-repeat').checked,
+            studentList: document.getElementById('student-list').value,
+            sourceText: document.getElementById('source-text').value
+        };
+        localStorage.setItem('quiz_battle_settings', JSON.stringify(s));
+    } catch (e) {}
+}
+
+function loadSettings() {
+    try {
+        var raw = localStorage.getItem('quiz_battle_settings');
+        if (!raw) return;
+        var s = JSON.parse(raw);
+        if (s.qCount) document.getElementById('q-count-input').value = s.qCount;
+        if (s.easyCount) document.getElementById('easy-count').value = s.easyCount;
+        if (s.mediumCount) document.getElementById('medium-count').value = s.mediumCount;
+        if (s.hardCount) document.getElementById('hard-count').value = s.hardCount;
+        if (s.shuffleDifficulty !== undefined) document.getElementById('shuffle-difficulty').checked = s.shuffleDifficulty;
+        if (s.timerEnabled !== undefined) document.getElementById('timer-enabled').checked = s.timerEnabled;
+        if (s.timerSeconds) document.getElementById('timer-seconds-input').value = s.timerSeconds;
+        if (s.answerSeconds) document.getElementById('answer-seconds-input').value = s.answerSeconds;
+        if (s.allowRepeat !== undefined) document.getElementById('allow-repeat').checked = s.allowRepeat;
+        if (s.studentList) document.getElementById('student-list').value = s.studentList;
+        if (s.sourceText) document.getElementById('source-text').value = s.sourceText;
+        document.getElementById('q-count-val').innerText = s.qCount || '10';
+        document.getElementById('diff-total-target').innerText = s.qCount || '10';
+        document.getElementById('timer-val').innerText = s.timerSeconds || '20';
+        document.getElementById('answer-val').innerText = s.answerSeconds || '5';
+        if (!s.timerEnabled) {
+            document.getElementById('timer-group').classList.add('hidden');
+        }
+        validateDiffSum();
+    } catch (e) {}
+}
+</script>
+</html>
