@@ -298,7 +298,13 @@
                 </section>
             </div>
 
-            <button onclick="generateQuiz()" class="w-full py-6 bg-blue-600 text-white text-3xl font-black rounded-3xl shadow-2xl hover:scale-105 transition-transform btn-action">🚀 生成 AI 挑战并开始</button>
+            <button onclick="generateQuiz()" id="generate-btn" class="w-full py-6 bg-blue-600 text-white text-3xl font-black rounded-3xl shadow-2xl hover:scale-105 transition-transform btn-action">🚀 生成 AI 挑战并开始</button>
+
+            <!-- 生成成功后显示的按钮组 -->
+            <div id="post-generate-actions" class="hidden mt-6 flex gap-4">
+                <button onclick="downloadStandaloneQuiz()" class="flex-1 py-5 bg-emerald-600 text-white text-2xl font-black rounded-2xl shadow-xl hover:scale-105 transition-transform border-4 border-emerald-400">📥 下载独立 HTML</button>
+                <button onclick="startChallenge()" class="flex-1 py-5 bg-orange-500 text-white text-2xl font-black rounded-2xl shadow-xl hover:scale-105 transition-transform border-4 border-orange-300">▶ 开始挑战</button>
+            </div>
         </div>
     </div>
 
@@ -756,6 +762,11 @@ ${text}
             config._isOffline = isOfflineMode;
 
             document.getElementById('loading').classList.add('hidden');
+            document.getElementById('generate-btn').classList.add('hidden');
+            document.getElementById('post-generate-actions').classList.remove('hidden');
+        }
+
+        function startChallenge() {
             document.getElementById('setup-view').classList.add('hidden');
             initWheel();
             showView('wheel-view');
