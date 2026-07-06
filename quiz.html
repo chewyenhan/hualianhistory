@@ -9,6 +9,7 @@
     <!-- 引入文档解析库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         :root {
             --theme-color: #3b82f6;
@@ -240,7 +241,7 @@
                         <button onclick="document.getElementById('file-upload').click()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-xl border-2 border-gray-300 font-bold flex items-center gap-2 transition-all">
                             📂 上传 PDF / Word
                         </button>
-                        <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx" onchange="handleFileUpload(this)">
+                        <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx,.pptx" onchange="handleFileUpload(this)">
                     </div>
                 </div>
                 <textarea id="source-text" class="setup-input h-64 text-lg" placeholder="在这里输入你的教学材料，或者通过上方按钮上传文档..."></textarea>
@@ -445,7 +446,10 @@
                 <tbody id="ranking-body" class="text-5xl font-black"></tbody>
             </table>
         </div>
-        <button onclick="location.reload()" class="btn-primary text-5xl px-24 py-10">重赛一轮</button>
+        <div class="flex flex-wrap justify-center gap-8">
+            <button onclick="location.reload()" class="btn-primary text-5xl px-24 py-10">重赛一轮</button>
+            <button onclick="downloadStandaloneQuiz()" class="bg-emerald-600 text-white font-black px-16 py-10 rounded-2xl shadow-xl text-3xl hover:scale-105 transition-transform border-4 border-emerald-400">📥 下载独立练习版</button>
+        </div>
     </div>
 
     <!-- Bottom Bar Control -->
@@ -695,6 +699,39 @@
             return map[difficulty] || config.multMedium || 2;
         }
 
+        function buildFallbackData(text, easyN, medN, hardN, totalQ) {
+            const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+            const questions = [];
+            lines.forEach((line, idx) => {
+                if (questions.length >= totalQ) return;
+                const prefix = line.length > 15 ? line.slice(0, 15) : line;
+                questions.push({
+                    q: `关于"${prefix}…"的内容，哪一项最准确？`,
+                    options: [
+                        line.length > 40 ? line.slice(0, 40) + '…' : line,
+                        `与"${prefix}"相关的关键概念`,
+                        `以下哪项不属于该知识点的范畴？`
+                    ],
+                    ans: 0,
+                    note: `这道题围绕"${prefix}"设计。${line}`,
+                    title: `第${idx + 1}题`,
+                    emoji: '📝',
+                    diff: '⭐',
+                    difficulty: idx < easyN ? 'easy' : (idx < easyN + medN ? 'medium' : 'hard')
+                });
+            });
+            while (questions.length < totalQ) {
+                questions.push({
+                    q: `第 ${questions.length + 1} 题：请根据资料内容判断`,
+                    options: ['选项 A：补充更多资料可获得更精准的题目', '选项 B：当前为离线模式生成的备用题目', '选项 C：连接 AI 服务可生成更高质量的题目'],
+                    ans: 1,
+                    note: '这是离线模式生成的备用题目。连接 AI 服务可获得更精准、更有教育意义的题目。',
+                    title: `备用题`, emoji: '🤖', diff: '⭐', difficulty: 'medium'
+                });
+            }
+            return questions.slice(0, totalQ);
+        }
+
         async function launchAI() {
             const apiKey = customApiKey, text = document.getElementById('source-text').value.trim(), qCount = document.getElementById('q-count-input').value;
             let model = document.getElementById('model-select').value;
@@ -743,61 +780,68 @@ ${ config.shuffleDifficulty ? '- Randomly shuffle the order of difficulty levels
 
 Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid JSON array, no markdown, no code blocks.`;
 
+            let isOfflineMode = false;
             try {
-                const res = await fetch(`${WORKER_URL}/gemini`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
+                const res = await fetch(`${WORKER_URL}/gemini`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model: model,
                         contents: [{ parts: [{ text: prompt }] }]
-                    }) 
+                    })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error?.message || "API 失败");
                 const aiTxt = data.candidates[0].content.parts[0].text;
                 const match = aiTxt.match(/\[[\s\S]*\]/);
                 if (!match) throw new Error("AI 格式错误，请尝试减少字数或重试。");
-                
+
                 scenes = JSON.parse(match[0]);
-
-                // 🔀 随机打乱每题选项顺序（防止正确答案总是在A位置 + 总是最长选项）
                 shuffleOptions(scenes);
+            } catch(e) {
+                console.warn('⚠️ API 调用失败，使用离线 fallback 模式', e);
+                scenes = buildFallbackData(text, config.easyCount, config.mediumCount, config.hardCount, config.qCount);
+                shuffleOptions(scenes);
+                isOfflineMode = true;
+            }
 
-                // Normalize difficulty: fallback if AI response doesn't match distribution
-                const diffOrder = [];
-                for (let i = 0; i < config.easyCount; i++) diffOrder.push('easy');
-                for (let i = 0; i < config.mediumCount; i++) diffOrder.push('medium');
-                for (let i = 0; i < config.hardCount; i++) diffOrder.push('hard');
-                if (config.shuffleDifficulty) {
-                    // Fisher-Yates shuffle
-                    for (let i = diffOrder.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [diffOrder[i], diffOrder[j]] = [diffOrder[j], diffOrder[i]];
-                    }
+            // Normalize difficulty
+            const diffOrder = [];
+            for (let i = 0; i < config.easyCount; i++) diffOrder.push('easy');
+            for (let i = 0; i < config.mediumCount; i++) diffOrder.push('medium');
+            for (let i = 0; i < config.hardCount; i++) diffOrder.push('hard');
+            if (config.shuffleDifficulty) {
+                for (let i = diffOrder.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [diffOrder[i], diffOrder[j]] = [diffOrder[j], diffOrder[i]];
                 }
-                const aiOk = scenes.length === config.qCount &&
-                    scenes.every(s => ['easy','medium','hard'].includes(s.difficulty)) &&
-                    scenes.filter(s => s.difficulty === 'easy').length === config.easyCount &&
-                    scenes.filter(s => s.difficulty === 'medium').length === config.mediumCount &&
-                    scenes.filter(s => s.difficulty === 'hard').length === config.hardCount;
-                const diffStars = { easy: '⭐', medium: '⭐⭐⭐', hard: '⭐⭐⭐⭐⭐' };
-                if (!aiOk) {
-                    scenes.forEach((s, i) => { s.difficulty = diffOrder[i] || 'medium'; s.diff = diffStars[s.difficulty] || '⭐⭐⭐'; });
-                }
+            }
+            const aiOk = scenes.length === config.qCount &&
+                scenes.every(s => ['easy','medium','hard'].includes(s.difficulty)) &&
+                scenes.filter(s => s.difficulty === 'easy').length === config.easyCount &&
+                scenes.filter(s => s.difficulty === 'medium').length === config.mediumCount &&
+                scenes.filter(s => s.difficulty === 'hard').length === config.hardCount;
+            const diffStars = { easy: '⭐', medium: '⭐⭐⭐', hard: '⭐⭐⭐⭐⭐' };
+            if (!aiOk) {
+                scenes.forEach((s, i) => { s.difficulty = diffOrder[i] || 'medium'; s.diff = diffStars[s.difficulty] || '⭐⭐⭐'; });
+            }
 
-                const themeCol = scenes[0].themeColor || '#3b82f6';
-                document.documentElement.style.setProperty('--theme-color', themeCol);
+            const themeCol = (scenes[0] && scenes[0].themeColor) || '#3b82f6';
+            document.documentElement.style.setProperty('--theme-color', themeCol);
 
-                // Start Music
-                sounds.start.play(); sounds.bgm.play(); bgmOn = true;
-                document.getElementById('bgm-widget').classList.remove('hidden');
+            // Start Music
+            sounds.start.play(); sounds.bgm.play(); bgmOn = true;
+            document.getElementById('bgm-widget').classList.remove('hidden');
 
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('setup-view').classList.add('hidden');
-                document.getElementById('game-view').classList.remove('hidden');
-                document.getElementById('control-bar').classList.remove('hidden');
-                loadRound();
-            } catch(e) { alert("生成失败: " + e.message); document.getElementById('loading').classList.add('hidden'); }
+            if (isOfflineMode) {
+                document.getElementById('active-team-info').innerText = '⚠️ 离线模式 · 点击底部选择战队';
+            }
+
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('setup-view').classList.add('hidden');
+            document.getElementById('game-view').classList.remove('hidden');
+            document.getElementById('control-bar').classList.remove('hidden');
+            loadRound();
         }
 
         function loadRound() {
@@ -982,6 +1026,129 @@ Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid
             document.getElementById('help-modal').classList.toggle('hidden', !show);
         }
 
+        function buildStandaloneHtml(scenesData, title) {
+            const safeQuestions = JSON.stringify(scenesData).replace(/</g,'\\u003c').replace(/>/g,'\\u003e');
+            return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title || '互动 Quiz'}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans SC','Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+    .card{background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.1);border-radius:24px;padding:2rem;max-width:700px;width:100%;box-shadow:0 0 40px rgba(59,130,246,0.15)}
+    h1{font-size:1.8rem;font-weight:900;color:#fbbf24;margin-bottom:.5rem}
+    h2{font-size:1.3rem;font-weight:700;margin-bottom:1.5rem;line-height:1.5}
+    .opt-btn{display:block;width:100%;padding:1rem 1.25rem;margin-bottom:.75rem;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.12);border-radius:16px;color:#e2e8f0;font-size:1.1rem;text-align:left;cursor:pointer;transition:all .2s;font-weight:600}
+    .opt-btn:hover{background:rgba(59,130,246,0.2);border-color:#3b82f6}
+    .opt-btn.correct{background:#065f46;border-color:#22c55e;color:#fff}
+    .opt-btn.wrong{background:#7f1d1d;border-color:#ef4444;color:#fff}
+    .opt-btn:disabled{pointer-events:none;opacity:.7}
+    .feedback{margin-top:1rem;padding:1rem;border-radius:12px;font-weight:700;display:none}
+    .feedback.show{display:block}
+    .feedback.correct{background:rgba(34,197,94,0.15);border:2px solid #22c55e;color:#4ade80}
+    .feedback.wrong{background:rgba(239,68,68,0.15);border:2px solid #ef4444;color:#f87171}
+    .next-btn{display:none;margin-top:1rem;padding:.75rem 2rem;background:#3b82f6;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer}
+    .next-btn.show{display:inline-block}
+    .progress{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:1.5rem;overflow:hidden}
+    .progress-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#fbbf24);border-radius:4px;transition:width .3s}
+    .score{text-align:center;font-size:1.2rem;font-weight:700;color:#fbbf24;margin-bottom:1rem}
+    .result{text-align:center}
+    .result h1{font-size:3rem;margin-bottom:1rem}
+    .result .score-big{font-size:4rem;font-weight:900}
+    .badge{display:inline-block;padding:.25rem .75rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-left:.5rem}
+    .badge.easy{background:#065f46;color:#4ade80}
+    .badge.medium{background:#713f12;color:#fbbf24}
+    .badge.hard{background:#7f1d1d;color:#f87171}
+    .subtitle{color:#94a3b8;font-size:.9rem;margin-bottom:1.5rem}
+    .restart-btn{margin-top:1rem;padding:.75rem 2rem;background:#fbbf24;color:#000;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+<div class="card" id="app">
+  <div id="intro">
+    <h1>${title || '互动 Quiz'}</h1>
+    <p class="subtitle">共 ${scenesData.length} 题 · 独立练习版 · 离线可玩</p>
+    <button class="opt-btn" onclick="startQuiz()" style="text-align:center;font-size:1.2rem">🚀 开始答题</button>
+  </div>
+  <div id="quiz" style="display:none">
+    <div class="progress"><div class="progress-bar" id="prog"></div></div>
+    <div class="score">📝 第 <span id="qIdx">1</span> / ${scenesData.length} 题 &nbsp;|&nbsp; ⭐ <span id="pts">0</span> 分</div>
+    <span class="badge" id="diffBadge"></span>
+    <h2 id="qText"></h2>
+    <div id="opts"></div>
+    <div class="feedback" id="fb"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">下一题 →</button>
+  </div>
+  <div id="end" style="display:none" class="result">
+    <h1>🏆 答题完成</h1>
+    <p class="score-big" id="finalScore"></p>
+    <p style="opacity:.7;margin:.5rem 0 1.5rem" id="finalMsg"></p>
+    <button class="restart-btn" onclick="location.reload()">🔄 再来一次</button>
+  </div>
+</div>
+<script>
+var questions=${safeQuestions};
+var idx=0,score=0,diffs={easy:10,medium:20,hard:30};
+function startQuiz(){document.getElementById('intro').style.display='none';document.getElementById('quiz').style.display='block';renderQ()}
+function renderQ(){
+  if(idx>=questions.length){endQuiz();return}
+  var q=questions[idx],pct=((idx)/questions.length*100)+'%';
+  document.getElementById('prog').style.width=pct;
+  document.getElementById('qIdx').innerText=idx+1;
+  document.getElementById('pts').innerText=score;
+  document.getElementById('qText').innerText=q.q;
+  var db=document.getElementById('diffBadge'),d=q.difficulty||'medium';
+  db.innerText=d==='easy'?'🟢 简单':d==='hard'?'🔴 困难':'🟡 中等';
+  db.className='badge '+(d||'medium');
+  document.getElementById('fb').className='feedback';
+  document.getElementById('fb').innerText='';
+  document.getElementById('nextBtn').className='next-btn';
+  var oDiv=document.getElementById('opts');oDiv.innerHTML='';
+  q.options.forEach(function(o,i){
+    var b=document.createElement('button');b.className='opt-btn';
+    b.innerText=String.fromCharCode(65+i)+'. '+o;
+    b.onclick=function(){checkAns(i)};
+    oDiv.appendChild(b);
+  });
+}
+function checkAns(sel){
+  var q=questions[idx],correct=sel===q.ans,pts=diffs[q.difficulty]||20;
+  var btns=document.querySelectorAll('#opts .opt-btn');
+  btns.forEach(function(b,i){b.disabled=true;if(i===q.ans)b.classList.add('correct');if(i===sel&&!correct)b.classList.add('wrong')});
+  if(correct){score+=pts;document.getElementById('fb').className='feedback correct show';document.getElementById('fb').innerText='✅ 正确！+'+pts+'分'}
+  else{document.getElementById('fb').className='feedback wrong show';document.getElementById('fb').innerText='❌ 错了。正确答案是 '+String.fromCharCode(65+q.ans)+'。'}
+  if(q.note){document.getElementById('fb').innerText+='\\n\\n💡 '+q.note}
+  document.getElementById('nextBtn').className='next-btn show';document.getElementById('pts').innerText=score;
+}
+function nextQuestion(){idx++;renderQ()}
+function endQuiz(){
+  document.getElementById('quiz').style.display='none';document.getElementById('end').style.display='block';
+  var max=questions.length*Math.max.apply(null,Object.values(diffs));
+  document.getElementById('finalScore').innerText=score+' / '+max;
+  var pct=Math.round(score/max*100);
+  document.getElementById('finalMsg').innerText=pct>=80?'🌟 太棒了！':pct>=50?'👍 继续加油！':'📚 多多练习，下次更好！';
+}
+<\/script>
+</body>
+</html>`;
+        }
+
+        function downloadStandaloneQuiz() {
+            if (!scenes || scenes.length === 0) { alert('没有可下载的题目，请先生成 Quiz！'); return; }
+            const html = buildStandaloneHtml(scenes, 'AI 竞技场 · 独立练习版');
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'quiz_独立练习版.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         function showResults() {
             document.getElementById('game-view').classList.add('hidden');
             document.getElementById('control-bar').classList.add('hidden');
@@ -1027,6 +1194,24 @@ Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid
         }
 
         // --- 文档解析逻辑 ---
+        async function extractPptxText(file) {
+            const zip = new JSZip();
+            const zipContent = await zip.loadAsync(file);
+            let text = '';
+            const slideFiles = Object.keys(zipContent.files)
+                .filter(name => name.startsWith('ppt/slides/slide') && name.endsWith('.xml'))
+                .sort();
+            for (const fileName of slideFiles) {
+                const slideXml = await zipContent.file(fileName).async('text');
+                const matches = slideXml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
+                matches.forEach(match => {
+                    const content = match.replace(/<\/?a:t>/g, '');
+                    if (content.trim()) text += content + '\n';
+                });
+            }
+            return text;
+        }
+
         async function handleFileUpload(input) {
             const file = input.files[0];
             if(!file) return;
@@ -1052,8 +1237,11 @@ Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
                     target.value = result.value;
+                } else if(file.name.endsWith('.pptx')) {
+                    const text = await extractPptxText(file);
+                    target.value = text;
                 } else {
-                    alert("目前仅支持 PDF 和 Word (.docx) 格式。PPT 请先另存为 PDF 再上传。");
+                    alert("目前仅支持 PDF、Word (.docx) 和 PPT (.pptx) 格式。");
                 }
             } catch(e) {
                 console.error(e);

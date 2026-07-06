@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Orbitron:wght@700&family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         :root {
             --bg-page: #0f172a; --primary: #3b82f6; --accent: #fbbf24;
@@ -204,7 +205,7 @@
                         <button onclick="document.getElementById('file-upload').click()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-xl border-2 border-gray-300 font-bold flex items-center gap-2 transition-all">
                             📂 上传 PDF / Word
                         </button>
-                        <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx" onchange="handleFileUpload(this)">
+                        <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx,.pptx" onchange="handleFileUpload(this)">
                     </div>
                 </div>
                 <textarea id="source-text" class="setup-input h-64 text-lg" placeholder="在这里输入你的教学材料，或者通过上方按钮上传文档..."></textarea>
@@ -362,8 +363,9 @@
                 <tbody id="leaderboard-body" class="font-black"></tbody>
             </table>
         </div>
-        <div class="mt-12 text-center">
+        <div class="mt-12 text-center flex flex-wrap justify-center gap-4">
             <button id="next-warrior-btn" onclick="backToWheel()" class="px-16 py-6 bg-blue-600 text-white rounded-full text-3xl font-black shadow-xl hover:scale-105">下一位勇士 →</button>
+            <button onclick="downloadStandaloneQuiz()" class="px-12 py-6 bg-emerald-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 border-4 border-emerald-400">📥 下载独立练习版</button>
         </div>
     </div>
 
@@ -566,6 +568,38 @@
         }
 
         // --- Logic: Generation ---
+        function buildFallbackData(text, easyN, medN, hardN, totalQ) {
+            const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+            const questions = [];
+            lines.forEach((line, idx) => {
+                if (questions.length >= totalQ) return;
+                const prefix = line.length > 15 ? line.slice(0, 15) : line;
+                const options = [
+                    line.length > 40 ? line.slice(0, 40) + '…' : line,
+                    `与"${prefix}"相关的关键概念`,
+                    `以下哪项不属于该知识点的范畴？`
+                ];
+                questions.push({
+                    q: `关于"${prefix}…"的内容，哪一项最准确？`,
+                    options,
+                    ans: 0,
+                    note: `这道题围绕"${prefix}"设计。${line}`,
+                    difficulty: idx < easyN ? 'easy' : (idx < easyN + medN ? 'medium' : 'hard')
+                });
+            });
+            // Ensure minimum
+            while (questions.length < totalQ) {
+                questions.push({
+                    q: `第 ${questions.length + 1} 题：请根据资料内容判断`,
+                    options: ['选项 A：请补充更多资料以获得更精准的题目', '选项 B：当前为离线模式生成的题目', '选项 C：连接 AI 服务可生成更高质量的题目'],
+                    ans: 1,
+                    note: '这是离线模式生成的备用题目。连接 AI 服务可获得更精准、更有教育意义的题目。',
+                    difficulty: 'medium'
+                });
+            }
+            return questions.slice(0, totalQ);
+        }
+
         async function generateQuiz() {
             if(!validateDiffSum()) return alert("题目难度分配总和不等于总题数！");
 
@@ -638,6 +672,7 @@ ${text}
                 }
             };
 
+            let isOfflineMode = false;
             try {
                 const res = await fetch(`${WORKER_URL}/gemini`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -653,92 +688,77 @@ ${text}
                 const data = await res.json();
                 if(!res.ok) throw new Error(data.error?.message || "API 调用失败");
                 const aiTxt = data.candidates[0].content.parts[0].text;
-                // response_schema 保证输出是合法 JSON，直接 parse
                 scenes = JSON.parse(aiTxt);
-
-                // 🔀 随机打乱每题选项顺序（防止正确答案总是A、总是最长选项）
                 shuffleOptions(scenes);
+            } catch(e) {
+                console.warn('⚠️ API 调用失败，使用离线 fallback 模式', e);
+                scenes = buildFallbackData(text, parseInt(easyN), parseInt(medN), parseInt(hardN), config.qCount);
+                shuffleOptions(scenes);
+                isOfflineMode = true;
+            }
 
-                // --- 后处理：验证难度字段 + 强制分布 + 唯一 ID ---
-                const VALID_DIFF = ['easy', 'medium', 'hard'];
-                const targetEasy = parseInt(easyN), targetMed = parseInt(medN), targetHard = parseInt(hardN);
+            // --- 后处理：验证难度字段 + 强制分布 + 唯一 ID ---
+            scenes.forEach((s, idx) => { if (!s.id) s.id = 'q-' + idx; });
 
-                // 1. 规范化每个 scene 的 difficulty
-                scenes.forEach((s, idx) => {
-                    if (!s.id) s.id = 'q-' + idx;
-                    // 转小写并去空格
-                    let raw = (s.difficulty || '').toString().trim().toLowerCase();
-                    // 尝试模糊匹配
-                    if (raw.includes('easy') || raw.includes('简单') || raw.includes('簡')) {
-                        s.difficulty = 'easy';
-                    } else if (raw.includes('hard') || raw.includes('困难') || raw.includes('困難') || raw.includes('难')) {
-                        s.difficulty = 'hard';
-                    } else if (raw.includes('medium') || raw.includes('中等') || raw.includes('普通')) {
-                        s.difficulty = 'medium';
+            const VALID_DIFF = ['easy', 'medium', 'hard'];
+            const targetEasy = parseInt(easyN), targetMed = parseInt(medN), targetHard = parseInt(hardN);
+
+            scenes.forEach((s, idx) => {
+                let raw = (s.difficulty || '').toString().trim().toLowerCase();
+                if (raw.includes('easy') || raw.includes('简单') || raw.includes('簡')) {
+                    s.difficulty = 'easy';
+                } else if (raw.includes('hard') || raw.includes('困难') || raw.includes('困難') || raw.includes('难')) {
+                    s.difficulty = 'hard';
+                } else if (raw.includes('medium') || raw.includes('中等') || raw.includes('普通')) {
+                    s.difficulty = 'medium';
+                } else {
+                    s.difficulty = 'medium';
+                }
+            });
+
+            const aiEasy = scenes.filter(s => s.difficulty === 'easy').length;
+            const aiMed = scenes.filter(s => s.difficulty === 'medium').length;
+            const aiHard = scenes.filter(s => s.difficulty === 'hard').length;
+
+            if (aiEasy !== targetEasy || aiMed !== targetMed || aiHard !== targetHard) {
+                const targetDiffs = [
+                    ...Array(targetEasy).fill('easy'),
+                    ...Array(targetMed).fill('medium'),
+                    ...Array(targetHard).fill('hard')
+                ];
+                for (let i = targetDiffs.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [targetDiffs[i], targetDiffs[j]] = [targetDiffs[j], targetDiffs[i]];
+                }
+                const used = { easy: 0, medium: 0, hard: 0 };
+                scenes.forEach(s => {
+                    const d = s.difficulty;
+                    if (used[d] < (d === 'easy' ? targetEasy : d === 'medium' ? targetMed : targetHard)) {
+                        used[d]++;
                     } else {
-                        // 无法识别，默认 medium
-                        s.difficulty = 'medium';
-                    }
-                });
-
-                // 2. 如果 AI 的难度分布不符合配置，强制重新分配
-                const aiEasy = scenes.filter(s => s.difficulty === 'easy').length;
-                const aiMed = scenes.filter(s => s.difficulty === 'medium').length;
-                const aiHard = scenes.filter(s => s.difficulty === 'hard').length;
-
-                console.log('🤖 AI 原始难度分布:', { easy: aiEasy, medium: aiMed, hard: aiHard });
-                console.log('🎯 设定难度分布:', { easy: targetEasy, medium: targetMed, hard: targetHard });
-
-                if (aiEasy !== targetEasy || aiMed !== targetMed || aiHard !== targetHard) {
-                    console.warn('⚠️ 难度分布不符，自动修正中...');
-                    // 构建目标难度数组并打乱
-                    const targetDiffs = [
-                        ...Array(targetEasy).fill('easy'),
-                        ...Array(targetMed).fill('medium'),
-                        ...Array(targetHard).fill('hard')
-                    ];
-                    // Fisher-Yates shuffle
-                    for (let i = targetDiffs.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [targetDiffs[i], targetDiffs[j]] = [targetDiffs[j], targetDiffs[i]];
-                    }
-                    // 优先保留 AI 原本的难度（按原顺序），多余/不足的用打乱后的补
-                    const used = { easy: 0, medium: 0, hard: 0 };
-                    scenes.forEach(s => {
-                        const d = s.difficulty;
-                        if (used[d] < (d === 'easy' ? targetEasy : d === 'medium' ? targetMed : targetHard)) {
-                            used[d]++;
-                        } else {
-                            // 该难度已满，从 targetDiffs 取一个未满的
-                            for (let k = 0; k < targetDiffs.length; k++) {
-                                const td = targetDiffs[k];
-                                if (used[td] < (td === 'easy' ? targetEasy : td === 'medium' ? targetMed : targetHard)) {
-                                    s.difficulty = td;
-                                    used[td]++;
-                                    break;
-                                }
+                        for (let k = 0; k < targetDiffs.length; k++) {
+                            const td = targetDiffs[k];
+                            if (used[td] < (td === 'easy' ? targetEasy : td === 'medium' ? targetMed : targetHard)) {
+                                s.difficulty = td;
+                                used[td]++;
+                                break;
                             }
                         }
-                    });
-                    console.log('✅ 修正后难度分布:', {
-                        easy: scenes.filter(s => s.difficulty === 'easy').length,
-                        medium: scenes.filter(s => s.difficulty === 'medium').length,
-                        hard: scenes.filter(s => s.difficulty === 'hard').length
-                    });
-                } else {
-                    console.log('✅ AI 难度分布完全符合设定，无需修正');
-                }
+                    }
+                });
+            }
 
-                // 3. 确保 config.scores 有 fallback（防止 NaN）
-                if (!config.scores.easy) config.scores.easy = 10;
-                if (!config.scores.medium) config.scores.medium = 20;
-                if (!config.scores.hard) config.scores.hard = 30;
-                
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('setup-view').classList.add('hidden');
-                initWheel();
-                showView('wheel-view');
-            } catch(e) { alert("生成失败: " + e.message); document.getElementById('loading').classList.add('hidden'); }
+            if (!config.scores.easy) config.scores.easy = 10;
+            if (!config.scores.medium) config.scores.medium = 20;
+            if (!config.scores.hard) config.scores.hard = 30;
+
+            // 标记离线模式到 config 以供 UI 显示
+            config._isOffline = isOfflineMode;
+
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('setup-view').classList.add('hidden');
+            initWheel();
+            showView('wheel-view');
         }
 
         // --- View Controller ---
@@ -890,6 +910,130 @@ ${text}
             }, 2000);
         }
 
+        function buildStandaloneHtml(scenesData, title) {
+            const safeQuestions = JSON.stringify(scenesData).replace(/</g,'\\u003c').replace(/>/g,'\\u003e');
+            return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title || '互动 Quiz'}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans SC','Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+    .card{background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.1);border-radius:24px;padding:2rem;max-width:700px;width:100%;box-shadow:0 0 40px rgba(59,130,246,0.15)}
+    h1{font-size:1.8rem;font-weight:900;color:#fbbf24;margin-bottom:.5rem}
+    h2{font-size:1.3rem;font-weight:700;margin-bottom:1.5rem;line-height:1.5}
+    .opt-btn{display:block;width:100%;padding:1rem 1.25rem;margin-bottom:.75rem;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.12);border-radius:16px;color:#e2e8f0;font-size:1.1rem;text-align:left;cursor:pointer;transition:all .2s;font-weight:600}
+    .opt-btn:hover{background:rgba(59,130,246,0.2);border-color:#3b82f6}
+    .opt-btn.correct{background:#065f46;border-color:#22c55e;color:#fff}
+    .opt-btn.wrong{background:#7f1d1d;border-color:#ef4444;color:#fff}
+    .opt-btn:disabled{pointer-events:none;opacity:.7}
+    .feedback{margin-top:1rem;padding:1rem;border-radius:12px;font-weight:700;display:none}
+    .feedback.show{display:block}
+    .feedback.correct{background:rgba(34,197,94,0.15);border:2px solid #22c55e;color:#4ade80}
+    .feedback.wrong{background:rgba(239,68,68,0.15);border:2px solid #ef4444;color:#f87171}
+    .next-btn{display:none;margin-top:1rem;padding:.75rem 2rem;background:#3b82f6;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer}
+    .next-btn.show{display:inline-block}
+    .progress{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:1.5rem;overflow:hidden}
+    .progress-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#fbbf24);border-radius:4px;transition:width .3s}
+    .score{text-align:center;font-size:1.2rem;font-weight:700;color:#fbbf24;margin-bottom:1rem}
+    .result{text-align:center}
+    .result h1{font-size:3rem;margin-bottom:1rem}
+    .result .score-big{font-size:4rem;font-weight:900}
+    .badge{display:inline-block;padding:.25rem .75rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-left:.5rem}
+    .badge.easy{background:#065f46;color:#4ade80}
+    .badge.medium{background:#713f12;color:#fbbf24}
+    .badge.hard{background:#7f1d1d;color:#f87171}
+    .subtitle{color:#94a3b8;font-size:.9rem;margin-bottom:1.5rem}
+    .restart-btn{margin-top:1rem;padding:.75rem 2rem;background:#fbbf24;color:#000;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+<div class="card" id="app">
+  <div id="intro">
+    <h1>${title || '互动 Quiz'}</h1>
+    <p class="subtitle">共 ${scenesData.length} 题 · AI 生成 · 离线可玩</p>
+    <button class="opt-btn" onclick="startQuiz()" style="text-align:center;font-size:1.2rem">🚀 开始答题</button>
+  </div>
+  <div id="quiz" style="display:none">
+    <div class="progress"><div class="progress-bar" id="prog"></div></div>
+    <div class="score">📝 第 <span id="qIdx">1</span> / ${scenesData.length} 题 &nbsp;|&nbsp; ⭐ <span id="pts">0</span> 分</div>
+    <span class="badge" id="diffBadge"></span>
+    <h2 id="qText"></h2>
+    <div id="opts"></div>
+    <div class="feedback" id="fb"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">下一题 →</button>
+  </div>
+  <div id="end" style="display:none" class="result">
+    <h1>🏆 答题完成</h1>
+    <p class="score-big" id="finalScore"></p>
+    <p style="opacity:.7;margin:.5rem 0 1.5rem" id="finalMsg"></p>
+    <button class="restart-btn" onclick="location.reload()">🔄 再来一次</button>
+  </div>
+</div>
+<script>
+var questions=${safeQuestions};
+var idx=0,score=0,diffs={easy:10,medium:20,hard:30};
+function startQuiz(){document.getElementById('intro').style.display='none';document.getElementById('quiz').style.display='block';renderQ()}
+function renderQ(){
+  if(idx>=questions.length){endQuiz();return}
+  var q=questions[idx],pct=((idx)/questions.length*100)+'%';
+  document.getElementById('prog').style.width=pct;
+  document.getElementById('qIdx').innerText=idx+1;
+  document.getElementById('pts').innerText=score;
+  document.getElementById('qText').innerText=q.q;
+  var db=document.getElementById('diffBadge'),d=q.difficulty||'medium';
+  db.innerText=d==='easy'?'🟢 简单':d==='hard'?'🔴 困难':'🟡 中等';
+  db.className='badge '+(d||'medium');
+  document.getElementById('fb').className='feedback';
+  document.getElementById('fb').innerText='';
+  document.getElementById('nextBtn').className='next-btn';
+  var oDiv=document.getElementById('opts');oDiv.innerHTML='';
+  q.options.forEach(function(o,i){
+    var b=document.createElement('button');b.className='opt-btn';
+    b.innerText=String.fromCharCode(65+i)+'. '+o;
+    b.onclick=function(){checkAns(i)};
+    oDiv.appendChild(b);
+  });
+}
+function checkAns(sel){
+  var q=questions[idx],correct=sel===q.ans,pts=diffs[q.difficulty]||20;
+  var btns=document.querySelectorAll('#opts .opt-btn');
+  btns.forEach(function(b,i){b.disabled=true;if(i===q.ans)b.classList.add('correct');if(i===sel&&!correct)b.classList.add('wrong')});
+  if(correct){score+=pts;document.getElementById('fb').className='feedback correct show';document.getElementById('fb').innerText='✅ 正确！+'+pts+'分'}
+  else{document.getElementById('fb').className='feedback wrong show';document.getElementById('fb').innerText='❌ 错了。正确答案是 '+String.fromCharCode(65+q.ans)+'。'}
+  if(q.note){document.getElementById('fb').innerText+='\\n\\n💡 '+q.note}
+  document.getElementById('nextBtn').className='next-btn show';document.getElementById('pts').innerText=score;
+}
+function nextQuestion(){idx++;renderQ()}
+function endQuiz(){
+  document.getElementById('quiz').style.display='none';document.getElementById('end').style.display='block';
+  var max=questions.length*Math.max.apply(null,Object.values(diffs));
+  document.getElementById('finalScore').innerText=score+' / '+max;
+  var pct=Math.round(score/max*100);
+  document.getElementById('finalMsg').innerText=pct>=80?'🌟 太棒了！':pct>=50?'👍 继续加油！':'📚 多多练习，下次更好！';
+}
+<\/script>
+</body>
+</html>`;
+        }
+
+        function downloadStandaloneQuiz() {
+            if (!scenes || scenes.length === 0) { alert('没有可下载的题目，请先生成 Quiz！'); return; }
+            const title = document.getElementById('page-title')?.value || document.querySelector('h1')?.innerText || '互动 Quiz';
+            const html = buildStandaloneHtml(scenes, title);
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (title.replace(/\s+/g, '_') || 'quiz') + '_独立版.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         function showLeaderboard() {
             const body = document.getElementById('leaderboard-body'); body.innerHTML = '';
             const sorted = [...students].sort((a,b) => b.score - a.score);
@@ -951,6 +1095,24 @@ ${text}
         }
 
         // --- File Upload ---
+        async function extractPptxText(file) {
+            const zip = new JSZip();
+            const zipContent = await zip.loadAsync(file);
+            let text = '';
+            const slideFiles = Object.keys(zipContent.files)
+                .filter(name => name.startsWith('ppt/slides/slide') && name.endsWith('.xml'))
+                .sort();
+            for (const fileName of slideFiles) {
+                const slideXml = await zipContent.file(fileName).async('text');
+                const matches = slideXml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
+                matches.forEach(match => {
+                    const content = match.replace(/<\/?a:t>/g, '');
+                    if (content.trim()) text += content + '\n';
+                });
+            }
+            return text;
+        }
+
         async function handleFileUpload(input) {
             const file = input.files[0]; if(!file) return;
             try {
@@ -969,8 +1131,11 @@ ${text}
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
                     document.getElementById('source-text').value = result.value;
+                } else if(file.name.endsWith('.pptx')) {
+                    const text = await extractPptxText(file);
+                    document.getElementById('source-text').value = text;
                 }
-            } catch(e) { alert("文档解析失败"); }
+            } catch(e) { alert("文档解析失败：" + e.message); }
         }
     </script>
 </body>
