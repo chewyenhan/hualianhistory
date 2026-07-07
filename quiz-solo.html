@@ -317,6 +317,7 @@
             <button onclick="spinWheel()" id="spin-btn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-red-500 border-8 border-white rounded-full text-white font-black text-3xl shadow-2xl hover:scale-110 active:scale-95 transition-all z-20">转动</button>
         </div>
         <div id="lucky-one" class="text-7xl font-black text-yellow-400 opacity-0 transition-opacity drop-shadow-lg">恭喜勇士：<span id="lucky-name" class="underline">XXX</span></div>
+        <button id="skip-student-btn" onclick="skipStudent()" class="hidden mt-6 px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-orange-300">⏭️ 学生缺席，跳过并重抽</button>
     </div>
 
     <!-- Step 3: Card Selection -->
@@ -406,7 +407,7 @@
     </div>
 
     <script>
-        let students = [], scenes = [], currentStudent = null, curScene = null;
+        let students = [], scenes = [], currentStudent = null, curScene = null, wheelTimeout = null;
         let answeredIds = new Set();
         let config = {
             qCount: 10,
@@ -801,6 +802,8 @@ ${text}
 
         function spinWheel() {
             document.getElementById('spin-btn').disabled = true;
+            document.getElementById('skip-student-btn').classList.add('hidden');
+            clearTimeout(wheelTimeout);
             let speed = 0.5 + Math.random() * 0.5, duration = 4000, start = null;
             let lastTick = 0;
             function animate(time) {
@@ -822,7 +825,9 @@ ${text}
                     document.getElementById('lucky-name').innerText = currentStudent.name;
                     document.getElementById('lucky-one').classList.remove('opacity-0');
                     document.getElementById('spin-btn').disabled = false;
-                    setTimeout(() => showCards(), 2000);
+                    document.getElementById('skip-student-btn').classList.remove('hidden');
+                    clearTimeout(wheelTimeout);
+                    wheelTimeout = setTimeout(() => { document.getElementById('skip-student-btn').classList.add('hidden'); showCards(); }, 2000);
                 }
             }
             requestAnimationFrame(animate);
@@ -1075,7 +1080,31 @@ function endQuiz(){
 
         function backToWheel() {
             document.getElementById('lucky-one').classList.add('opacity-0');
+            document.getElementById('skip-student-btn').classList.add('hidden');
             initWheel(); showView('wheel-view');
+        }
+
+        function skipStudent() {
+            // Remove the currently selected student from the roster
+            clearTimeout(wheelTimeout);
+            if (currentStudent) {
+                students = students.filter(function(s) { return s.name !== currentStudent.name; });
+                // Also remove from config.students array (used for persistence)
+                if (config.students) {
+                    config.students = config.students.filter(function(n) { return n !== currentStudent.name; });
+                }
+                // Update source text students list
+                var textarea = document.getElementById('student-list');
+                if (textarea) {
+                    var lines = textarea.value.split('\n').filter(function(l) { return l.trim(); });
+                    textarea.value = lines.filter(function(l) { return l.trim() !== currentStudent.name; }).join('\n');
+                }
+                currentStudent = null;
+            }
+            document.getElementById('lucky-one').classList.add('opacity-0');
+            document.getElementById('skip-student-btn').classList.add('hidden');
+            initWheel();
+            showView('wheel-view');
         }
 
         // --- 键盘快捷键 ---

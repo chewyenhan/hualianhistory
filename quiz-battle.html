@@ -287,6 +287,7 @@ body {
         <p class="text-6xl font-black text-yellow-400" id="wheel-result-name"></p>
         <p class="text-2xl opacity-70 mt-2">被选中！准备战斗！</p>
     </div>
+    <button id="skip-student-btn" onclick="skipCurrentStudent()" class="hidden mt-6 px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-orange-300">⏭️ 学生缺席，跳过并重抽</button>
 </div>
 
 <!-- CHARACTER SELECT VIEW -->
@@ -1087,7 +1088,8 @@ function startBattle() {
 }
 
 // ============ SECTION 6: WHEEL + CHARACTER SELECT ============
-let wheelState = { startAngle: 0, spinCount: 0, firstStudent: null, secondStudent: null, isSpinning: false, excludeStudent: null };
+let wheelState = { startAngle: 0, spinCount: 0, firstStudent: null, secondStudent: null, isSpinning: false, excludeStudent: null, lastSpunName: null };
+let wheelTimeout = null;
 let charSelectState = { pickingFor: 'left', leftPick: null, rightPick: null, singlePick: false };
 
 function getWheelCandidateNames() {
@@ -1123,6 +1125,8 @@ function spinWheel() {
     wheelState.isSpinning = true;
     document.getElementById('spin-btn').disabled = true;
     document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('skip-student-btn').classList.add('hidden');
+    clearTimeout(wheelTimeout);
 
     const speed = 0.4 + Math.random() * 0.5, duration = 3500;
     let start = null, lastTick = 0;
@@ -1144,6 +1148,8 @@ function spinWheel() {
             document.getElementById('spin-btn').disabled = false;
             document.getElementById('wheel-result').classList.remove('hidden');
             document.getElementById('wheel-result-name').innerText = chosen;
+            document.getElementById('skip-student-btn').classList.remove('hidden');
+            wheelState.lastSpunName = chosen;
             onWheelComplete(chosen);
         }
     }
@@ -1182,7 +1188,54 @@ function onWheelComplete(name) {
         wheelState.excludeStudent = null; // Reset exclusion
         document.getElementById('wheel-label').innerText = '双方战士已就位！';
         speak(name + '，准备出战！');
-        setTimeout(startCharacterSelection, 1500);
+        document.getElementById('skip-student-btn').classList.remove('hidden');
+        wheelTimeout = setTimeout(function() {
+            document.getElementById('skip-student-btn').classList.add('hidden');
+            startCharacterSelection();
+        }, 1500);
+    }
+}
+
+function skipCurrentStudent() {
+    clearTimeout(wheelTimeout);
+    var nameToSkip = wheelState.lastSpunName;
+    if (!nameToSkip) return;
+
+    // Remove student from the students object
+    delete students[nameToSkip];
+
+    // Also update the textarea
+    var textarea = document.getElementById('student-list');
+    if (textarea) {
+        var lines = textarea.value.split(/[,，\s\n]+/).filter(Boolean);
+        textarea.value = lines.filter(function(l) { return l !== nameToSkip; }).join(', ');
+    }
+
+    // Hide result and skip button
+    document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('skip-student-btn').classList.add('hidden');
+    wheelState.lastSpunName = null;
+
+    if (wheelState._spinForSlot) {
+        // Replacement spin: re-spin for same slot
+        spinForSlot(wheelState._spinForSlot);
+    } else if (wheelState.secondStudent) {
+        // Second spin just completed: re-do second pick
+        wheelState.secondStudent = null;
+        battleState.rightStudent = null;
+        wheelState.excludeStudent = wheelState.firstStudent;
+        document.getElementById('wheel-label').innerText = '🔵 右方战士抽选中...';
+        var avail = getWheelCandidateNames();
+        initWheel(avail);
+    } else {
+        // First spin just completed: re-do first pick
+        wheelState.firstStudent = null;
+        battleState.leftStudent = null;
+        wheelState.spinCount = 0;
+        wheelState.excludeStudent = null;
+        document.getElementById('wheel-label').innerText = '🔴 左方战士抽选中...';
+        var avail2 = getWheelCandidateNames();
+        initWheel(avail2);
     }
 }
 
@@ -1191,8 +1244,10 @@ function startWheelPhase() {
     document.getElementById('wheel-view').classList.remove('hidden');
     document.getElementById('wheel-label').innerText = '🔴 左方战士抽选中...';
     document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('skip-student-btn').classList.add('hidden');
+    clearTimeout(wheelTimeout);
     wheelState.spinCount = 0; wheelState.firstStudent = null; wheelState.secondStudent = null;
-    wheelState.excludeStudent = null; // Reset exclusion
+    wheelState.excludeStudent = null; wheelState.lastSpunName = null;
     const avail = getWheelCandidateNames();
     initWheel(avail);
 }
@@ -1558,6 +1613,8 @@ function spinForSlot(slot) {
     document.getElementById('wheel-view').classList.remove('hidden');
     document.getElementById('wheel-label').innerText = slot === 'left' ? '🔴 左方新战士抽选中...' : '🔵 右方新战士抽选中...';
     document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('skip-student-btn').classList.add('hidden');
+    clearTimeout(wheelTimeout);
     wheelState.spinCount = 1; // Single spin
     wheelState._spinForSlot = slot;
     var winnerName = slot === 'left' ? battleState.rightStudent : battleState.leftStudent;
@@ -1576,17 +1633,25 @@ function spinForSlot(slot) {
             battleState.rightStudent = name;
         }
         wheelState.excludeStudent = null;
-        document.getElementById('wheel-view').classList.add('hidden');
+        wheelState.lastSpunName = name;
+        document.getElementById('skip-student-btn').classList.remove('hidden');
         onWheelComplete = origComplete;
         var pickSlot = wheelState._spinForSlot;
         delete wheelState._spinForSlot;
-        // Let challenger pick their character
-        startSingleCharSelect(pickSlot);
+        // Brief delay so teacher can click skip if student is absent
+        wheelTimeout = setTimeout(function() {
+            document.getElementById('skip-student-btn').classList.add('hidden');
+            document.getElementById('wheel-view').classList.add('hidden');
+            wheelState.lastSpunName = null;
+            startSingleCharSelect(pickSlot);
+        }, 2000);
     };
 }
 
 function spinForBoth() {
     document.getElementById('battle-view').classList.add('hidden');
+    document.getElementById('skip-student-btn').classList.add('hidden');
+    clearTimeout(wheelTimeout);
     wheelState.spinCount = 0;
     wheelState.firstStudent = null;
     wheelState.secondStudent = null;
