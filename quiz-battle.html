@@ -103,9 +103,9 @@ body {
 .buzzer-side .buzzer-name { font-size: 0.85rem; text-align: center; line-height: 1.2; }
 
 .option-btn {
-    display: block; width: 100%; padding: 0.8rem 1.2rem; margin-bottom: 0.4rem;
+    display: block; width: 100%; padding: 1rem 1.5rem; margin-bottom: 0.5rem;
     background: rgba(255,255,255,0.08); border: 3px solid rgba(255,255,255,0.12);
-    border-radius: 14px; color: #e2e8f0; font-size: 1.35rem; font-weight: 700;
+    border-radius: 14px; color: #e2e8f0; font-size: 1.6rem; font-weight: 700;
     text-align: left; cursor: pointer; transition: all 0.2s;
 }
 .option-btn:hover:not(:disabled) { background: var(--primary); border-color: #fff; transform: scale(1.01); }
@@ -283,11 +283,16 @@ body {
         <canvas id="wheelCanvas" width="600" height="600" class="max-w-full"></canvas>
         <button id="spin-btn" onclick="spinWheel()" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-black font-black text-3xl px-10 py-6 rounded-full shadow-2xl border-4 border-yellow-200 hover:scale-110 transition-transform z-10">🎯 抽签</button>
     </div>
-    <div id="wheel-result" class="hidden mt-8 text-center">
-        <p class="text-6xl font-black text-yellow-400" id="wheel-result-name"></p>
-        <p class="text-2xl opacity-70 mt-2">被选中！准备战斗！</p>
+    <div id="wheel-result-actions" class="hidden mt-8 flex flex-col items-center gap-4">
+        <div id="wheel-result" class="hidden text-center">
+            <p class="text-6xl font-black text-yellow-400" id="wheel-result-name"></p>
+            <p class="text-2xl opacity-70 mt-2">被选中！准备战斗！</p>
+        </div>
+        <div class="flex gap-4">
+            <button id="confirm-student-btn" onclick="confirmStudent()" class="hidden px-10 py-5 bg-green-500 hover:bg-green-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-green-300">✅ 确认出战</button>
+            <button id="skip-student-btn" onclick="skipCurrentStudent()" class="hidden px-8 py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-orange-300">⏭️ 学生缺席，跳过并重抽</button>
+        </div>
     </div>
-    <button id="skip-student-btn" onclick="skipCurrentStudent()" class="hidden mt-6 px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-orange-300">⏭️ 学生缺席，跳过并重抽</button>
 </div>
 
 <!-- CHARACTER SELECT VIEW -->
@@ -335,19 +340,19 @@ body {
             <div class="timer-bar-fill" id="timer-bar-fill" style="width:100%"></div>
         </div>
         <div class="flex justify-between items-center" style="margin-bottom:0.2rem;">
-            <span style="font-size:1rem;font-weight:700;opacity:0.7;" id="timer-label">⏱️ 抢答倒计时</span>
-            <span style="font-size:1.5rem;font-weight:900;font-family:'Orbitron',sans-serif;" id="timer-text">20</span>
+            <span style="font-size:1.2rem;font-weight:700;opacity:0.7;" id="timer-label">⏱️ 抢答倒计时</span>
+            <span style="font-size:2rem;font-weight:900;font-family:'Orbitron',sans-serif;" id="timer-text">20</span>
         </div>
         <!-- Question -->
         <div class="glass-panel" style="padding:0.5rem 1rem;">
-            <p style="font-size:1.6rem;font-weight:900;line-height:1.4;margin:0;" id="battle-question"></p>
+            <p style="font-size:2.2rem;font-weight:900;line-height:1.4;margin:0;" id="battle-question"></p>
         </div>
         <!-- Options -->
         <div id="battle-options"></div>
         <!-- Note (shown after round, overlays options) -->
         <div id="battle-note" class="hidden glass-panel" style="padding:1rem;text-align:center;position:absolute;bottom:10px;left:85px;right:85px;z-index:20;">
-            <p style="font-size:1.5rem;font-weight:900;color:#fbbf24;margin:0 0 0.5rem 0;">💡 知识精华</p>
-            <p style="font-size:1.3rem;line-height:1.5;margin:0 0 0.5rem 0;" id="battle-note-text"></p>
+            <p style="font-size:1.8rem;font-weight:900;color:#fbbf24;margin:0 0 0.5rem 0;">💡 知识精华</p>
+            <p style="font-size:1.6rem;line-height:1.5;margin:0 0 0.5rem 0;" id="battle-note-text"></p>
             <button onclick="proceedAfterRound()" style="background:#eab308;color:#000;padding:0.6rem 3rem;border-radius:999px;font-size:1.3rem;font-weight:900;border:none;cursor:pointer;">
                 <span id="next-round-btn-text">下一场对决 →</span>
             </button>
@@ -1189,6 +1194,8 @@ function spinWheel() {
     wheelState.isSpinning = true;
     document.getElementById('spin-btn').disabled = true;
     document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('wheel-result-actions').classList.add('hidden');
+    document.getElementById('confirm-student-btn').classList.add('hidden');
     document.getElementById('skip-student-btn').classList.add('hidden');
     clearTimeout(wheelTimeout);
 
@@ -1210,9 +1217,9 @@ function spinWheel() {
             const chosen = avail[idx];
             wheelState.isSpinning = false;
             document.getElementById('spin-btn').disabled = false;
+            document.getElementById('wheel-result-actions').classList.remove('hidden');
             document.getElementById('wheel-result').classList.remove('hidden');
             document.getElementById('wheel-result-name').innerText = chosen;
-            document.getElementById('skip-student-btn').classList.remove('hidden');
             wheelState.lastSpunName = chosen;
             onWheelComplete(chosen);
         }
@@ -1239,25 +1246,21 @@ function onWheelComplete(name) {
     if (wheelState.spinCount === 0) {
         wheelState.firstStudent = name;
         battleState.leftStudent = name;
-        // Exclude first student from next spin
-        wheelState.excludeStudent = name;
-        document.getElementById('wheel-label').innerText = '🔵 右方战士抽选中...';
         wheelState.spinCount = 1;
-        const avail = getWheelCandidateNames();
-        initWheel(avail);
+        document.getElementById('wheel-label').innerText = '左方战士：' + name + ' ✅';
         speak(name + '，准备出战！');
     } else {
         wheelState.secondStudent = name;
         battleState.rightStudent = name;
-        wheelState.excludeStudent = null; // Reset exclusion
-        document.getElementById('wheel-label').innerText = '双方战士已就位！';
+        wheelState.excludeStudent = null;
+        document.getElementById('wheel-label').innerText = '右方战士：' + name + ' ✅  双方已就位！';
         speak(name + '，准备出战！');
-        document.getElementById('skip-student-btn').classList.remove('hidden');
-        wheelTimeout = setTimeout(function() {
-            document.getElementById('skip-student-btn').classList.add('hidden');
-            startCharacterSelection();
-        }, 1500);
     }
+
+    // Show confirm + skip buttons, wait for teacher action
+    document.getElementById('wheel-result-actions').classList.remove('hidden');
+    document.getElementById('confirm-student-btn').classList.remove('hidden');
+    document.getElementById('skip-student-btn').classList.remove('hidden');
 }
 
 function skipCurrentStudent() {
@@ -1275,8 +1278,10 @@ function skipCurrentStudent() {
         textarea.value = lines.filter(function(l) { return l !== nameToSkip; }).join(', ');
     }
 
-    // Hide result and skip button
+    // Hide result and buttons
     document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('wheel-result-actions').classList.add('hidden');
+    document.getElementById('confirm-student-btn').classList.add('hidden');
     document.getElementById('skip-student-btn').classList.add('hidden');
     wheelState.lastSpunName = null;
 
@@ -1303,11 +1308,41 @@ function skipCurrentStudent() {
     }
 }
 
+function confirmStudent() {
+    clearTimeout(wheelTimeout);
+    document.getElementById('confirm-student-btn').classList.add('hidden');
+    document.getElementById('skip-student-btn').classList.add('hidden');
+    document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('wheel-result-actions').classList.add('hidden');
+
+    if (wheelState._spinForSlot) {
+        // Replacement spin: proceed to single character select
+        var pickSlot = wheelState._spinForSlot;
+        delete wheelState._spinForSlot;
+        wheelState.lastSpunName = null;
+        document.getElementById('wheel-view').classList.add('hidden');
+        startSingleCharSelect(pickSlot);
+    } else if (wheelState.firstStudent && !wheelState.secondStudent) {
+        // First spin confirmed, prepare for second spin
+        wheelState.excludeStudent = wheelState.firstStudent;
+        document.getElementById('wheel-label').innerText = '🔵 右方战士抽选中...';
+        var avail = getWheelCandidateNames();
+        initWheel(avail);
+    } else if (wheelState.secondStudent) {
+        // Second spin confirmed, proceed to character selection
+        wheelState.lastSpunName = null;
+        document.getElementById('wheel-view').classList.add('hidden');
+        startCharacterSelection();
+    }
+}
+
 function startWheelPhase() {
     document.getElementById('setup-view').classList.add('hidden');
     document.getElementById('wheel-view').classList.remove('hidden');
     document.getElementById('wheel-label').innerText = '🔴 左方战士抽选中...';
     document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('wheel-result-actions').classList.add('hidden');
+    document.getElementById('confirm-student-btn').classList.add('hidden');
     document.getElementById('skip-student-btn').classList.add('hidden');
     clearTimeout(wheelTimeout);
     wheelState.spinCount = 0; wheelState.firstStudent = null; wheelState.secondStudent = null;
@@ -1720,6 +1755,8 @@ function spinForSlot(slot) {
     document.getElementById('wheel-view').classList.remove('hidden');
     document.getElementById('wheel-label').innerText = slot === 'left' ? '🔴 左方新战士抽选中...' : '🔵 右方新战士抽选中...';
     document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('wheel-result-actions').classList.add('hidden');
+    document.getElementById('confirm-student-btn').classList.add('hidden');
     document.getElementById('skip-student-btn').classList.add('hidden');
     clearTimeout(wheelTimeout);
     wheelState.spinCount = 1; // Single spin
@@ -1736,27 +1773,26 @@ function spinForSlot(slot) {
         if (students[name]) students[name].usedCount = (students[name].usedCount || 0) + 1;
         if (wheelState._spinForSlot === 'left') {
             battleState.leftStudent = name;
+            document.getElementById('wheel-label').innerText = '左方新战士：' + name + ' ✅';
         } else {
             battleState.rightStudent = name;
+            document.getElementById('wheel-label').innerText = '右方新战士：' + name + ' ✅';
         }
         wheelState.excludeStudent = null;
         wheelState.lastSpunName = name;
-        document.getElementById('skip-student-btn').classList.remove('hidden');
+        wheelState._spinForSlot = wheelState._spinForSlot; // keep for confirmStudent
         onWheelComplete = origComplete;
-        var pickSlot = wheelState._spinForSlot;
-        delete wheelState._spinForSlot;
-        // Brief delay so teacher can click skip if student is absent
-        wheelTimeout = setTimeout(function() {
-            document.getElementById('skip-student-btn').classList.add('hidden');
-            document.getElementById('wheel-view').classList.add('hidden');
-            wheelState.lastSpunName = null;
-            startSingleCharSelect(pickSlot);
-        }, 2000);
+        // Show confirm + skip buttons, wait for teacher action
+        document.getElementById('wheel-result-actions').classList.remove('hidden');
+        document.getElementById('confirm-student-btn').classList.remove('hidden');
+        document.getElementById('skip-student-btn').classList.remove('hidden');
     };
 }
 
 function spinForBoth() {
     document.getElementById('battle-view').classList.add('hidden');
+    document.getElementById('wheel-result-actions').classList.add('hidden');
+    document.getElementById('confirm-student-btn').classList.add('hidden');
     document.getElementById('skip-student-btn').classList.add('hidden');
     clearTimeout(wheelTimeout);
     wheelState.spinCount = 0;
