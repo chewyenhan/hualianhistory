@@ -301,6 +301,15 @@ body {
     <div id="vs-text">3</div>
 </div>
 
+<!-- TURN CONFIRMATION OVERLAY (prevents double-tap misclicks) -->
+<div id="turn-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="dismissTurnOverlay()">
+  <div class="glass-panel text-center" style="padding:2.5rem;" onclick="event.stopPropagation()">
+    <div style="font-size:4rem;margin-bottom:1rem;">⚡</div>
+    <p style="font-size:2rem;font-weight:900;margin:0;" id="turn-overlay-name">轮到 某某 作答！</p>
+    <p style="font-size:1.2rem;opacity:0.7;margin-top:0.5rem;">👆 点击任意位置开始作答</p>
+  </div>
+</div>
+
 <!-- BATTLE VIEW -->
 <div id="battle-view" class="hidden">
     <!-- Canvas Arena -->
@@ -387,6 +396,12 @@ let battleState = {
     buzzerWinner: null, secondChance: false, roundResolved: false,
     timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null
 };
+
+// Per-round lock state (prevents double-tap & unfair auto-pass)
+let pausedTimerRemaining = 0;
+let buzzerFailedLeft = false;
+let buzzerFailedRight = false;
+let turnOverlayActive = false;
 
 // Sound system
 const sounds = {
@@ -1365,6 +1380,14 @@ function startBattleRound() {
     battleState.timerPhase = 'waiting';
     battleState.timerActiveSide = null;
 
+    // Reset per-round lock state
+    buzzerFailedLeft = false;
+    buzzerFailedRight = false;
+    pausedTimerRemaining = 0;
+    turnOverlayActive = false;
+    setSingleBuzzerEnabled('left', true);
+    setSingleBuzzerEnabled('right', true);
+
     document.getElementById('battle-view').classList.remove('hidden');
     document.getElementById('battle-note').classList.add('hidden');
 
@@ -1424,15 +1447,42 @@ function setBuzzersEnabled(en) {
     document.getElementById('buzzer-right-btn').disabled = !en;
 }
 
+function setSingleBuzzerEnabled(side, enabled) {
+    var btn = document.getElementById(side === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn');
+    btn.disabled = !enabled;
+    if (!enabled) { btn.style.opacity = '0.3'; btn.style.cursor = 'not-allowed'; }
+    else { btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+}
+
+function showTurnOverlay(name) {
+    turnOverlayActive = true;
+    document.getElementById('turn-overlay-name').textContent = '轮到 ' + name + ' 作答！';
+    document.getElementById('turn-overlay').classList.remove('hidden');
+    speak(name + '，轮到你作答！');
+}
+
+function dismissTurnOverlay() {
+    if (!turnOverlayActive) return;
+    turnOverlayActive = false;
+    document.getElementById('turn-overlay').classList.add('hidden');
+    setOptionsEnabled(true);
+    startBattleTimer(config.answerSeconds, 'answering', battleState.buzzerWinner);
+    var buzzerName = battleState.buzzerWinner === 'left' ? battleState.leftStudent : battleState.rightStudent;
+    document.getElementById('timer-label').innerText = '⚡ ' + buzzerName + ' 作答中...';
+    speak(buzzerName + '，请作答！');
+}
+
 function handleBuzzer(side) {
     if (battleState.buzzerWinner !== null) return;
     if (battleState.roundResolved) return;
     if (battleState.timerPhase !== 'waiting') return;
+    if (side === 'left' && buzzerFailedLeft) return;
+    if (side === 'right' && buzzerFailedRight) return;
 
     battleState.buzzerWinner = side;
     playBuzzerSound();
+    pausedTimerRemaining = battleState.timerRemaining;
     stopBattleTimer();
-    setOptionsEnabled(true);
     setBuzzersEnabled(false);
 
     var btnId = side === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn';
@@ -1440,11 +1490,9 @@ function handleBuzzer(side) {
 
     battleState.timerPhase = 'answering';
     battleState.timerActiveSide = side;
-    startBattleTimer(config.answerSeconds, 'answering', side);
 
     var name = side === 'left' ? battleState.leftStudent : battleState.rightStudent;
-    document.getElementById('timer-label').innerText = '⚡ ' + name + ' 作答中...';
-    speak(name + '，请作答！');
+    showTurnOverlay(name);
 }
 
 function handleAnswerChoice(optIdx) {
@@ -1472,26 +1520,34 @@ function handleAnswerChoice(optIdx) {
         });
         resolveRound('both_lose');
     } else {
-        // First student wrong → mark wrong ONLY, do NOT reveal correct answer yet
+        // First student wrong → mark wrong, lock their buzzer, resume main timer for opponent
         document.querySelectorAll('.option-btn').forEach(function(b, i) {
             if (i === optIdx) b.classList.add('wrong-choice');
         });
         battleState.secondChance = true;
-        var prevSide = battleState.buzzerWinner;
-        battleState.buzzerWinner = opponentSide;
-        document.getElementById(prevSide === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.remove('active-buzz');
-        document.getElementById(opponentSide === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.add('active-buzz');
-        setOptionsEnabled(false);
         playWrongSound();
+
+        // Lock the failed student's buzzer
+        if (answeringSide === 'left') buzzerFailedLeft = true;
+        else buzzerFailedRight = true;
+        setSingleBuzzerEnabled(answeringSide, false);
+        var failedNameEl = document.getElementById(answeringSide === 'left' ? 'buzzer-left-name' : 'buzzer-right-name');
+        failedNameEl.textContent = '❌ ' + (answeringSide === 'left' ? battleState.leftStudent : battleState.rightStudent) + '（已答错）';
+        document.getElementById(answeringSide === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.remove('active-buzz');
+
+        battleState.buzzerWinner = null;
+        battleState.timerPhase = 'waiting';
+        battleState.timerActiveSide = null;
+        setOptionsEnabled(false);
+
         var oppName = opponentSide === 'left' ? battleState.leftStudent : battleState.rightStudent;
         setTimeout(function() {
             // Clear the wrong-choice highlight so second student sees clean options
             document.querySelectorAll('.option-btn').forEach(function(b) { b.classList.remove('wrong-choice'); });
-            setOptionsEnabled(true);
-            battleState.timerPhase = 'answering';
-            battleState.timerActiveSide = opponentSide;
-            startBattleTimer(config.answerSeconds, 'answering', opponentSide);
-            document.getElementById('timer-label').innerText = '⚡ ' + oppName + ' 作答中...';
+            // Re-enable opponent's buzzer and resume main countdown
+            setSingleBuzzerEnabled(opponentSide, true);
+            document.getElementById('timer-label').innerText = '⏱️ 抢答倒计时';
+            startBattleTimer(pausedTimerRemaining, 'waiting');
             speak(oppName + '，轮到你了！');
         }, 800);
     }
@@ -1704,20 +1760,26 @@ function handleTimerExpired(phase, side) {
     } else if (phase === 'answering') {
         if (!battleState.secondChance) {
             battleState.secondChance = true;
-            var oppSide = side === 'left' ? 'right' : 'left';
-            battleState.buzzerWinner = oppSide;
-            document.getElementById(side === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.remove('active-buzz');
-            document.getElementById(oppSide === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.add('active-buzz');
+            // Lock the timed-out student's buzzer instead of auto-giving to opponent
+            var timedOutSide = side;
+            if (timedOutSide === 'left') buzzerFailedLeft = true;
+            else buzzerFailedRight = true;
+            setSingleBuzzerEnabled(timedOutSide, false);
+            var failedNameEl = document.getElementById(timedOutSide === 'left' ? 'buzzer-left-name' : 'buzzer-right-name');
+            failedNameEl.textContent = '⏰ ' + (timedOutSide === 'left' ? battleState.leftStudent : battleState.rightStudent) + '（超时）';
+            document.getElementById(timedOutSide === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn').classList.remove('active-buzz');
+
+            var oppSide = timedOutSide === 'left' ? 'right' : 'left';
+            battleState.buzzerWinner = null;
+            battleState.timerPhase = 'waiting';
+            battleState.timerActiveSide = null;
             setOptionsEnabled(false);
+            // Re-enable opponent's buzzer and resume main countdown
+            setSingleBuzzerEnabled(oppSide, true);
+            document.getElementById('timer-label').innerText = '⏱️ 抢答倒计时';
+            startBattleTimer(pausedTimerRemaining, 'waiting');
             var oppName = oppSide === 'left' ? battleState.leftStudent : battleState.rightStudent;
-            setTimeout(function() {
-                setOptionsEnabled(true);
-                battleState.timerPhase = 'answering';
-                battleState.timerActiveSide = oppSide;
-                startBattleTimer(config.answerSeconds, 'answering', oppSide);
-                document.getElementById('timer-label').innerText = '⚡ ' + oppName + ' 作答中...';
-                speak(oppName + '，轮到你了！');
-            }, 500);
+            speak(oppName + '，轮到你了！');
         } else {
             resolveRound('both_lose');
             speak('时间到！双方都未答对！');
@@ -1948,9 +2010,9 @@ document.addEventListener('keydown', function(e) {
 
     if (e.key === 'q' || e.key === 'Q') { e.preventDefault(); handleBuzzer('left'); }
     else if (e.key === 'p' || e.key === 'P') { e.preventDefault(); handleBuzzer('right'); }
-    else if (e.key === '1' || e.key === 'a' || e.key === 'A') { e.preventDefault(); if (battleState.timerPhase === 'answering') handleAnswerChoice(0); }
-    else if (e.key === '2' || e.key === 'b' || e.key === 'B') { e.preventDefault(); if (battleState.timerPhase === 'answering') handleAnswerChoice(1); }
-    else if (e.key === '3' || e.key === 'c' || e.key === 'C') { e.preventDefault(); if (battleState.timerPhase === 'answering') handleAnswerChoice(2); }
+    else if (e.key === '1' || e.key === 'a' || e.key === 'A') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(0); }
+    else if (e.key === '2' || e.key === 'b' || e.key === 'B') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(1); }
+    else if (e.key === '3' || e.key === 'c' || e.key === 'C') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(2); }
     else if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
         var noteEl = document.getElementById('battle-note');
