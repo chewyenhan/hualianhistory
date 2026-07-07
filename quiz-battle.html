@@ -402,6 +402,8 @@ let pausedTimerRemaining = 0;
 let buzzerFailedLeft = false;
 let buzzerFailedRight = false;
 let turnOverlayActive = false;
+let leftFallen = false;      // 左方角色是否已倒地（持久状态，阻止站立绘制）
+let rightFallen = false;     // 右方角色是否已倒地
 
 // Sound system
 const sounds = {
@@ -647,8 +649,8 @@ function startRenderLoop() {
 
         ctx.clearRect(0, 0, w, h);
         drawBackground(ctx, w, h);
-        drawCharacterAt(ctx, 'left', battleState.leftCharacter, battleState.leftLevel, now);
-        drawCharacterAt(ctx, 'right', battleState.rightCharacter, battleState.rightLevel, now);
+        if (!leftFallen) drawCharacterAt(ctx, 'left', battleState.leftCharacter, battleState.leftLevel, now);
+        if (!rightFallen) drawCharacterAt(ctx, 'right', battleState.rightCharacter, battleState.rightLevel, now);
         drawScores(ctx, w, h, now);
         drawEffects(ctx, w, h, now);
         processAnimations(now);
@@ -770,38 +772,60 @@ function drawEffects(ctx, w, h, now) {
                 const y = a.y + Math.sin(t * Math.PI) * -30;
                 // Draw projectile based on character
                 ctx.save(); ctx.imageSmoothingEnabled = true;
+
+                // Trail particles (behind projectile, all classes)
+                for (let i = 1; i <= 4; i++) {
+                    var trailT = Math.max(0, t - i * 0.12);
+                    var trailX = a.fromX + (a.toX - a.fromX) * trailT;
+                    var trailY = a.y + Math.sin(trailT * Math.PI) * -30;
+                    ctx.fillStyle = 'rgba(255,255,200,' + (0.35 - i * 0.07).toFixed(2) + ')';
+                    ctx.beginPath(); ctx.arc(trailX, trailY, 4, 0, Math.PI * 2); ctx.fill();
+                }
+
                 switch (a.charKey) {
                     case 'knight':
-                        ctx.fillStyle = '#ffd700'; ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 12;
-                        ctx.fillRect(x-2, y-12, 4, 24); break; // sword beam
+                        ctx.fillStyle = '#ffd700'; ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 18;
+                        ctx.fillRect(x-3, y-18, 6, 36); break; // sword beam (scaled up)
                     case 'archer':
-                        ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 3;
-                        ctx.beginPath(); ctx.moveTo(x-15, y); ctx.lineTo(x, y); ctx.stroke();
+                        ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 5;
+                        ctx.beginPath(); ctx.moveTo(x-20, y); ctx.lineTo(x, y); ctx.stroke();
                         ctx.fillStyle = '#ccc';
-                        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x-6, y-3); ctx.lineTo(x-6, y+3); ctx.fill();
+                        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x-8, y-4); ctx.lineTo(x-8, y+4); ctx.fill();
                         break;
                     case 'mage':
-                        const grad = ctx.createRadialGradient(x, y, 0, x, y, 12);
-                        grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#da70d6'); grad.addColorStop(1, 'transparent');
-                        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI*2); ctx.fill();
+                        // Outer flame glow (trail)
+                        var flameOuter = ctx.createRadialGradient(x, y, 0, x, y, 20);
+                        flameOuter.addColorStop(0, 'rgba(255,180,0,0.9)');
+                        flameOuter.addColorStop(0.4, 'rgba(255,80,0,0.7)');
+                        flameOuter.addColorStop(0.7, 'rgba(255,30,0,0.3)');
+                        flameOuter.addColorStop(1, 'transparent');
+                        ctx.fillStyle = flameOuter;
+                        ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.fill();
+                        // Inner white-hot core
+                        var flameCore = ctx.createRadialGradient(x, y, 0, x, y, 8);
+                        flameCore.addColorStop(0, '#fff');
+                        flameCore.addColorStop(0.4, '#ffdd00');
+                        flameCore.addColorStop(1, 'rgba(255,80,0,0)');
+                        ctx.fillStyle = flameCore;
+                        ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fill();
                         break;
                     case 'ninja':
                         ctx.save(); ctx.translate(x, y); ctx.rotate(t * Math.PI * 4);
-                        ctx.fillStyle = '#ff4500'; ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 8;
-                        drawStar(ctx, 0, 0, 5, 10, 4); ctx.fill(); ctx.restore();
+                        ctx.fillStyle = '#ff4500'; ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 12;
+                        drawStar(ctx, 0, 0, 5, 14, 5); ctx.fill(); ctx.restore();
                         break;
                     case 'viking':
                         ctx.save(); ctx.translate(x, y); ctx.rotate(t * Math.PI * 3);
-                        ctx.fillStyle = '#c0c0c0'; ctx.shadowColor = '#888'; ctx.shadowBlur = 6;
-                        ctx.fillRect(-12, -4, 24, 8); // axe head
-                        ctx.fillStyle = '#8B4513'; ctx.fillRect(-2, -14, 4, 10); // handle
+                        ctx.fillStyle = '#c0c0c0'; ctx.shadowColor = '#888'; ctx.shadowBlur = 8;
+                        ctx.fillRect(-16, -6, 32, 12); // axe head (scaled up)
+                        ctx.fillStyle = '#8B4513'; ctx.fillRect(-3, -18, 6, 14); // handle (scaled up)
                         ctx.restore();
                         break;
                     case 'samurai':
-                        ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 20;
-                        ctx.fillRect(x-1, y-20, 2, 40); // slash line
-                        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                        ctx.fillRect(x-20, y-2, 40, 4); // horizontal flash
+                        ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 28;
+                        ctx.fillRect(x-2, y-25, 4, 50); // slash line (scaled up)
+                        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                        ctx.fillRect(x-25, y-3, 50, 6); // horizontal flash (scaled up)
                         break;
                 }
                 ctx.restore();
@@ -843,6 +867,26 @@ function drawEffects(ctx, w, h, now) {
             }
         }
     });
+
+    // Draw static fallen sprites (persist after fall animation ends)
+    if (leftFallen) {
+        var lX = canvasW * 0.22, lY = groundY - 144;
+        ctx.save(); ctx.translate(lX + 72, lY + 144);
+        ctx.rotate(Math.PI / 2); // fully rotated (90°)
+        var lSprite = getCharacterCanvas(battleState.leftCharacter || 'knight', battleState.leftLevel || 1);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(lSprite.canvas, -72, -144 - 200, 144, 144); // t=1: offset 200 down
+        ctx.restore();
+    }
+    if (rightFallen) {
+        var rX = canvasW * 0.78, rY = groundY - 144;
+        ctx.save(); ctx.translate(rX + 72, rY + 144);
+        ctx.rotate(-Math.PI / 2); // fully rotated (-90° for right side)
+        var rSprite = getCharacterCanvas(battleState.rightCharacter || 'knight', battleState.rightLevel || 1);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(rSprite.canvas, -72, -144 - 200, 144, 144);
+        ctx.restore();
+    }
 }
 
 function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
@@ -870,7 +914,12 @@ function addFallAnimation(side, charKey, level) {
     playDeathSound();
     animations.push({
         type: ANIM_TYPES.FALL, startTime: performance.now(), duration: 800,
-        side, charKey, level, onComplete: null
+        side, charKey, level,
+        onComplete: function() {
+            // Mark side as fallen so standing draw is suppressed
+            if (side === 'left') leftFallen = true;
+            else rightFallen = true;
+        }
     });
 }
 
@@ -1385,6 +1434,8 @@ function startBattleRound() {
     buzzerFailedRight = false;
     pausedTimerRemaining = 0;
     turnOverlayActive = false;
+    leftFallen = false;
+    rightFallen = false;
     setSingleBuzzerEnabled('left', true);
     setSingleBuzzerEnabled('right', true);
 
