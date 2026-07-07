@@ -302,7 +302,7 @@ body {
 </div>
 
 <!-- TURN CONFIRMATION OVERLAY (prevents double-tap misclicks) -->
-<div id="turn-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;cursor:pointer;" onclick="dismissTurnOverlay()">
+<div id="turn-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;cursor:pointer;" onclick="dismissTurnOverlay()">
   <div class="glass-panel text-center" style="padding:2.5rem;" onclick="event.stopPropagation()">
     <div style="font-size:4rem;margin-bottom:1rem;">⚡</div>
     <p style="font-size:2rem;font-weight:900;margin:0;" id="turn-overlay-name">轮到 某某 作答！</p>
@@ -1457,16 +1457,14 @@ function setSingleBuzzerEnabled(side, enabled) {
 function showTurnOverlay(name) {
     turnOverlayActive = true;
     document.getElementById('turn-overlay-name').textContent = '轮到 ' + name + ' 作答！';
-    var overlay = document.getElementById('turn-overlay');
-    overlay.classList.remove('hidden');
-    overlay.style.display = 'flex';
+    document.getElementById('turn-overlay').style.display = 'flex';
     speak(name + '，轮到你作答！');
 }
 
 function dismissTurnOverlay() {
     if (!turnOverlayActive) return;
     turnOverlayActive = false;
-    document.getElementById('turn-overlay').classList.add('hidden');
+    document.getElementById('turn-overlay').style.display = 'none';
     setOptionsEnabled(true);
     startBattleTimer(config.answerSeconds, 'answering', battleState.buzzerWinner);
     var buzzerName = battleState.buzzerWinner === 'left' ? battleState.leftStudent : battleState.rightStudent;
