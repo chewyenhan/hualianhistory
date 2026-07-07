@@ -302,7 +302,7 @@ body {
 </div>
 
 <!-- TURN CONFIRMATION OVERLAY (prevents double-tap misclicks) -->
-<div id="turn-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="dismissTurnOverlay()">
+<div id="turn-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;cursor:pointer;" onclick="dismissTurnOverlay()">
   <div class="glass-panel text-center" style="padding:2.5rem;" onclick="event.stopPropagation()">
     <div style="font-size:4rem;margin-bottom:1rem;">⚡</div>
     <p style="font-size:2rem;font-weight:900;margin:0;" id="turn-overlay-name">轮到 某某 作答！</p>
@@ -1457,7 +1457,9 @@ function setSingleBuzzerEnabled(side, enabled) {
 function showTurnOverlay(name) {
     turnOverlayActive = true;
     document.getElementById('turn-overlay-name').textContent = '轮到 ' + name + ' 作答！';
-    document.getElementById('turn-overlay').classList.remove('hidden');
+    var overlay = document.getElementById('turn-overlay');
+    overlay.classList.remove('hidden');
+    overlay.style.display = 'flex';
     speak(name + '，轮到你作答！');
 }
 
