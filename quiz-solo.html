@@ -316,8 +316,13 @@
             <canvas id="wheelCanvas" width="1000" height="1000" class="w-full h-full rounded-full border-[10px] border-white shadow-[0_0_50px_rgba(255,255,255,0.3)]"></canvas>
             <button onclick="spinWheel()" id="spin-btn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-red-500 border-8 border-white rounded-full text-white font-black text-3xl shadow-2xl hover:scale-110 active:scale-95 transition-all z-20">转动</button>
         </div>
-        <div id="lucky-one" class="text-7xl font-black text-yellow-400 opacity-0 transition-opacity drop-shadow-lg">恭喜勇士：<span id="lucky-name" class="underline">XXX</span></div>
-        <button id="skip-student-btn" onclick="skipStudent()" class="hidden mt-6 px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-orange-300">⏭️ 学生缺席，跳过并重抽</button>
+        <div id="wheel-result-actions" class="hidden mt-8 flex flex-col items-center gap-4">
+            <div id="lucky-one" class="text-7xl font-black text-yellow-400 opacity-0 transition-opacity drop-shadow-lg">恭喜勇士：<span id="lucky-name" class="underline">XXX</span></div>
+            <div class="flex gap-4">
+                <button id="confirm-student-btn" onclick="confirmStudent()" class="hidden px-10 py-5 bg-green-500 hover:bg-green-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-green-300">✅ 确认出战</button>
+                <button id="skip-student-btn" onclick="skipStudent()" class="hidden px-8 py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-orange-300">⏭️ 学生缺席，跳过并重抽</button>
+            </div>
+        </div>
     </div>
 
     <!-- Step 3: Card Selection -->
@@ -825,9 +830,10 @@ ${text}
                     document.getElementById('lucky-name').innerText = currentStudent.name;
                     document.getElementById('lucky-one').classList.remove('opacity-0');
                     document.getElementById('spin-btn').disabled = false;
+                    document.getElementById('wheel-result-actions').classList.remove('hidden');
+                    document.getElementById('confirm-student-btn').classList.remove('hidden');
                     document.getElementById('skip-student-btn').classList.remove('hidden');
                     clearTimeout(wheelTimeout);
-                    wheelTimeout = setTimeout(() => { document.getElementById('skip-student-btn').classList.add('hidden'); showCards(); }, 2000);
                 }
             }
             requestAnimationFrame(animate);
@@ -1080,8 +1086,19 @@ function endQuiz(){
 
         function backToWheel() {
             document.getElementById('lucky-one').classList.add('opacity-0');
+            document.getElementById('wheel-result-actions').classList.add('hidden');
+            document.getElementById('confirm-student-btn').classList.add('hidden');
             document.getElementById('skip-student-btn').classList.add('hidden');
             initWheel(); showView('wheel-view');
+        }
+
+        function confirmStudent() {
+            clearTimeout(wheelTimeout);
+            document.getElementById('confirm-student-btn').classList.add('hidden');
+            document.getElementById('skip-student-btn').classList.add('hidden');
+            document.getElementById('lucky-one').classList.add('opacity-0');
+            document.getElementById('wheel-result-actions').classList.add('hidden');
+            showCards();
         }
 
         function skipStudent() {
@@ -1102,6 +1119,8 @@ function endQuiz(){
                 currentStudent = null;
             }
             document.getElementById('lucky-one').classList.add('opacity-0');
+            document.getElementById('wheel-result-actions').classList.add('hidden');
+            document.getElementById('confirm-student-btn').classList.add('hidden');
             document.getElementById('skip-student-btn').classList.add('hidden');
             initWheel();
             showView('wheel-view');
