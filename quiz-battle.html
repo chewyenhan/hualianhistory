@@ -1516,7 +1516,7 @@ function renderBattleOptions(options) {
     options.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.innerHTML = '<span style="font-weight:900;margin-right:10px">' + String.fromCharCode(65+i) + '.</span> ' + opt;
+        btn.innerHTML = '<span style="font-weight:900;margin-right:10px">' + (i+1) + '.</span> ' + opt;
         btn.id = 'battle-opt-' + i;
         btn.disabled = true;
         btn.onclick = function() { handleAnswerChoice(i); };
@@ -1969,14 +1969,14 @@ function buildStandaloneHtml(scenesData, title) {
 'var oDiv=document.getElementById("opts");oDiv.innerHTML="";\n' +
 'q.options.forEach(function(o,i){\n' +
 'var b=document.createElement("button");b.className="opt-btn";\n' +
-'b.innerText=String.fromCharCode(65+i)+". "+o;\n' +
+'b.innerText=(i+1)+". "+o;\n' +
 'b.onclick=function(){checkAns(i)};oDiv.appendChild(b);});}\n' +
 'function checkAns(sel){\n' +
 'var q=questions[idx],correct=sel===q.ans,pts=diffs[q.difficulty]||20;\n' +
 'var btns=document.querySelectorAll("#opts .opt-btn");\n' +
 'btns.forEach(function(b,i){b.disabled=true;if(i===q.ans)b.classList.add("correct");if(i===sel&&!correct)b.classList.add("wrong")});\n' +
 'if(correct){score+=pts;document.getElementById("fb").className="feedback correct show";document.getElementById("fb").innerText="✅ 正确！+"+pts+"分"}\n' +
-'else{document.getElementById("fb").className="feedback wrong show";document.getElementById("fb").innerText="❌ 错了。正确答案是 "+String.fromCharCode(65+q.ans)+"。"}\n' +
+'else{document.getElementById("fb").className="feedback wrong show";document.getElementById("fb").innerText="❌ 错了。正确答案是 "+(q.ans+1)+"。"}\n' +
 'if(q.note){document.getElementById("fb").innerText+="\\n\\n💡 "+q.note}\n' +
 'document.getElementById("nextBtn").className="next-btn show";document.getElementById("pts").innerText=score;}\n' +
 'function nextQuestion(){idx++;renderQ()}\n' +
@@ -2097,9 +2097,9 @@ document.addEventListener('keydown', function(e) {
 
     if (e.key === 'q' || e.key === 'Q') { e.preventDefault(); handleBuzzer('left'); }
     else if (e.key === 'p' || e.key === 'P') { e.preventDefault(); handleBuzzer('right'); }
-    else if (e.key === '1' || e.key === 'a' || e.key === 'A') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(0); }
-    else if (e.key === '2' || e.key === 'b' || e.key === 'B') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(1); }
-    else if (e.key === '3' || e.key === 'c' || e.key === 'C') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(2); }
+    else if (e.key === '1') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(0); }
+    else if (e.key === '2') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(1); }
+    else if (e.key === '3') { e.preventDefault(); if (battleState.timerPhase === 'answering' && !turnOverlayActive) handleAnswerChoice(2); }
     else if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
         var noteEl = document.getElementById('battle-note');
