@@ -2251,9 +2251,8 @@ function resolveRound(result, winningSide) {
         // Skill wheel trigger: every 3 consecutive wins (streak 3, 6, 9, ...)
         var winnerStreak = students[winnerName] ? students[winnerName].streak : 0;
         var winnerSkillSlot = winningSide + 'Skill';
-        var winnerSkillConsumed = winningSide + 'SkillConsumed';
         var winsSinceLastSkill = winnerStreak - (skillState[winningSide + 'LastSkillStreak'] || 0);
-        if (winsSinceLastSkill >= 3 && !skillState[winnerSkillSlot] && !skillState[winnerSkillConsumed]) {
+        if (winsSinceLastSkill >= 3 && !skillState[winnerSkillSlot]) {
             // Delay note — show skill wheel first
             setTimeout(function() {
                 showSkillWheel(winningSide, winnerName);
