@@ -47,6 +47,22 @@ body {
 .theme-cute .bg-white { background-color: var(--card-bg) !important; }
 .theme-cute .text-gray-700, .theme-cute .text-gray-800 { color: var(--text-main) !important; }
 
+/* Cream theme — battle UI overrides */
+.theme-cute .battle-arena { background: #f5e6d3; }
+.theme-cute .option-btn {
+    color: #5c5246; background: #ffffff; border: 3px solid #e8d5b7;
+    box-shadow: 0 4px 0 #e8d5b7;
+}
+.theme-cute .option-btn:hover:not(:disabled) { background: var(--primary); border-color: #d4607a; color: #fff; box-shadow: 0 4px 0 #d4607a; }
+.theme-cute .option-btn.correct-answer { background: #065f46 !important; border-color: #22c55e !important; color: #fff !important; box-shadow: none; }
+.theme-cute .option-btn.wrong-choice { background: #7f1d1d !important; border-color: #ef4444 !important; color: #fff !important; box-shadow: none; }
+.theme-cute .buzzer-side-left { color: #5c5246; background: rgba(239,68,68,0.15); border-left: 3px solid rgba(239,68,68,0.4); }
+.theme-cute .buzzer-side-left:hover, .theme-cute .buzzer-side-left.active-buzz { color: #fff; background: rgba(239,68,68,0.7) !important; }
+.theme-cute .buzzer-side-right { color: #5c5246; background: rgba(59,130,246,0.15); border-right: 3px solid rgba(59,130,246,0.4); }
+.theme-cute .buzzer-side-right:hover, .theme-cute .buzzer-side-right.active-buzz { color: #fff; background: rgba(59,130,246,0.7) !important; }
+.theme-cute .timer-bar-bg { background: rgba(0,0,0,0.08); }
+.theme-cute .char-card { border-color: #e8d5b7; }
+
 /* Tech theme overrides */
 .theme-tech .bg-white { background-color: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; }
 .theme-tech .bg-green-50, .theme-tech .bg-yellow-50, .theme-tech .bg-red-50,
