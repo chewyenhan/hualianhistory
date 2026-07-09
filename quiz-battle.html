@@ -504,6 +504,8 @@ let skillState = {
     showFreezeOverlay: false, freezeOverlaySide: null,
     // Double score — triggers giant weapon animation
     leftDoubleScore: false, rightDoubleScore: false,
+    // Track streak when last skill wheel was awarded (for multi-trigger)
+    leftLastSkillStreak: 0, rightLastSkillStreak: 0,
 };
 let skillWheelState = { targetSkill: null, isSpinning: false, pendingSide: null, pendingName: null };
 
@@ -1439,6 +1441,7 @@ function startBattle() {
         leftFreezeBonus: 0, rightFreezeBonus: 0,
         showFreezeOverlay: false, freezeOverlaySide: null,
         leftDoubleScore: false, rightDoubleScore: false,
+        leftLastSkillStreak: 0, rightLastSkillStreak: 0,
     };
     skillWheelState = { targetSkill: null, isSpinning: false, pendingSide: null, pendingName: null };
     startWheelPhase();
@@ -1557,6 +1560,11 @@ function closeSkillWheel() {
     document.getElementById('skill-wheel-overlay').classList.add('hidden');
     document.getElementById('skill-spin-btn').disabled = false;
 
+    // Record streak at which skill wheel was awarded (for next trigger: need +3)
+    var currentStreak = students[skillWheelState.pendingName] ? students[skillWheelState.pendingName].streak : 0;
+    if (side === 'left') skillState.leftLastSkillStreak = currentStreak;
+    else skillState.rightLastSkillStreak = currentStreak;
+
     if (chosenKey && chosenKey !== 'try_again') {
         if (side === 'left') { skillState.leftSkill = chosenKey; skillState.leftSkillConsumed = false; }
         else { skillState.rightSkill = chosenKey; skillState.rightSkillConsumed = false; }
@@ -1568,7 +1576,7 @@ function closeSkillWheel() {
         var skill = SKILLS[chosenKey];
         speak(skillWheelState.pendingName + '获得技能：' + skill.name + '！');
     } else {
-        // try_again: mark consumed so wheel won't re-trigger
+        // try_again: mark consumed so wheel won't re-trigger until next milestone
         if (side === 'left') skillState.leftSkillConsumed = true;
         else skillState.rightSkillConsumed = true;
         speak('再接再励！继续加油！');
@@ -2231,6 +2239,7 @@ function resolveRound(result, winningSide) {
         }
         skillState[loserSide + 'SkillConsumed'] = false;
         skillState[loserSide + 'DoubleScore'] = false;
+        skillState[loserSide + 'LastSkillStreak'] = 0;  // reset on loss
 
         // Play animations and sounds
         playCorrectSound();
@@ -2239,11 +2248,12 @@ function resolveRound(result, winningSide) {
             addFallAnimation(loserSide, loserChar, winningSide === 'left' ? battleState.rightLevel : battleState.leftLevel);
         }, 700);
 
-        // Skill wheel trigger: streak first reaches 3 (after all stat updates)
+        // Skill wheel trigger: every 3 consecutive wins (streak 3, 6, 9, ...)
         var winnerStreak = students[winnerName] ? students[winnerName].streak : 0;
         var winnerSkillSlot = winningSide + 'Skill';
         var winnerSkillConsumed = winningSide + 'SkillConsumed';
-        if (winnerStreak === 3 && !skillState[winnerSkillSlot] && !skillState[winnerSkillConsumed]) {
+        var winsSinceLastSkill = winnerStreak - (skillState[winningSide + 'LastSkillStreak'] || 0);
+        if (winsSinceLastSkill >= 3 && !skillState[winnerSkillSlot] && !skillState[winnerSkillConsumed]) {
             // Delay note — show skill wheel first
             setTimeout(function() {
                 showSkillWheel(winningSide, winnerName);
@@ -2267,6 +2277,7 @@ function resolveRound(result, winningSide) {
         skillState.leftSkill = null; skillState.leftSkillConsumed = false;
         skillState.rightSkill = null; skillState.rightSkillConsumed = false;
         skillState.leftDoubleScore = false; skillState.rightDoubleScore = false;
+        skillState.leftLastSkillStreak = 0; skillState.rightLastSkillStreak = 0;
         playWrongSound();
         addFallAnimation('left', leftChar, battleState.leftLevel);
         setTimeout(function() { addFallAnimation('right', rightChar, battleState.rightLevel); }, 300);
@@ -2352,8 +2363,10 @@ function spinForSlot(slot) {
     // Reset new challenger's skill slot
     if (slot === 'left') {
         skillState.leftSkill = null; skillState.leftSkillConsumed = false; skillState.leftDoubleScore = false;
+        skillState.leftLastSkillStreak = 0;
     } else {
         skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
+        skillState.rightLastSkillStreak = 0;
     }
 
     var avail = getWheelCandidateNames();
@@ -2398,6 +2411,7 @@ function spinForBoth() {
     // Reset both skill slots since both players are being replaced
     skillState.leftSkill = null; skillState.leftSkillConsumed = false; skillState.leftDoubleScore = false;
     skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
+    skillState.leftLastSkillStreak = 0; skillState.rightLastSkillStreak = 0;
     // Reset eliminated for all students if none available
     var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     if (uneliminated.length < 2) {
