@@ -164,6 +164,42 @@ body {
 }
 #vs-overlay.hidden { display: none; }
 #vs-text { font-family: 'Orbitron', sans-serif; font-size: 8rem; font-weight: 900; color: var(--accent); }
+
+/* Skill wheel overlay */
+#skill-wheel-overlay {
+    position: fixed; inset: 0; z-index: 9998; background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+}
+#skill-wheel-overlay.hidden { display: none; }
+#skill-spinner {
+    width: 300px; height: 300px; border-radius: 50%;
+    margin: 1.5rem auto; position: relative;
+    transition: transform 3.5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+.skill-segment-label {
+    position: absolute; font-size: 1.3rem; font-weight: 900;
+    color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    white-space: nowrap;
+}
+#skill-spinner-pointer {
+    position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 18px solid transparent; border-right: 18px solid transparent;
+    border-top: 28px solid #fbbf24; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+#skill-result-display { text-align: center; animation: bounce-in 0.5s ease-out; }
+@keyframes shield-pulse {
+    0%,100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+@keyframes giant-attack-shake {
+    0%,100% { transform: translate(0, 0) scale(1); }
+    10% { transform: translate(-4px, -2px) scale(1.05); }
+    30% { transform: translate(4px, 2px) scale(1.1); }
+    50% { transform: translate(-2px, -1px) scale(1.08); }
+    70% { transform: translate(2px, 1px) scale(1.04); }
+    90% { transform: translate(-1px, 0) scale(1.02); }
+}
 </style>
 </head>
 <body class="theme-tech" onclick="initAudio()">
@@ -336,6 +372,22 @@ body {
   </div>
 </div>
 
+<!-- SKILL WHEEL OVERLAY -->
+<div id="skill-wheel-overlay" class="hidden">
+  <div class="glass-panel text-center" style="padding:2rem; max-width:480px; width:90%;">
+    <h2 style="font-size:2.5rem; font-weight:900; color:#fbbf24; margin-bottom:0.5rem;">🎰 大招抽选！</h2>
+    <p id="skill-wheel-who" style="font-size:1.5rem; font-weight:700; margin-bottom:0.5rem; opacity:0.8;"></p>
+    <p style="font-size:1rem; opacity:0.6; margin-bottom:0.5rem;">连续 3 胜触发 · 点击按钮抽取随机技能</p>
+    <div id="skill-spinner-container" style="position:relative; width:300px; height:300px; margin:0 auto;">
+      <div id="skill-spinner-pointer"></div>
+      <div id="skill-spinner" style="width:300px;height:300px;border-radius:50%;"></div>
+    </div>
+    <div id="skill-result-display" class="hidden" style="margin-top:1rem;"></div>
+    <button id="skill-spin-btn" onclick="spinSkillWheel()" style="margin-top:1rem;background:#eab308;color:#000;padding:0.8rem 3rem;border-radius:999px;font-size:1.4rem;font-weight:900;border:none;cursor:pointer;box-shadow:0 6px 0 #a16207;">🎯 抽技能！</button>
+    <button id="skill-close-btn" onclick="closeSkillWheel()" class="hidden" style="margin-top:1rem;background:#22c55e;color:#fff;padding:0.8rem 3rem;border-radius:999px;font-size:1.4rem;font-weight:900;border:none;cursor:pointer;box-shadow:0 6px 0 #15803d;">✅ 确认 · 继续战斗</button>
+  </div>
+</div>
+
 <!-- BATTLE VIEW -->
 <div id="battle-view" class="hidden">
     <!-- Canvas Arena -->
@@ -430,6 +482,29 @@ let buzzerFailedRight = false;
 let turnOverlayActive = false;
 let leftFallen = false;      // 左方角色是否已倒地（持久状态，阻止站立绘制）
 let rightFallen = false;     // 右方角色是否已倒地
+
+// Skill system (大招)
+const SKILLS = {
+    shield:     { name:'护盾',     emoji:'🛡️', desc:'对方攻击无效，双方进入下一题', color:'#60a5fa' },
+    revive:     { name:'复活',     emoji:'💚', desc:'答错可重新作答一次',           color:'#4ade80' },
+    time_freeze:{ name:'时空冻结', emoji:'❄️', desc:'作答倒计时 +5 秒',            color:'#a0d8ef' },
+    double_score:{ name:'双倍得分', emoji:'⚡', desc:'本题答对胜场 ×2',            color:'#fbbf24' },
+    preemptive: { name:'先发制人', emoji:'🎯', desc:'下题自动抢到答题权',          color:'#f97316' },
+    try_again:  { name:'再接再励', emoji:'🍀', desc:'未抽到技能，继续加油！',      color:'#a0a0a0' }
+};
+const SKILL_KEYS = Object.keys(SKILLS); // ['shield','revive','time_freeze','double_score','preemptive','try_again']
+
+let skillState = {
+    leftSkill: null, rightSkill: null,
+    leftSkillConsumed: false, rightSkillConsumed: false,
+    // Per-round tracking
+    leftReviveUsedThisRound: false, rightReviveUsedThisRound: false,
+    leftFreezeBonus: 0, rightFreezeBonus: 0,
+    showFreezeOverlay: false, freezeOverlaySide: null,
+    // Double score — triggers giant weapon animation
+    leftDoubleScore: false, rightDoubleScore: false,
+};
+let skillWheelState = { targetSkill: null, isSpinning: false, pendingSide: null, pendingName: null };
 
 // Sound system
 const sounds = {
@@ -675,10 +750,26 @@ function startRenderLoop() {
 
         ctx.clearRect(0, 0, w, h);
         drawBackground(ctx, w, h);
+        // Draw shield bubbles behind characters
+        if (!leftFallen) drawSkillShield(ctx, 'left', now);
+        if (!rightFallen) drawSkillShield(ctx, 'right', now);
         if (!leftFallen) drawCharacterAt(ctx, 'left', battleState.leftCharacter, battleState.leftLevel, now);
         if (!rightFallen) drawCharacterAt(ctx, 'right', battleState.rightCharacter, battleState.rightLevel, now);
         drawScores(ctx, w, h, now);
         drawEffects(ctx, w, h, now);
+        // Freeze overlay (time freeze skill)
+        if (skillState.showFreezeOverlay) {
+            ctx.fillStyle = 'rgba(50, 100, 200, 0.15)';
+            ctx.fillRect(0, 0, w, h);
+            for (var fi = 0; fi < 20; fi++) {
+                var fpx = (fi * 73 + now * 0.02) % w;
+                var fpy = (fi * 47 + now * 0.03) % h;
+                ctx.fillStyle = 'rgba(200, 230, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(fpx, fpy, 2 + (fi % 3), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
         processAnimations(now);
 
         renderLoopId = requestAnimationFrame(frame);
@@ -716,6 +807,47 @@ function drawCloud(ctx, x, y, r) {
     ctx.arc(x+r*0.5, y-r*0.2, r*0.5, 0, Math.PI*2);
     ctx.arc(x+r, y, r*0.55, 0, Math.PI*2);
     ctx.fill();
+}
+
+function drawHexagon(ctx, cx, cy, r, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    for (var i = 0; i < 6; i++) {
+        var angle = (i / 6) * Math.PI * 2;
+        var hx = cx + Math.cos(angle) * r;
+        var hy = cy + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawSkillShield(ctx, side, now) {
+    var hasShield = (side === 'left' && skillState.leftSkill === 'shield' && !skillState.leftSkillConsumed) ||
+                    (side === 'right' && skillState.rightSkill === 'shield' && !skillState.rightSkillConsumed);
+    if (!hasShield) return;
+    var x = side === 'left' ? canvasW * 0.22 + 72 : canvasW * 0.78 + 72;
+    var y = groundY - 144 + 72;
+    var pulse = 1 + Math.sin(now * 0.005) * 0.05;
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(x, y, 85 * pulse, 95 * pulse, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(100, 200, 255, 0.7)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(x, y, 80 * pulse, 90 * pulse, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(100, 200, 255, 0.08)';
+    ctx.fill();
+    // Rotating hexagons
+    for (var i = 0; i < 6; i++) {
+        var angle = (i / 6) * Math.PI * 2 + now * 0.001;
+        var hx = x + Math.cos(angle) * 65;
+        var hy = y + Math.sin(angle) * 70;
+        drawHexagon(ctx, hx, hy, 8, 'rgba(150,220,255,0.3)');
+    }
+    ctx.restore();
 }
 
 function drawCharacterAt(ctx, side, charKey, level, now) {
@@ -761,6 +893,17 @@ function drawScores(ctx, w, h, now) {
         ctx.fillStyle = '#f97316'; ctx.font = '24px sans-serif';
         ctx.fillText('🔥'.repeat(Math.min(rightStreak, 5)), canvasW * 0.78 + 72, fy);
     }
+    // Skill icons above characters
+    var skillIcons = { shield: '🛡️', revive: '💚', time_freeze: '❄️', double_score: '⚡', preemptive: '🎯' };
+    var skillY = groundY - 248;
+    if (skillState.leftSkill && !skillState.leftSkillConsumed) {
+        ctx.font = '22px sans-serif';
+        ctx.fillText((skillIcons[skillState.leftSkill] || '❓'), canvasW * 0.22 + 72, skillY);
+    }
+    if (skillState.rightSkill && !skillState.rightSkillConsumed) {
+        ctx.font = '22px sans-serif';
+        ctx.fillText((skillIcons[skillState.rightSkill] || '❓'), canvasW * 0.78 + 72, skillY);
+    }
     // VS
     ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.font = 'bold 64px "Orbitron", sans-serif';
     ctx.fillText('VS', canvasW / 2, groundY - 100);
@@ -771,14 +914,14 @@ const ANIM_TYPES = {
     ATTACK: 'attack', HIT: 'hit', FALL: 'fall', LEVEL_UP: 'levelUp', VS_COUNTDOWN: 'vsCd'
 };
 
-function addAttackAnimation(fromSide, charKey) {
+function addAttackAnimation(fromSide, charKey, isGiant) {
     const fromX = fromSide === 'left' ? canvasW * 0.22 + 144 : canvasW * 0.78 - 10;
     const toX = fromSide === 'left' ? canvasW * 0.78 : canvasW * 0.22 + 144;
     const y = groundY - 100;
     animations.push({
-        type: ANIM_TYPES.ATTACK, startTime: performance.now(), duration: 600,
-        fromSide, charKey, fromX, toX, y,
-        onComplete: () => { addHitAnimation(fromSide === 'left' ? 'right' : 'left'); }
+        type: ANIM_TYPES.ATTACK, startTime: performance.now(), duration: isGiant ? 800 : 600,
+        fromSide, charKey, fromX, toX, y, isGiant: !!isGiant,
+        onComplete: () => { addHitAnimation(fromSide === 'left' ? 'right' : 'left', isGiant); }
     });
 }
 
@@ -799,71 +942,129 @@ function drawEffects(ctx, w, h, now) {
                 // Draw projectile based on character
                 ctx.save(); ctx.imageSmoothingEnabled = true;
 
+                // Giant weapon scale factor (double_score skill)
+                var giantScale = a.isGiant ? 2.5 : 1.0;
+                if (a.isGiant) {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(giantScale, giantScale); ctx.translate(-x, -y);
+                    ctx.save(); ctx.translate(x, y); ctx.scale(giantScale, giantScale); ctx.translate(-x, -y);
+                    ctx.restore(); // We'll re-save per-character below
+                }
+
                 // Trail particles (behind projectile, all classes)
-                for (let i = 1; i <= 4; i++) {
-                    var trailT = Math.max(0, t - i * 0.12);
+                var trailCount = a.isGiant ? 8 : 4;
+                for (let i = 1; i <= trailCount; i++) {
+                    var trailT = Math.max(0, t - i * 0.08);
                     var trailX = a.fromX + (a.toX - a.fromX) * trailT;
-                    var trailY = a.y + Math.sin(trailT * Math.PI) * -30;
-                    ctx.fillStyle = 'rgba(255,255,200,' + (0.35 - i * 0.07).toFixed(2) + ')';
-                    ctx.beginPath(); ctx.arc(trailX, trailY, 4, 0, Math.PI * 2); ctx.fill();
+                    var trailY = a.y + Math.sin(trailT * Math.PI) * -30 * giantScale;
+                    ctx.fillStyle = a.isGiant
+                        ? 'rgba(255,220,50,' + (0.6 - i * 0.06).toFixed(2) + ')'
+                        : 'rgba(255,255,200,' + (0.35 - i * 0.07).toFixed(2) + ')';
+                    ctx.beginPath(); ctx.arc(trailX, trailY, (a.isGiant ? 8 : 4) * giantScale, 0, Math.PI * 2); ctx.fill();
+                }
+
+                // Apply giant scale transform for the projectile
+                if (a.isGiant) {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(giantScale, giantScale); ctx.translate(-x, -y);
                 }
 
                 switch (a.charKey) {
                     case 'knight':
-                        ctx.fillStyle = '#ffd700'; ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 18;
-                        ctx.fillRect(x-3, y-18, 6, 36); break; // sword beam (scaled up)
+                        ctx.fillStyle = a.isGiant ? '#ffe44d' : '#ffd700';
+                        ctx.shadowColor = a.isGiant ? '#fff' : '#ffd700';
+                        ctx.shadowBlur = a.isGiant ? 40 : 18;
+                        ctx.fillRect(x-3, y-18, 6, 36);
+                        if (a.isGiant) {
+                            // Extra glow lines around giant sword
+                            ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+                            ctx.beginPath(); ctx.moveTo(x-8, y-22); ctx.lineTo(x+8, y-22); ctx.stroke();
+                            ctx.beginPath(); ctx.moveTo(x-8, y+18); ctx.lineTo(x+8, y+18); ctx.stroke();
+                        }
+                        break;
                     case 'archer':
-                        ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 5;
+                        ctx.strokeStyle = a.isGiant ? '#5C2E00' : '#8B4513';
+                        ctx.lineWidth = a.isGiant ? 8 : 5;
                         ctx.beginPath(); ctx.moveTo(x-20, y); ctx.lineTo(x, y); ctx.stroke();
-                        ctx.fillStyle = '#ccc';
+                        ctx.fillStyle = a.isGiant ? '#ddd' : '#ccc';
                         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x-8, y-4); ctx.lineTo(x-8, y+4); ctx.fill();
+                        if (a.isGiant) {
+                            // Giant arrow fletching glow
+                            ctx.fillStyle = '#ff0';
+                            ctx.beginPath(); ctx.moveTo(x-12, y-6); ctx.lineTo(x-16, y); ctx.lineTo(x-12, y+6); ctx.fill();
+                        }
                         break;
                     case 'mage':
-                        // Outer flame glow (trail)
-                        var flameOuter = ctx.createRadialGradient(x, y, 0, x, y, 20);
-                        flameOuter.addColorStop(0, 'rgba(255,180,0,0.9)');
-                        flameOuter.addColorStop(0.4, 'rgba(255,80,0,0.7)');
-                        flameOuter.addColorStop(0.7, 'rgba(255,30,0,0.3)');
+                        var outerR = a.isGiant ? 50 : 20;
+                        var coreR = a.isGiant ? 25 : 10;
+                        var flameOuter = ctx.createRadialGradient(x, y, 0, x, y, outerR);
+                        flameOuter.addColorStop(0, a.isGiant ? 'rgba(255,255,100,1)' : 'rgba(255,180,0,0.9)');
+                        flameOuter.addColorStop(0.4, a.isGiant ? 'rgba(255,100,0,0.9)' : 'rgba(255,80,0,0.7)');
+                        flameOuter.addColorStop(0.7, a.isGiant ? 'rgba(255,50,0,0.5)' : 'rgba(255,30,0,0.3)');
                         flameOuter.addColorStop(1, 'transparent');
                         ctx.fillStyle = flameOuter;
-                        ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.fill();
-                        // Inner white-hot core
-                        var flameCore = ctx.createRadialGradient(x, y, 0, x, y, 8);
+                        ctx.beginPath(); ctx.arc(x, y, outerR, 0, Math.PI * 2); ctx.fill();
+                        var flameCore = ctx.createRadialGradient(x, y, 0, x, y, coreR);
                         flameCore.addColorStop(0, '#fff');
                         flameCore.addColorStop(0.4, '#ffdd00');
                         flameCore.addColorStop(1, 'rgba(255,80,0,0)');
                         ctx.fillStyle = flameCore;
-                        ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(x, y, coreR, 0, Math.PI * 2); ctx.fill();
                         break;
                     case 'ninja':
                         ctx.save(); ctx.translate(x, y); ctx.rotate(t * Math.PI * 4);
-                        ctx.fillStyle = '#ff4500'; ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 12;
-                        drawStar(ctx, 0, 0, 5, 14, 5); ctx.fill(); ctx.restore();
+                        ctx.fillStyle = '#ff4500'; ctx.shadowColor = a.isGiant ? '#ff0' : '#ff4500';
+                        ctx.shadowBlur = a.isGiant ? 30 : 12;
+                        drawStar(ctx, 0, 0, 5, a.isGiant ? 35 : 14, a.isGiant ? 12 : 5); ctx.fill();
+                        if (a.isGiant) {
+                            // Second star for double effect
+                            ctx.fillStyle = 'rgba(255,255,200,0.4)';
+                            drawStar(ctx, 0, 0, 5, 50, 18); ctx.fill();
+                        }
+                        ctx.restore();
                         break;
                     case 'viking':
                         ctx.save(); ctx.translate(x, y); ctx.rotate(t * Math.PI * 3);
-                        ctx.fillStyle = '#c0c0c0'; ctx.shadowColor = '#888'; ctx.shadowBlur = 8;
-                        ctx.fillRect(-16, -6, 32, 12); // axe head (scaled up)
-                        ctx.fillStyle = '#8B4513'; ctx.fillRect(-3, -18, 6, 14); // handle (scaled up)
+                        ctx.fillStyle = a.isGiant ? '#ddd' : '#c0c0c0';
+                        ctx.shadowColor = a.isGiant ? '#fff' : '#888';
+                        ctx.shadowBlur = a.isGiant ? 20 : 8;
+                        ctx.fillRect(-16, -6, 32, 12);
+                        ctx.fillStyle = '#8B4513'; ctx.fillRect(-3, -18, 6, 14);
                         ctx.restore();
                         break;
                     case 'samurai':
-                        ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 28;
-                        ctx.fillRect(x-2, y-25, 4, 50); // slash line (scaled up)
-                        ctx.fillStyle = 'rgba(255,255,255,0.35)';
-                        ctx.fillRect(x-25, y-3, 50, 6); // horizontal flash (scaled up)
+                        ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff';
+                        ctx.shadowBlur = a.isGiant ? 50 : 28;
+                        ctx.fillRect(x-2, y-25, 4, 50);
+                        ctx.fillStyle = a.isGiant ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.35)';
+                        ctx.fillRect(x-25, y-3, 50, 6);
+                        if (a.isGiant) {
+                            // Cross slash for giant samurai
+                            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                            ctx.fillRect(x-3, y-40, 6, 80);
+                        }
                         break;
                 }
-                ctx.restore();
+                if (a.isGiant) { ctx.restore(); } // end giant scale
+                ctx.restore(); // end main save
                 break;
             }
             case ANIM_TYPES.HIT: {
                 const targetSide = a.side;
                 const tx = (targetSide === 'right' ? canvasW * 0.78 : canvasW * 0.22) + 72;
                 const ty = groundY - 72;
-                ctx.fillStyle = `rgba(255,0,0,${1-t})`; ctx.fillRect(tx-30, ty-30, 60, 60);
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
-                ctx.fillText('💥', tx, ty);
+                var hitScale = a.isGiant ? 2.0 : 1.0;
+                ctx.fillStyle = a.isGiant
+                    ? `rgba(255,200,0,${(1-t)*0.8})`
+                    : `rgba(255,0,0,${1-t})`;
+                ctx.fillRect(tx - 30 * hitScale, ty - 30 * hitScale, 60 * hitScale, 60 * hitScale);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold ' + (a.isGiant ? 36 : 20) + 'px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText(a.isGiant ? '💥⚡' : '💥', tx, ty);
+                if (a.isGiant) {
+                    // Screen shake text
+                    ctx.fillStyle = 'rgba(255,255,0,0.7)';
+                    ctx.font = 'bold 18px "Orbitron", sans-serif';
+                    ctx.fillText('DOUBLE!', tx, ty - 40 * hitScale);
+                }
                 break;
             }
             case ANIM_TYPES.FALL: {
@@ -889,6 +1090,45 @@ function drawEffects(ctx, w, h, now) {
                 }
                 ctx.fillStyle = '#ffd700'; ctx.font = 'bold 28px "Orbitron", sans-serif'; ctx.textAlign = 'center';
                 ctx.fillText('LEVEL UP!', lX, lY - 60);
+                break;
+            }
+            case 'shieldBlock': {
+                const sX = (a.side === 'left' ? canvasW * 0.22 : canvasW * 0.78) + 72;
+                const sY = groundY - 72;
+                const expand = t < 0.3 ? t / 0.3 : 1;
+                const alpha = t > 0.6 ? (1 - (t - 0.6) / 0.4) : 1;
+                ctx.save();
+                ctx.strokeStyle = 'rgba(100, 200, 255, ' + alpha.toFixed(2) + ')';
+                ctx.lineWidth = 4;
+                const radius = 40 + expand * 60;
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.ellipse(sX, sY + i * 15 - 15, radius, radius * 0.7, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.fillStyle = 'rgba(255, 255, 255, ' + (alpha * 0.4).toFixed(2) + ')';
+                ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('🛡️ BLOCKED!', sX, sY - radius - 20);
+                ctx.restore();
+                break;
+            }
+            case 'revive': {
+                const rX = (a.side === 'left' ? canvasW * 0.22 : canvasW * 0.78) + 72;
+                const rY = groundY - 100;
+                ctx.save();
+                for (let i = 0; i < 12; i++) {
+                    const pt = (t + i * 0.08) % 1;
+                    const angle = i * 0.9 + pt * Math.PI * 2;
+                    const dist = pt * 50;
+                    const px = rX + Math.cos(angle) * dist;
+                    const py = rY - pt * 60 + Math.sin(pt * Math.PI) * 15;
+                    ctx.fillStyle = 'rgba(74, 222, 128, ' + (1 - pt).toFixed(2) + ')';
+                    ctx.beginPath(); ctx.arc(px, py, 3 + (1 - pt) * 3, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.fillStyle = 'rgba(74, 222, 128, ' + (1 - t).toFixed(2) + ')';
+                ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('💚 复活!', rX, rY - 50);
+                ctx.restore();
                 break;
             }
         }
@@ -929,9 +1169,24 @@ function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
 
 function processAnimations(now) { /* animations filtered in drawEffects */ }
 
-function addHitAnimation(side) {
+function addHitAnimation(side, isGiant) {
     animations.push({
-        type: ANIM_TYPES.HIT, startTime: performance.now(), duration: 400, side,
+        type: ANIM_TYPES.HIT, startTime: performance.now(), duration: isGiant ? 600 : 400, side, isGiant: !!isGiant,
+        onComplete: null
+    });
+}
+
+// New animation types for skill system
+function addShieldBlockAnimation(side) {
+    animations.push({
+        type: 'shieldBlock', startTime: performance.now(), duration: 800, side,
+        onComplete: null
+    });
+}
+
+function addReviveAnimation(side) {
+    animations.push({
+        type: 'revive', startTime: performance.now(), duration: 1000, side,
         onComplete: null
     });
 }
@@ -1174,7 +1429,164 @@ function startBattle() {
         buzzerWinner: null, secondChance: false, roundResolved: false,
         timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null
     };
+    // Reset skill state
+    skillState = {
+        leftSkill: null, rightSkill: null,
+        leftSkillConsumed: false, rightSkillConsumed: false,
+        leftReviveUsedThisRound: false, rightReviveUsedThisRound: false,
+        leftFreezeBonus: 0, rightFreezeBonus: 0,
+        showFreezeOverlay: false, freezeOverlaySide: null,
+        leftDoubleScore: false, rightDoubleScore: false,
+    };
+    skillWheelState = { targetSkill: null, isSpinning: false, pendingSide: null, pendingName: null };
     startWheelPhase();
+}
+
+// ============ SECTION 5.5: SKILL WHEEL (大招轮盘) ============
+function showSkillWheel(side, playerName) {
+    if (skillWheelState.isSpinning) return;
+    skillWheelState.pendingSide = side;
+    skillWheelState.pendingName = playerName;
+    skillWheelState.isSpinning = false;
+    skillWheelState.targetSkill = null;
+
+    document.getElementById('skill-wheel-who').innerText = '🔥 ' + playerName + ' 获得大招机会！';
+    document.getElementById('skill-spin-btn').classList.remove('hidden');
+    document.getElementById('skill-close-btn').classList.add('hidden');
+    document.getElementById('skill-result-display').classList.add('hidden');
+    document.getElementById('skill-wheel-overlay').classList.remove('hidden');
+    initSkillSpinner();
+    speak(playerName + '连续三胜！抽选大招技能！');
+}
+
+function initSkillSpinner() {
+    var spinner = document.getElementById('skill-spinner');
+    var n = SKILL_KEYS.length;
+    var arc = 360 / n;
+    var gradParts = [];
+    SKILL_KEYS.forEach(function(k, i) {
+        var c = SKILLS[k].color;
+        gradParts.push(c + ' ' + (i * arc) + 'deg ' + ((i + 1) * arc) + 'deg');
+    });
+    spinner.style.background = 'conic-gradient(' + gradParts.join(', ') + ')';
+    spinner.style.transform = 'rotate(0deg)';
+    spinner.style.transition = 'none';
+
+    // Draw segment labels
+    var container = document.getElementById('skill-spinner-container');
+    // Remove old labels
+    container.querySelectorAll('.skill-segment-label').forEach(function(el) { el.remove(); });
+    var r = 110; // label distance from center
+    SKILL_KEYS.forEach(function(k, i) {
+        var midAngle = (i * arc + arc / 2) * Math.PI / 180;
+        var lx = 150 + Math.cos(midAngle) * r;
+        var ly = 150 + Math.sin(midAngle) * r;
+        var label = document.createElement('div');
+        label.className = 'skill-segment-label';
+        label.style.left = lx + 'px';
+        label.style.top = ly + 'px';
+        label.style.transform = 'translate(-50%, -50%) rotate(' + (midAngle * 180 / Math.PI) + 'deg)';
+        label.innerText = SKILLS[k].emoji;
+        container.appendChild(label);
+    });
+}
+
+function spinSkillWheel() {
+    if (skillWheelState.isSpinning) return;
+    skillWheelState.isSpinning = true;
+    document.getElementById('skill-spin-btn').disabled = true;
+    document.getElementById('skill-result-display').classList.add('hidden');
+
+    var spins = 5 + Math.random() * 3; // 5-8 full rotations
+    var extraAngle = Math.random() * 360;
+    var totalAngle = spins * 360 + extraAngle;
+    var spinner = document.getElementById('skill-spinner');
+
+    // Animate with rAF for tick sound
+    var startAngle = 0;
+    var duration = 3500;
+    var startTime = null;
+    var lastTick = 0;
+
+    function animate(time) {
+        if (!startTime) startTime = time;
+        var progress = Math.min((time - startTime) / duration, 1);
+        // Ease out cubic
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var currentAngle = eased * totalAngle;
+        spinner.style.transition = 'none';
+        spinner.style.transform = 'rotate(' + currentAngle + 'deg)';
+
+        if (Math.floor(currentAngle / 30) > lastTick) {
+            playWheelTick();
+            lastTick = Math.floor(currentAngle / 30);
+        }
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            // Determine result
+            var finalAngle = totalAngle % 360;
+            var arc = 360 / SKILL_KEYS.length;
+            var idx = Math.floor(((360 - finalAngle) % 360) / arc) % SKILL_KEYS.length;
+            var chosenKey = SKILL_KEYS[idx];
+            skillWheelState.targetSkill = chosenKey;
+            skillWheelState.isSpinning = false;
+            document.getElementById('skill-spin-btn').classList.add('hidden');
+            document.getElementById('skill-close-btn').classList.remove('hidden');
+
+            var skill = SKILLS[chosenKey];
+            var resultDiv = document.getElementById('skill-result-display');
+            resultDiv.classList.remove('hidden');
+            if (chosenKey === 'try_again') {
+                resultDiv.innerHTML = '<div style="font-size:4rem;">🍀</div><p style="font-size:1.8rem;font-weight:900;color:#a0a0a0;">再接再励！</p><p style="font-size:1.1rem;opacity:0.7;">未抽到技能，继续加油！</p>';
+            } else {
+                resultDiv.innerHTML = '<div style="font-size:4rem;">' + skill.emoji + '</div><p style="font-size:2rem;font-weight:900;color:' + skill.color + ';">' + skill.name + '</p><p style="font-size:1.1rem;opacity:0.7;">' + skill.desc + '</p>';
+            }
+            playCorrectSound();
+        }
+    }
+    requestAnimationFrame(animate);
+}
+
+function closeSkillWheel() {
+    var side = skillWheelState.pendingSide;
+    var chosenKey = skillWheelState.targetSkill;
+    document.getElementById('skill-wheel-overlay').classList.add('hidden');
+    document.getElementById('skill-spin-btn').disabled = false;
+
+    if (chosenKey && chosenKey !== 'try_again') {
+        if (side === 'left') { skillState.leftSkill = chosenKey; skillState.leftSkillConsumed = false; }
+        else { skillState.rightSkill = chosenKey; skillState.rightSkillConsumed = false; }
+        // If double_score, mark for giant weapon on next attack
+        if (chosenKey === 'double_score') {
+            if (side === 'left') skillState.leftDoubleScore = true;
+            else skillState.rightDoubleScore = true;
+        }
+        var skill = SKILLS[chosenKey];
+        speak(skillWheelState.pendingName + '获得技能：' + skill.name + '！');
+    } else {
+        // try_again: mark consumed so wheel won't re-trigger
+        if (side === 'left') skillState.leftSkillConsumed = true;
+        else skillState.rightSkillConsumed = true;
+        speak('再接再励！继续加油！');
+    }
+
+    skillWheelState.pendingSide = null;
+    skillWheelState.pendingName = null;
+    skillWheelState.targetSkill = null;
+
+    // Resume: show the battle note that was delayed
+    var q = scenes[battleState.questionIndex];
+    document.getElementById('battle-note').classList.remove('hidden');
+    document.getElementById('battle-note-text').innerText = q.note || '';
+    document.getElementById('timer-label').innerText = '✅ 回合结束';
+    var nextBtn = document.getElementById('next-round-btn-text');
+    if (battleState.questionIndex + 1 >= scenes.length) {
+        nextBtn.innerText = '🏆 查看最终英雄榜 →';
+    } else {
+        nextBtn.innerText = '下一场对决 →';
+    }
 }
 
 // ============ SECTION 6: WHEEL + CHARACTER SELECT ============
@@ -1261,8 +1673,12 @@ function getUneliminatedStudents() {
 
 function onWheelComplete(name) {
     playCorrectSound();
-    // Track participation
-    if (students[name]) students[name].usedCount = (students[name].usedCount || 0) + 1;
+    // Ensure student exists in tracking (defensive, for mid-game spins)
+    if (!students[name]) {
+        students[name] = { name: name, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
+    } else {
+        students[name].usedCount = (students[name].usedCount || 0) + 1;
+    }
 
     if (wheelState.spinCount === 0) {
         wheelState.firstStudent = name;
@@ -1339,6 +1755,11 @@ function confirmStudent() {
     if (wheelState._spinForSlot) {
         // Replacement spin: proceed to single character select
         var pickSlot = wheelState._spinForSlot;
+        var spunName = wheelState.lastSpunName;
+        // Ensure replacement student exists in students object
+        if (spunName && !students[spunName]) {
+            students[spunName] = { name: spunName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
+        }
         delete wheelState._spinForSlot;
         wheelState.lastSpunName = null;
         document.getElementById('wheel-view').classList.add('hidden');
@@ -1492,6 +1913,13 @@ function startBattleRound() {
     turnOverlayActive = false;
     leftFallen = false;
     rightFallen = false;
+    // Reset per-round skill flags
+    skillState.leftReviveUsedThisRound = false;
+    skillState.rightReviveUsedThisRound = false;
+    skillState.leftFreezeBonus = 0;
+    skillState.rightFreezeBonus = 0;
+    skillState.showFreezeOverlay = false;
+    skillState.freezeOverlaySide = null;
     setSingleBuzzerEnabled('left', true);
     setSingleBuzzerEnabled('right', true);
 
@@ -1527,6 +1955,16 @@ function startBattleRound() {
     document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('correct-answer','wrong-choice'));
 
     if (config.timerEnabled) startBattleTimer(config.timerSeconds, 'waiting');
+
+    // Preemptive strike: auto-buzz for player with this skill
+    if (skillState.leftSkill === 'preemptive' && !skillState.leftSkillConsumed) {
+        skillState.leftSkill = null; skillState.leftSkillConsumed = true;
+        setTimeout(function() { handleBuzzer('left'); }, 600);
+    } else if (skillState.rightSkill === 'preemptive' && !skillState.rightSkillConsumed) {
+        skillState.rightSkill = null; skillState.rightSkillConsumed = true;
+        setTimeout(function() { handleBuzzer('right'); }, 600);
+    }
+
     if (battleState.questionIndex === 0) speak('第一题！' + q.q);
     else speak(q.q);
 }
@@ -1573,9 +2011,14 @@ function dismissTurnOverlay() {
     turnOverlayActive = false;
     document.getElementById('turn-overlay').style.display = 'none';
     setOptionsEnabled(true);
-    startBattleTimer(config.answerSeconds, 'answering', battleState.buzzerWinner);
-    var buzzerName = battleState.buzzerWinner === 'left' ? battleState.leftStudent : battleState.rightStudent;
-    document.getElementById('timer-label').innerText = '⚡ ' + buzzerName + ' 作答中...';
+    // Apply time freeze bonus if active
+    var side = battleState.buzzerWinner;
+    var bonus = skillState[side + 'FreezeBonus'] || 0;
+    var totalTime = config.answerSeconds + bonus;
+    startBattleTimer(totalTime, 'answering', side);
+    skillState[side + 'FreezeBonus'] = 0;
+    var buzzerName = side === 'left' ? battleState.leftStudent : battleState.rightStudent;
+    document.getElementById('timer-label').innerText = (bonus > 0 ? '❄️ ' : '⚡ ') + buzzerName + ' 作答中...';
     speak(buzzerName + '，请作答！');
 }
 
@@ -1591,6 +2034,19 @@ function handleBuzzer(side) {
     pausedTimerRemaining = battleState.timerRemaining;
     stopBattleTimer();
     setBuzzersEnabled(false);
+
+    // Time Freeze skill: grant +5 seconds answer time
+    if (skillState[side + 'Skill'] === 'time_freeze' && !skillState[side + 'SkillConsumed']) {
+        skillState[side + 'FreezeBonus'] = 5;
+        skillState[side + 'Skill'] = null;
+        skillState[side + 'SkillConsumed'] = true;
+        // Brief freeze overlay effect
+        skillState.showFreezeOverlay = true;
+        skillState.freezeOverlaySide = side;
+        setTimeout(function() { skillState.showFreezeOverlay = false; }, 1500);
+        playSynth(200, 'sine', 0.08, 0.6); // wind/whoosh sound
+        speak('时空冻结！额外五秒！');
+    }
 
     var btnId = side === 'left' ? 'buzzer-left-btn' : 'buzzer-right-btn';
     document.getElementById(btnId).classList.add('active-buzz');
@@ -1627,6 +2083,28 @@ function handleAnswerChoice(optIdx) {
         });
         resolveRound('both_lose');
     } else {
+        // Revive skill check: re-answer instead of passing to opponent
+        var reviveKey = answeringSide + 'ReviveUsedThisRound';
+        if (skillState[answeringSide + 'Skill'] === 'revive' && !skillState[answeringSide + 'SkillConsumed'] && !skillState[reviveKey]) {
+            skillState[answeringSide + 'Skill'] = null;
+            skillState[answeringSide + 'SkillConsumed'] = true;
+            skillState[reviveKey] = true;
+            // Clear wrong highlight
+            document.querySelectorAll('.option-btn').forEach(function(b, i) {
+                if (i === optIdx) b.classList.remove('wrong-choice');
+            });
+            // Revive sparkle animation
+            addReviveAnimation(answeringSide);
+            playSynth(523, 'sine', 0.1, 0.15);
+            setTimeout(function() { playSynth(659, 'sine', 0.1, 0.15); }, 150);
+            setTimeout(function() { playSynth(784, 'sine', 0.1, 0.2); }, 300);
+            // Restart answer timer
+            startBattleTimer(config.answerSeconds, 'answering', answeringSide);
+            document.getElementById('timer-label').innerText = '💚 复活！再试一次';
+            speak('复活！再试一次！');
+            return;
+        }
+
         // First student wrong → mark wrong, lock their buzzer, resume main timer for opponent
         document.querySelectorAll('.option-btn').forEach(function(b, i) {
             if (i === optIdx) b.classList.add('wrong-choice');
@@ -1681,57 +2159,128 @@ function resolveRound(result, winningSide) {
         var loserName = winningSide === 'left' ? rightName : leftName;
         var winnerChar = winningSide === 'left' ? leftChar : rightChar;
         var loserChar = winningSide === 'left' ? rightChar : leftChar;
+        var loserSide = winningSide === 'left' ? 'right' : 'left';
 
-        if (students[winnerName]) {
+        // Shield skill check: block the attack
+        if (skillState[loserSide + 'Skill'] === 'shield' && !skillState[loserSide + 'SkillConsumed']) {
+            skillState[loserSide + 'Skill'] = null;
+            skillState[loserSide + 'SkillConsumed'] = true;
+            // Shield block animation
+            addShieldBlockAnimation(loserSide);
+            playSynth(200, 'square', 0.08, 0.2);
+            setTimeout(function() { playSynth(100, 'triangle', 0.1, 0.25); }, 150);
+            // Show note directly (shield blocked, no scores change)
+            setTimeout(function() {
+                document.getElementById('battle-note').classList.remove('hidden');
+                document.getElementById('battle-note-text').innerText = '🛡️ ' + loserName + ' 的护盾挡住了攻击！双方未得分。\n\n' + (q.note || '');
+                document.getElementById('timer-label').innerText = '🛡️ 护盾格挡！';
+                var nextBtn = document.getElementById('next-round-btn-text');
+                if (battleState.questionIndex + 1 >= scenes.length) {
+                    nextBtn.innerText = '🏆 查看最终英雄榜 →';
+                } else {
+                    nextBtn.innerText = '下一场对决 →';
+                }
+            }, 800);
+            speak('护盾挡住了攻击！');
+            // Still mark both as answered the question
+            if (students[winnerName]) { students[winnerName].totalQuestions++; }
+            if (students[loserName]) { students[loserName].totalQuestions++; }
+            return;
+        }
+
+        // Ensure both students exist in tracking (replacement students may not be)
+        if (!students[winnerName]) {
+            students[winnerName] = { name: winnerName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
+        }
+        if (!students[loserName]) {
+            students[loserName] = { name: loserName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
+        }
+
+        students[winnerName].wins++;
+        // Double score skill: extra win
+        var dblKey = winningSide + 'DoubleScore';
+        if (skillState[dblKey]) {
             students[winnerName].wins++;
-            students[winnerName].streak++;
-            students[winnerName].correctAnswers++;
-            students[winnerName].totalQuestions++;
-            students[winnerName].character = winnerChar;
-            students[winnerName].eliminated = false; // Winner stays alive
-            if (students[winnerName].streak > students[winnerName].bestStreak) students[winnerName].bestStreak = students[winnerName].streak;
-            checkLevelUp(winnerName);
+            skillState[dblKey] = false;
+            skillState[winningSide + 'Skill'] = null;
+            skillState[winningSide + 'SkillConsumed'] = true;
         }
-        if (students[loserName]) {
-            students[loserName].losses++;
-            students[loserName].streak = 0;
-            students[loserName].level = 1;
-            students[loserName].totalQuestions++;
-            students[loserName].eliminated = true;
-            students[loserName].character = loserChar;
-        }
+        students[winnerName].streak++;
+        students[winnerName].correctAnswers++;
+        students[winnerName].totalQuestions++;
+        students[winnerName].character = winnerChar;
+        students[winnerName].eliminated = false; // Winner stays alive
+        if (students[winnerName].streak > students[winnerName].bestStreak) students[winnerName].bestStreak = students[winnerName].streak;
+        checkLevelUp(winnerName);
 
+        // Always update loser stats (MUST run before skill wheel check)
+        students[loserName].losses++;
+        students[loserName].streak = 0;
+        students[loserName].level = 1;
+        students[loserName].totalQuestions++;
+        students[loserName].eliminated = true;
+        students[loserName].character = loserChar;
+        // Clear loser's skill on defeat (always reset consumed flag too)
+        if (skillState[loserSide + 'Skill']) {
+            skillState[loserSide + 'Skill'] = null;
+        }
+        skillState[loserSide + 'SkillConsumed'] = false;
+        skillState[loserSide + 'DoubleScore'] = false;
+
+        // Play animations and sounds
         playCorrectSound();
-        addAttackAnimation(winningSide, winnerChar);
+        addAttackAnimation(winningSide, winnerChar, skillState[winningSide + 'DoubleScore'] || false);
         setTimeout(function() {
-            addFallAnimation(winningSide === 'left' ? 'right' : 'left', loserChar, winningSide === 'left' ? battleState.rightLevel : battleState.leftLevel);
+            addFallAnimation(loserSide, loserChar, winningSide === 'left' ? battleState.rightLevel : battleState.leftLevel);
         }, 700);
 
+        // Skill wheel trigger: streak first reaches 3 (after all stat updates)
+        var winnerStreak = students[winnerName] ? students[winnerName].streak : 0;
+        var winnerSkillSlot = winningSide + 'Skill';
+        var winnerSkillConsumed = winningSide + 'SkillConsumed';
+        if (winnerStreak === 3 && !skillState[winnerSkillSlot] && !skillState[winnerSkillConsumed]) {
+            // Delay note — show skill wheel first
+            setTimeout(function() {
+                showSkillWheel(winningSide, winnerName);
+            }, 1500);
+            return; // Note will be shown by closeSkillWheel()
+        }
+
     } else if (result === 'both_lose') {
-        if (students[leftName]) {
-            students[leftName].losses++; students[leftName].streak = 0; students[leftName].level = 1; students[leftName].totalQuestions++;
-            students[leftName].eliminated = true; students[leftName].character = leftChar;
+        // Ensure both students exist in tracking
+        if (!students[leftName]) {
+            students[leftName] = { name: leftName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
         }
-        if (students[rightName]) {
-            students[rightName].losses++; students[rightName].streak = 0; students[rightName].level = 1; students[rightName].totalQuestions++;
-            students[rightName].eliminated = true; students[rightName].character = rightChar;
+        if (!students[rightName]) {
+            students[rightName] = { name: rightName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
         }
+        students[leftName].losses++; students[leftName].streak = 0; students[leftName].level = 1; students[leftName].totalQuestions++;
+        students[leftName].eliminated = true; students[leftName].character = leftChar;
+        students[rightName].losses++; students[rightName].streak = 0; students[rightName].level = 1; students[rightName].totalQuestions++;
+        students[rightName].eliminated = true; students[rightName].character = rightChar;
+        // Clear skills for both sides
+        skillState.leftSkill = null; skillState.leftSkillConsumed = false;
+        skillState.rightSkill = null; skillState.rightSkillConsumed = false;
+        skillState.leftDoubleScore = false; skillState.rightDoubleScore = false;
         playWrongSound();
         addFallAnimation('left', leftChar, battleState.leftLevel);
         setTimeout(function() { addFallAnimation('right', rightChar, battleState.rightLevel); }, 300);
     }
 
-    setTimeout(function() {
-        document.getElementById('battle-note').classList.remove('hidden');
-        document.getElementById('battle-note-text').innerText = q.note || '';
-        document.getElementById('timer-label').innerText = '✅ 回合结束';
-        var nextBtn = document.getElementById('next-round-btn-text');
-        if (battleState.questionIndex + 1 >= scenes.length) {
-            nextBtn.innerText = '🏆 查看最终英雄榜 →';
-        } else {
-            nextBtn.innerText = '下一场对决 →';
-        }
-    }, 1500);
+    // Only show note if skill wheel wasn't triggered
+    if (!skillWheelState.pendingSide) {
+        setTimeout(function() {
+            document.getElementById('battle-note').classList.remove('hidden');
+            document.getElementById('battle-note-text').innerText = q.note || '';
+            document.getElementById('timer-label').innerText = '✅ 回合结束';
+            var nextBtn = document.getElementById('next-round-btn-text');
+            if (battleState.questionIndex + 1 >= scenes.length) {
+                nextBtn.innerText = '🏆 查看最终英雄榜 →';
+            } else {
+                nextBtn.innerText = '下一场对决 →';
+            }
+        }, 1500);
+    }
 }
 
 function proceedAfterRound() {
@@ -1784,6 +2333,12 @@ function spinForSlot(slot) {
     wheelState._spinForSlot = slot;
     var winnerName = slot === 'left' ? battleState.rightStudent : battleState.leftStudent;
     wheelState.excludeStudent = winnerName; // Exclude winner from wheel
+    // Reset new challenger's skill slot
+    if (slot === 'left') {
+        skillState.leftSkill = null; skillState.leftSkillConsumed = false; skillState.leftDoubleScore = false;
+    } else {
+        skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
+    }
 
     var avail = getWheelCandidateNames();
     initWheel(avail);
@@ -1791,7 +2346,12 @@ function spinForSlot(slot) {
     var origComplete = onWheelComplete;
     onWheelComplete = function(name) {
         playCorrectSound();
-        if (students[name]) students[name].usedCount = (students[name].usedCount || 0) + 1;
+        // Ensure replacement student exists in tracking
+        if (!students[name]) {
+            students[name] = { name: name, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
+        } else {
+            students[name].usedCount = (students[name].usedCount || 0) + 1;
+        }
         if (wheelState._spinForSlot === 'left') {
             battleState.leftStudent = name;
             document.getElementById('wheel-label').innerText = '左方新战士：' + name + ' ✅';
@@ -1819,6 +2379,9 @@ function spinForBoth() {
     wheelState.spinCount = 0;
     wheelState.firstStudent = null;
     wheelState.secondStudent = null;
+    // Reset both skill slots since both players are being replaced
+    skillState.leftSkill = null; skillState.leftSkillConsumed = false; skillState.leftDoubleScore = false;
+    skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
     // Reset eliminated for all students if none available
     var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     if (uneliminated.length < 2) {
