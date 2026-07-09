@@ -472,7 +472,8 @@ let battleState = {
     leftCharacter: null, rightCharacter: null,
     leftLevel: 1, rightLevel: 1,
     buzzerWinner: null, secondChance: false, roundResolved: false,
-    timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null
+    timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null,
+    shieldBlocked: false
 };
 
 // Per-round lock state (prevents double-tap & unfair auto-pass)
@@ -1427,7 +1428,8 @@ function startBattle() {
         leftCharacter: null, rightCharacter: null,
         leftLevel: 1, rightLevel: 1,
         buzzerWinner: null, secondChance: false, roundResolved: false,
-        timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null
+        timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null,
+        shieldBlocked: false
     };
     // Reset skill state
     skillState = {
@@ -1903,6 +1905,7 @@ function startBattleRound() {
     battleState.buzzerWinner = null;
     battleState.secondChance = false;
     battleState.roundResolved = false;
+    battleState.shieldBlocked = false;
     battleState.timerPhase = 'waiting';
     battleState.timerActiveSide = null;
 
@@ -2185,6 +2188,8 @@ function resolveRound(result, winningSide) {
             // Still mark both as answered the question
             if (students[winnerName]) { students[winnerName].totalQuestions++; }
             if (students[loserName]) { students[loserName].totalQuestions++; }
+            // Mark shield blocked so proceedAfterRound keeps both players
+            battleState.shieldBlocked = true;
             return;
         }
 
@@ -2310,6 +2315,17 @@ function proceedAfterRound() {
         battleState.rightCharacter = (students[rightName] && students[rightName].character) || battleState.rightCharacter;
         battleState.rightLevel = (students[rightName] && students[rightName].level) || 1;
         spinForSlot('left');
+    } else if (leftAlive && rightAlive && battleState.shieldBlocked) {
+        // Shield block: both survive, continue with same characters
+        battleState.shieldBlocked = false;
+        battleState.leftStudent = leftName;
+        battleState.rightStudent = rightName;
+        battleState.leftCharacter = (students[leftName] && students[leftName].character) || battleState.leftCharacter;
+        battleState.leftLevel = (students[leftName] && students[leftName].level) || 1;
+        battleState.rightCharacter = (students[rightName] && students[rightName].character) || battleState.rightCharacter;
+        battleState.rightLevel = (students[rightName] && students[rightName].level) || 1;
+        document.getElementById('battle-view').classList.add('hidden');
+        showVSCountdown();
     } else {
         spinForBoth();
     }
