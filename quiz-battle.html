@@ -493,7 +493,9 @@ const SKILLS = {
     preemptive: { name:'先发制人', emoji:'🎯', desc:'下题自动抢到答题权',          color:'#f97316' },
     try_again:  { name:'再接再励', emoji:'🍀', desc:'未抽到技能，继续加油！',      color:'#a0a0a0' }
 };
-const SKILL_KEYS = Object.keys(SKILLS); // ['shield','revive','time_freeze','double_score','preemptive','try_again']
+const SKILL_KEYS = Object.keys(SKILLS); // 6 keys (for lookup only)
+// Wheel slots: 7 sectors, 2× try_again → 5/7 ≈ 71% chance to get a skill
+const SKILL_WHEEL_SLOTS = ['shield','revive','time_freeze','double_score','preemptive','try_again','try_again'];
 
 let skillState = {
     leftSkill: null, rightSkill: null,
@@ -914,7 +916,8 @@ function drawScores(ctx, w, h, now) {
 
 // ============ SECTION 4: ANIMATION ENGINE ============
 const ANIM_TYPES = {
-    ATTACK: 'attack', HIT: 'hit', FALL: 'fall', LEVEL_UP: 'levelUp', VS_COUNTDOWN: 'vsCd'
+    ATTACK: 'attack', HIT: 'hit', FALL: 'fall', LEVEL_UP: 'levelUp', VS_COUNTDOWN: 'vsCd',
+    KING_SLAYER: 'kingSlayer'
 };
 
 function addAttackAnimation(fromSide, charKey, isGiant) {
@@ -1134,6 +1137,47 @@ function drawEffects(ctx, w, h, now) {
                 ctx.restore();
                 break;
             }
+            case ANIM_TYPES.KING_SLAYER: {
+                // Big "弑王者 King Slayer" text + explosion particles
+                var cx = canvasW / 2;
+                var cy = groundY - 100;
+                // Scale pop: 0→1.2→1
+                var scale = t < 0.15 ? t / 0.15 * 1.2 : 1.2 - (t - 0.15) / 0.85 * 0.2;
+                if (t < 0.15) scale = t / 0.15 * 1.2;
+                else scale = 1.2 - Math.min((t - 0.15) / 0.15, 1) * 0.2;
+                var alpha = t > 0.8 ? 1 - (t - 0.8) / 0.2 : 1;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.translate(cx, cy);
+                ctx.scale(scale, scale);
+                ctx.translate(-cx, -cy);
+                // Background glow
+                ctx.shadowColor = '#ffd700';
+                ctx.shadowBlur = 40;
+                ctx.fillStyle = '#ffd700';
+                ctx.font = 'bold 72px "Noto Sans SC", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('弑王者', cx, cy - 10);
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 20;
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 36px "Orbitron", sans-serif';
+                ctx.fillText('King Slayer', cx, cy + 40);
+                ctx.shadowBlur = 0;
+                // Explosion particles
+                for (var i = 0; i < 20; i++) {
+                    var pt = Math.min(t * 1.5, 1);
+                    var angle = i * 0.314 + t * 2;
+                    var dist = pt * 120 + Math.sin(t * 10 + i) * 15;
+                    var px = cx + Math.cos(angle) * dist;
+                    var py = cy + Math.sin(angle) * dist;
+                    var pAlpha = (1 - pt) * alpha;
+                    ctx.fillStyle = 'rgba(255,215,0,' + pAlpha.toFixed(2) + ')';
+                    ctx.beginPath(); ctx.arc(px, py, 3 + (1 - pt) * 4, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.restore();
+                break;
+            }
         }
     });
 
@@ -1192,6 +1236,24 @@ function addReviveAnimation(side) {
         type: 'revive', startTime: performance.now(), duration: 1000, side,
         onComplete: null
     });
+}
+
+function addKingSlayerAnimation() {
+    animations.push({
+        type: ANIM_TYPES.KING_SLAYER, startTime: performance.now(), duration: 2500,
+        onComplete: null
+    });
+}
+
+function playKingSlayerSound() {
+    // Triumphant horn fanfare: C5→E5→G5
+    playSynth(523, 'square', 0.12, 0.2);
+    setTimeout(function() { playSynth(659, 'square', 0.12, 0.2); }, 150);
+    setTimeout(function() { playSynth(784, 'square', 0.15, 0.35); }, 300);
+    // Bass drum hit
+    setTimeout(function() { playNoise(0.2, 0.15, 200); }, 100);
+    // Additional fanfare tail
+    setTimeout(function() { playSynth(1047, 'square', 0.1, 0.3); }, 500);
 }
 
 function addFallAnimation(side, charKey, level) {
@@ -1466,10 +1528,10 @@ function showSkillWheel(side, playerName) {
 
 function initSkillSpinner() {
     var spinner = document.getElementById('skill-spinner');
-    var n = SKILL_KEYS.length;
+    var n = SKILL_WHEEL_SLOTS.length;
     var arc = 360 / n;
     var gradParts = [];
-    SKILL_KEYS.forEach(function(k, i) {
+    SKILL_WHEEL_SLOTS.forEach(function(k, i) {
         var c = SKILLS[k].color;
         gradParts.push(c + ' ' + (i * arc) + 'deg ' + ((i + 1) * arc) + 'deg');
     });
@@ -1482,7 +1544,7 @@ function initSkillSpinner() {
     // Remove old labels
     container.querySelectorAll('.skill-segment-label').forEach(function(el) { el.remove(); });
     var r = 110; // label distance from center
-    SKILL_KEYS.forEach(function(k, i) {
+    SKILL_WHEEL_SLOTS.forEach(function(k, i) {
         var midAngle = (i * arc + arc / 2) * Math.PI / 180;
         var lx = 150 + Math.cos(midAngle) * r;
         var ly = 150 + Math.sin(midAngle) * r;
@@ -1532,9 +1594,9 @@ function spinSkillWheel() {
         } else {
             // Determine result
             var finalAngle = totalAngle % 360;
-            var arc = 360 / SKILL_KEYS.length;
-            var idx = Math.floor(((360 - finalAngle) % 360) / arc) % SKILL_KEYS.length;
-            var chosenKey = SKILL_KEYS[idx];
+            var arc = 360 / SKILL_WHEEL_SLOTS.length;
+            var idx = Math.floor(((360 - finalAngle) % 360) / arc) % SKILL_WHEEL_SLOTS.length;
+            var chosenKey = SKILL_WHEEL_SLOTS[idx];
             skillWheelState.targetSkill = chosenKey;
             skillWheelState.isSpinning = false;
             document.getElementById('skill-spin-btn').classList.add('hidden');
@@ -2209,14 +2271,28 @@ function resolveRound(result, winningSide) {
             students[loserName] = { name: loserName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
         }
 
+        // Capture loser's streak before reset (for King Slayer check)
+        var loserStreakBefore = students[loserName] ? students[loserName].streak : 0;
+
         students[winnerName].wins++;
         // Double score skill: extra win
         var dblKey = winningSide + 'DoubleScore';
+        var doubleScoreUsed = false;
         if (skillState[dblKey]) {
             students[winnerName].wins++;
             skillState[dblKey] = false;
             skillState[winningSide + 'Skill'] = null;
             skillState[winningSide + 'SkillConsumed'] = true;
+            doubleScoreUsed = true;
+        }
+        // King Slayer: +1 extra win if beating a 3+ streak opponent
+        // Only add if double_score didn't already boost (cap at +2 total)
+        if (loserStreakBefore >= 3 && !doubleScoreUsed) {
+            students[winnerName].wins++;
+        }
+        if (loserStreakBefore >= 3) {
+            addKingSlayerAnimation();
+            playKingSlayerSound();
         }
         students[winnerName].streak++;
         students[winnerName].correctAnswers++;
