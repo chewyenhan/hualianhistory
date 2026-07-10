@@ -2285,16 +2285,17 @@ function resolveRound(result, winningSide) {
             skillState[winningSide + 'SkillConsumed'] = true;
             doubleScoreUsed = true;
         }
-        // King Slayer: +1 extra win if beating a 3+ streak opponent
-        // Only add if double_score didn't already boost (cap at +2 total)
+        // King Slayer: +1 extra win + bonus streak if beating a 3+ streak opponent
+        // Only add win if double_score didn't already boost (cap at +2 total)
         if (loserStreakBefore >= 3 && !doubleScoreUsed) {
             students[winnerName].wins++;
         }
         if (loserStreakBefore >= 3) {
+            students[winnerName].streak++;  // bonus streak: beating the king counts as "extra round"
             addKingSlayerAnimation();
             playKingSlayerSound();
         }
-        students[winnerName].streak++;
+        students[winnerName].streak++;  // regular +1 streak per round
         students[winnerName].correctAnswers++;
         students[winnerName].totalQuestions++;
         students[winnerName].character = winnerChar;
