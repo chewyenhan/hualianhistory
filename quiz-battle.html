@@ -2342,10 +2342,20 @@ function proceedAfterRound() {
 }
 
 function spinForSlot(slot) {
+    var winnerName = slot === 'left' ? battleState.rightStudent : battleState.leftStudent;
+    var loserName = slot === 'left' ? battleState.leftStudent : battleState.rightStudent;
     // Reset eliminated flags if no challengers available
+    // Guard: never reset the just-eliminated loser — they should NOT immediately re-enter the wheel
     var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
-    if (uneliminated.length < 2) {
-        Object.keys(students).forEach(function(n) { students[n].eliminated = false; });
+    var available = uneliminated.filter(function(n) { return n !== winnerName; });
+    if (available.length < 1) {
+        // Reset eliminated students except the current battle participants
+        Object.keys(students).forEach(function(n) {
+            if (n !== loserName && n !== winnerName) { students[n].eliminated = false; }
+        });
+        // If still no challengers, reluctantly allow the loser
+        var still = Object.keys(students).filter(function(n) { return !students[n].eliminated && n !== winnerName; });
+        if (still.length < 1 && students[loserName]) { students[loserName].eliminated = false; }
     }
     document.getElementById('battle-view').classList.add('hidden');
     document.getElementById('wheel-view').classList.remove('hidden');
@@ -2357,7 +2367,6 @@ function spinForSlot(slot) {
     clearTimeout(wheelTimeout);
     wheelState.spinCount = 1; // Single spin
     wheelState._spinForSlot = slot;
-    var winnerName = slot === 'left' ? battleState.rightStudent : battleState.leftStudent;
     wheelState.excludeStudent = winnerName; // Exclude winner from wheel
     // Reset new challenger's skill slot
     if (slot === 'left') {
@@ -2412,9 +2421,21 @@ function spinForBoth() {
     skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
     skillState.leftLastSkillStreak = 0; skillState.rightLastSkillStreak = 0;
     // Reset eliminated for all students if none available
+    // Guard: never reset the two students currently in battle — they just lost and should not re-enter immediately
+    var guardLeft = battleState.leftStudent;
+    var guardRight = battleState.rightStudent;
     var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     if (uneliminated.length < 2) {
-        Object.keys(students).forEach(function(n) { students[n].eliminated = false; });
+        // First pass: reset eliminated students NOT currently in battle
+        Object.keys(students).forEach(function(n) {
+            if (n !== guardLeft && n !== guardRight) { students[n].eliminated = false; }
+        });
+        // If still not enough, reluctantly allow guarded students
+        var still = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+        if (still.length < 2) {
+            if (guardLeft && students[guardLeft]) students[guardLeft].eliminated = false;
+            if (guardRight && students[guardRight]) students[guardRight].eliminated = false;
+        }
     }
     startWheelPhase();
 }
