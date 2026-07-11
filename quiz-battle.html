@@ -2018,7 +2018,13 @@ function startBattleRound() {
         return;
     }
     const q = scenes[battleState.questionIndex];
-    document.getElementById('battle-question').innerHTML = '<span style="font-size:1rem;opacity:0.5">' + (q.diff||'') + ' ' + (q.emoji||'') + '</span><br>' + q.q;
+    const questionEl = document.getElementById('battle-question');
+    questionEl.replaceChildren();
+    const questionMeta = document.createElement('span');
+    questionMeta.style.fontSize = '1rem';
+    questionMeta.style.opacity = '0.5';
+    questionMeta.textContent = (q.diff || '') + ' ' + (q.emoji || '');
+    questionEl.append(questionMeta, document.createElement('br'), document.createTextNode(q.q || ''));
     renderBattleOptions(q.options);
 
     setOptionsEnabled(false);
@@ -2048,7 +2054,11 @@ function renderBattleOptions(options) {
     options.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.innerHTML = '<span style="font-weight:900;margin-right:10px">' + (i+1) + '.</span> ' + opt;
+        const optionNumber = document.createElement('span');
+        optionNumber.style.fontWeight = '900';
+        optionNumber.style.marginRight = '10px';
+        optionNumber.textContent = (i + 1) + '.';
+        btn.append(optionNumber, document.createTextNode(' ' + (opt || '')));
         btn.id = 'battle-opt-' + i;
         btn.disabled = true;
         btn.onclick = function() { handleAnswerChoice(i); };
@@ -2204,8 +2214,12 @@ function handleAnswerChoice(optIdx) {
             document.querySelectorAll('.option-btn').forEach(function(b) { b.classList.remove('wrong-choice'); });
             // Re-enable opponent's buzzer and resume main countdown
             setSingleBuzzerEnabled(opponentSide, true);
-            document.getElementById('timer-label').innerText = '⏱️ 抢答倒计时';
-            startBattleTimer(pausedTimerRemaining, 'waiting');
+            if (config.timerEnabled) {
+                document.getElementById('timer-label').innerText = '⏱️ 抢答倒计时';
+                startBattleTimer(pausedTimerRemaining, 'waiting');
+            } else {
+                document.getElementById('timer-label').innerText = '⏱️ 抢答（不限时）';
+            }
             speak(oppName + '，轮到你了！');
         }, 800);
     }
@@ -2320,7 +2334,9 @@ function resolveRound(result, winningSide) {
 
         // Play animations and sounds
         playCorrectSound();
-        addAttackAnimation(winningSide, winnerChar, skillState[winningSide + 'DoubleScore'] || false);
+        // The skill flag is cleared once its bonus win is awarded above, so use the
+        // captured result to keep the giant-weapon animation in sync with scoring.
+        addAttackAnimation(winningSide, winnerChar, doubleScoreUsed);
         setTimeout(function() {
             addFallAnimation(loserSide, loserChar, winningSide === 'left' ? battleState.rightLevel : battleState.leftLevel);
         }, 700);
@@ -2609,7 +2625,7 @@ function showLeaderboard() {
 
         return '<tr class="border-b border-white/10 ' + (i < 3 ? 'bg-yellow-50/10' : '') + '">' +
             '<td class="p-6 text-center text-4xl font-black">' + badge + ' #' + (i+1) + '</td>' +
-            '<td class="p-6 text-3xl font-black">' + s.name + '</td>' +
+            '<td class="p-6 text-3xl font-black">' + escapeHtml(s.name) + '</td>' +
             '<td class="p-6 text-center text-2xl">' + charEmoji + ' ' + charName + ' ' + levelStars + '</td>' +
             '<td class="p-6 text-center text-3xl font-black text-yellow-400">' + s.wins + '</td>' +
             '<td class="p-6 text-center text-2xl font-black text-orange-400">🔥 ' + s.bestStreak + '</td>' +
@@ -2618,6 +2634,12 @@ function showLeaderboard() {
 
     document.getElementById('leaderboard-view').classList.remove('hidden');
     speak('决战结束！恭喜获胜者！');
+}
+
+function escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = String(value ?? '');
+    return element.innerHTML;
 }
 
 // ============ SECTION 10: STANDALONE HTML DOWNLOAD ============
