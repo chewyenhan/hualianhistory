@@ -1426,7 +1426,6 @@ ${ config.shuffleDifficulty ? '- Randomly shuffle the order of difficulty levels
 
 Output ONLY valid JSON array, no markdown, no code blocks.`;
 
-    let isOffline = false;
     try {
         const res = await fetch(`${WORKER_URL}/gemini`, {
             method: 'POST',
@@ -1441,10 +1440,18 @@ Output ONLY valid JSON array, no markdown, no code blocks.`;
         scenes = JSON.parse(match[0]);
         shuffleOptions(scenes);
     } catch (e) {
-        console.warn('API failed, using fallback', e);
+        console.warn('API failed', e);
+        const reason = e && e.message ? e.message : '无法连接 AI 服务';
+        const useFallback = window.confirm(
+            '⚠️ AI 题目生成失败：' + reason +
+            '\n\n点击“确定”使用备用题继续；点击“取消”返回设置后重试。'
+        );
+        if (!useFallback) {
+            document.getElementById('loading').classList.add('hidden');
+            return;
+        }
         scenes = buildFallbackData(text, easyN, medN, hardN, qCount);
         shuffleOptions(scenes);
-        isOffline = true;
     }
 
     // Normalize difficulty (6-step post-processing)
