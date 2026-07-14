@@ -2152,8 +2152,10 @@ function startGroupWheelPhase() {
     var isRightSpin = (ph === 'rightGroup' || ph === 'rightReplacement');
 
     if (isLeftSpin || isRightSpin) {
-        if (groupQueue.length === 0) {
-            // No groups left to pick — game should end
+        // Double-check end condition: count ALL groups with alive players
+        var aliveCount = 0;
+        groups.forEach(function(g) { if (g.aliveCount > 0) aliveCount++; });
+        if (aliveCount <= 1 || groupQueue.length === 0) {
             showGroupLeaderboard();
             return;
         }
@@ -2491,26 +2493,25 @@ function groupProceedAfterRound() {
 }
 
 function updateGroupElimination() {
-    var leftGid = groupWheelState.leftGroupIdx;
-    var rightGid = groupWheelState.rightGroupIdx;
-
-    [leftGid, rightGid].forEach(function(gid) {
-        if (gid === null || gid === undefined) return;
+    // Check ALL groups, not just active ones — queue groups may have stale aliveCount
+    for (var gid = 0; gid < groups.length; gid++) {
         var g = groups[gid];
-        if (!g) return;
+        if (!g) continue;
         var alive = 0;
-        g.players.forEach(function(p) {
+        for (var pi = 0; pi < g.players.length; pi++) {
+            var p = g.players[pi];
+            // Sync from students tracking (authoritative source)
             if (students[p.name] && students[p.name].eliminated) {
                 p.eliminated = true;
             }
             if (!p.eliminated) alive++;
-        });
+        }
         g.aliveCount = alive;
         if (alive === 0) {
-            // Remove from queue
+            // Remove dead group from waiting queue
             groupQueue = groupQueue.filter(function(qid) { return qid !== gid; });
         }
-    });
+    }
 }
 
 function showGroupLeaderboard() {
