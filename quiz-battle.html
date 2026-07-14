@@ -2129,7 +2129,8 @@ function startGroupBattle() {
 
     groupWheelState = {
         phase: 'leftGroup', leftGroupIdx: null, rightGroupIdx: null,
-        leftPlayer: null, rightPlayer: null, isSpinning: false, selectedPlayerIdx: null
+        leftPlayer: null, rightPlayer: null, isSpinning: false, selectedPlayerIdx: null,
+        replacementSide: null
     };
     startGroupWheelPhase();
 }
@@ -2146,19 +2147,18 @@ function startGroupWheelPhase() {
     document.getElementById('spin-btn').classList.remove('hidden');
     clearTimeout(wheelTimeout);
 
-    if (groupWheelState.phase === 'leftGroup' || groupWheelState.phase === 'rightGroup') {
-        // Show group wheel
-        var eligible = groupQueue.slice(); // copy
-        if (groupWheelState.phase === 'rightGroup' && groupWheelState.leftGroupIdx !== null) {
-            // For right group, temporarily remove left group from queue display
-            // but the actual selection comes from queue[1] in the deterministic logic
-        }
-        document.getElementById('wheel-label').innerText = groupWheelState.phase === 'leftGroup' ? '🔴 抽选左方组别...' : '🔵 抽选右方组别...';
+    var ph = groupWheelState.phase;
+    var isLeftSpin = (ph === 'leftGroup' || ph === 'leftReplacement');
+    var isRightSpin = (ph === 'rightGroup' || ph === 'rightReplacement');
 
-        // For group wheel, we use deterministic queue ordering but show wheel for excitement
-        // The wheel canvas shows all groups in groupQueue
+    if (isLeftSpin || isRightSpin) {
+        if (groupQueue.length === 0) {
+            // No groups left to pick — game should end
+            showGroupLeaderboard();
+            return;
+        }
+        document.getElementById('wheel-label').innerText = isLeftSpin ? '🔴 抽选左方组别...' : '🔵 抽选右方组别...';
         initGroupWheel();
-        // Override the spin button handler
         var spinBtn = document.getElementById('spin-btn');
         spinBtn.onclick = spinGroupWheel;
         spinBtn.classList.remove('hidden');
@@ -2187,6 +2187,7 @@ function initGroupWheel() {
 
 function spinGroupWheel() {
     if (wheelState.isSpinning) return;
+    if (groupQueue.length === 0) return;
     wheelState.isSpinning = true;
     document.getElementById('spin-btn').disabled = true;
     document.getElementById('wheel-result').classList.add('hidden');
@@ -2196,13 +2197,8 @@ function spinGroupWheel() {
     var speed = 0.3 + Math.random() * 0.4, duration = 3000;
     var start = null, lastTick = 0;
 
-    // Determine the target group index (deterministic from queue)
-    var targetQueueIdx;
-    if (groupWheelState.phase === 'leftGroup') {
-        targetQueueIdx = 0; // first in queue
-    } else {
-        targetQueueIdx = 1; // second in queue
-    }
+    // Winner stays: queue only has waiting groups. Always pick queue[0].
+    var targetQueueIdx = 0;
     var targetGroupIdx = groupQueue[targetQueueIdx];
     var groupNames = groupQueue.map(function(idx) { return groups[idx].name; });
     var targetArc = (2 * Math.PI) / groupNames.length;
@@ -2239,14 +2235,18 @@ function onGroupWheelComplete(groupIdx) {
     playCorrectSound();
     var groupName = groups[groupIdx].name;
 
-    if (groupWheelState.phase === 'leftGroup') {
+    // Remove selected group from queue (it's now "active" in the arena)
+    groupQueue = groupQueue.filter(function(qid) { return qid !== groupIdx; });
+
+    var ph = groupWheelState.phase;
+
+    if (ph === 'leftGroup' || ph === 'leftReplacement') {
         groupWheelState.leftGroupIdx = groupIdx;
         document.getElementById('wheel-label').innerText = '左方组别：' + groupName + ' ✅';
-        // Show player pick for this group
         document.getElementById('spin-btn').classList.add('hidden');
         renderGroupPlayerList(groupIdx, 'left');
         groupWheelState.phase = 'leftPlayer';
-    } else if (groupWheelState.phase === 'rightGroup') {
+    } else if (ph === 'rightGroup' || ph === 'rightReplacement') {
         groupWheelState.rightGroupIdx = groupIdx;
         document.getElementById('wheel-label').innerText = '右方组别：' + groupName + ' ✅';
         document.getElementById('spin-btn').classList.add('hidden');
@@ -2308,35 +2308,54 @@ function confirmGroupPlayer() {
 
     playerName = groups[groupIdx].players[groupWheelState.selectedPlayerIdx].name;
 
+    // Initialize student tracking
+    if (!students[playerName]) {
+        students[playerName] = { name: playerName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
+    } else {
+        students[playerName].usedCount = (students[playerName].usedCount || 0) + 1;
+    }
+    students[playerName].eliminated = false; // Reset for re-entering players
+
     if (side === 'left') {
         groupWheelState.leftPlayer = playerName;
         battleState.leftStudent = playerName;
-        // Update student tracking if needed
-        if (!students[playerName]) {
-            students[playerName] = { name: playerName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
-        } else {
-            students[playerName].usedCount = (students[playerName].usedCount || 0) + 1;
+        // Restore character/level if player has played before
+        if (students[playerName].character) {
+            battleState.leftCharacter = students[playerName].character;
+            battleState.leftLevel = students[playerName].level || 1;
         }
-
-        // Move to right group pick
-        document.getElementById('group-player-pick-panel').classList.add('hidden');
-        document.getElementById('wheel-label').innerText = '左方：' + playerName + ' ✅ — 准备抽选右方组别';
-        groupWheelState.phase = 'rightGroup';
-        setTimeout(function() { startGroupWheelPhase(); }, 1000);
     } else {
         groupWheelState.rightPlayer = playerName;
         battleState.rightStudent = playerName;
-        if (!students[playerName]) {
-            students[playerName] = { name: playerName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
-        } else {
-            students[playerName].usedCount = (students[playerName].usedCount || 0) + 1;
+        if (students[playerName].character) {
+            battleState.rightCharacter = students[playerName].character;
+            battleState.rightLevel = students[playerName].level || 1;
         }
+    }
 
-        // Done! Proceed to character selection
-        document.getElementById('group-player-pick-panel').classList.add('hidden');
+    document.getElementById('group-player-pick-panel').classList.add('hidden');
+
+    // Check if both sides are ready
+    var leftReady = groupWheelState.leftPlayer !== null;
+    var rightReady = groupWheelState.rightPlayer !== null;
+
+    if (leftReady && rightReady) {
+        // Both sides ready → proceed to battle
         document.getElementById('wheel-view').classList.add('hidden');
         groupWheelState.phase = 'done';
-        startCharacterSelection();
+
+        if (groupWheelState.replacementSide) {
+            // Winner stays — only new player picks character
+            startSingleCharSelect(groupWheelState.replacementSide);
+        } else {
+            // Both new — full character selection
+            startCharacterSelection();
+        }
+    } else {
+        // Only one side set → spin for the other side
+        groupWheelState.phase = 'rightGroup';
+        document.getElementById('wheel-label').innerText = '左方：' + playerName + ' ✅ — 准备抽选右方组别';
+        setTimeout(function() { startGroupWheelPhase(); }, 1000);
     }
 }
 
@@ -2357,38 +2376,12 @@ function groupProceedAfterRound() {
     var leftAlive = students[leftName] && !students[leftName].eliminated;
     var rightAlive = students[rightName] && !students[rightName].eliminated;
 
-    // Update group alive counts and queue
+    // Update group alive counts and queue (remove fully dead groups)
     updateGroupElimination();
 
-    // Check if game is over (only 1 or 0 groups left)
-    var aliveGroups = groupQueue.length;
-    if (aliveGroups <= 1) {
-        stopRenderLoop();
-        document.getElementById('battle-view').classList.add('hidden');
-        showGroupLeaderboard();
-        return;
-    }
-
-    // Move left and right groups to back of queue (round-robin rotation)
-    var leftGid = groupWheelState.leftGroupIdx;
-    var rightGid = groupWheelState.rightGroupIdx;
-
-    // Remove both from current positions and push to back
-    var newQueue = [];
-    for (var i = 0; i < groupQueue.length; i++) {
-        if (groupQueue[i] !== leftGid && groupQueue[i] !== rightGid) {
-            newQueue.push(groupQueue[i]);
-        }
-    }
-    // Push both to back (if they still exist in queue)
-    if (groupQueue.indexOf(leftGid) !== -1) newQueue.push(leftGid);
-    if (groupQueue.indexOf(rightGid) !== -1 && leftGid !== rightGid) newQueue.push(rightGid);
-    groupQueue = newQueue;
-
-    // Reset group wheel state for next round
     stopRenderLoop();
 
-    // Update levels from students
+    // Restore winner's character/level from tracking
     if (students[leftName]) {
         battleState.leftCharacter = students[leftName].character || battleState.leftCharacter;
         battleState.leftLevel = students[leftName].level || 1;
@@ -2398,19 +2391,102 @@ function groupProceedAfterRound() {
         battleState.rightLevel = students[rightName].level || 1;
     }
 
-    // If both alive (shield block), keep same players
+    // Shield block: both survive → rematch with same players
     if (leftAlive && rightAlive && battleState.shieldBlocked) {
         battleState.shieldBlocked = false;
+        var aliveGroupCountSB = 0;
+        groups.forEach(function(g) { if (g.aliveCount > 0) aliveGroupCountSB++; });
+        if (aliveGroupCountSB <= 1) {
+            document.getElementById('battle-view').classList.add('hidden');
+            showGroupLeaderboard();
+            return;
+        }
+        // Both stay active, no queue changes needed
+        groupWheelState.phase = 'done'; groupWheelState.replacementSide = null;
         document.getElementById('battle-view').classList.add('hidden');
         showVSCountdown();
         return;
     }
 
-    // Otherwise, start a fresh group wheel phase
-    groupWheelState = {
-        phase: 'leftGroup', leftGroupIdx: null, rightGroupIdx: null,
-        leftPlayer: null, rightPlayer: null, isSpinning: false, selectedPlayerIdx: null
-    };
+    var leftGid = groupWheelState.leftGroupIdx;
+    var rightGid = groupWheelState.rightGroupIdx;
+
+    // WINNER STAYS: loser's group → back of queue. Winner stays active.
+    // New challenger comes from front of queue.
+
+    if (leftAlive && !rightAlive) {
+        // Left won → push right (loser) to back of queue
+        if (rightGid !== null && rightGid !== undefined && groups[rightGid] && groups[rightGid].aliveCount > 0) {
+            groupQueue.push(rightGid);
+        }
+        groupWheelState = {
+            phase: 'rightReplacement',
+            leftGroupIdx: leftGid, leftPlayer: leftName,
+            rightGroupIdx: null, rightPlayer: null,
+            isSpinning: false, selectedPlayerIdx: null,
+            replacementSide: 'right'
+        };
+        battleState.leftStudent = leftName;
+        battleState.leftCharacter = students[leftName] ? (students[leftName].character || battleState.leftCharacter) : battleState.leftCharacter;
+        battleState.leftLevel = students[leftName] ? (students[leftName].level || 1) : battleState.leftLevel;
+
+    } else if (!leftAlive && rightAlive) {
+        // Right won → push left (loser) to back of queue
+        if (leftGid !== null && leftGid !== undefined && groups[leftGid] && groups[leftGid].aliveCount > 0) {
+            groupQueue.push(leftGid);
+        }
+        groupWheelState = {
+            phase: 'leftReplacement',
+            leftGroupIdx: null, leftPlayer: null,
+            rightGroupIdx: rightGid, rightPlayer: rightName,
+            isSpinning: false, selectedPlayerIdx: null,
+            replacementSide: 'left'
+        };
+        battleState.rightStudent = rightName;
+        battleState.rightCharacter = students[rightName] ? (students[rightName].character || battleState.rightCharacter) : battleState.rightCharacter;
+        battleState.rightLevel = students[rightName] ? (students[rightName].level || 1) : battleState.rightLevel;
+
+    } else {
+        // Both lost → push both to back of queue
+        if (leftGid !== null && leftGid !== undefined && groups[leftGid] && groups[leftGid].aliveCount > 0) {
+            groupQueue.push(leftGid);
+        }
+        if (rightGid !== null && rightGid !== undefined && groups[rightGid] && groups[rightGid].aliveCount > 0) {
+            groupQueue.push(rightGid);
+        }
+        groupWheelState = {
+            phase: 'leftGroup',
+            leftGroupIdx: null, leftPlayer: null,
+            rightGroupIdx: null, rightPlayer: null,
+            isSpinning: false, selectedPlayerIdx: null,
+            replacementSide: null
+        };
+    }
+
+    // Check end condition: count ALL groups (active + waiting) with alive players
+    var aliveGroupCount = 0;
+    groups.forEach(function(g) { if (g.aliveCount > 0) aliveGroupCount++; });
+    if (aliveGroupCount <= 1) {
+        stopRenderLoop();
+        document.getElementById('battle-view').classList.add('hidden');
+        showGroupLeaderboard();
+        return;
+    }
+
+    // Need at least one group in queue to pick a challenger
+    if (groupWheelState.phase !== 'leftGroup' && groupQueue.length === 0) {
+        stopRenderLoop();
+        document.getElementById('battle-view').classList.add('hidden');
+        showGroupLeaderboard();
+        return;
+    }
+    if (groupWheelState.phase === 'leftGroup' && groupQueue.length < 2) {
+        stopRenderLoop();
+        document.getElementById('battle-view').classList.add('hidden');
+        showGroupLeaderboard();
+        return;
+    }
+
     startGroupWheelPhase();
 }
 
@@ -2444,10 +2520,10 @@ function showGroupLeaderboard() {
     var lb = document.getElementById('leaderboard-view');
     lb.classList.remove('hidden');
 
-    // Sort groups by aliveCount desc, then totalWins desc
+    // Sort groups by totalWins desc, then aliveCount desc
     var sortedGroups = groups.slice().sort(function(a, b) {
-        if (b.aliveCount !== a.aliveCount) return b.aliveCount - a.aliveCount;
-        return b.totalWins - a.totalWins;
+        if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
+        return b.aliveCount - a.aliveCount;
     });
 
     var html = '<h2 class="text-5xl font-black mb-6 text-center" style="color:#c084fc">🏆 组别对决 · 最终排名</h2>';
@@ -2461,14 +2537,15 @@ function showGroupLeaderboard() {
         html += '<div><span class="text-3xl mr-3">' + medal + '</span><span class="text-3xl font-black">' + escHTML(g.name) + '</span>';
         if (isChampion) html += ' <span class="text-2xl ml-3">👑 冠军组！</span>';
         html += '</div>';
-        html += '<div class="text-right"><span class="text-2xl font-black text-green-400">' + g.aliveCount + ' 人存活</span>';
-        html += ' <span class="text-xl opacity-60">/ ' + g.players.length + '</span></div>';
-        html += '</div>';
+        html += '<div class="text-right">';
+        html += '<span class="text-3xl font-black text-yellow-400">🏆 ' + (g.totalWins || 0) + ' 分</span>';
+        html += '<div class="text-lg opacity-60">' + g.aliveCount + ' 人存活 / ' + g.players.length + '</div>';
+        html += '</div></div>';
         html += '<div class="mt-3 flex flex-wrap gap-2">';
         g.players.forEach(function(p) {
             var pStudent = students[p.name] || p;
             var pElim = p.eliminated || (pStudent && pStudent.eliminated);
-            html += '<span class="px-3 py-1 rounded-full text-sm font-bold" style="background:' + (pElim ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)') + ';color:' + (pElim ? '#fca5a5' : '#86efac') + ';">' + escHTML(p.name) + (pElim ? ' ❌' : ' ✅') + ' (' + (pStudent.wins || p.wins || 0) + '胜)</span>';
+            html += '<span class="px-3 py-1 rounded-full text-sm font-bold" style="background:' + (pElim ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)') + ';color:' + (pElim ? '#fca5a5' : '#86efac') + ';">' + escHTML(p.name) + (pElim ? ' ❌' : ' ✅') + '</span>';
         });
         html += '</div></div>';
     });
