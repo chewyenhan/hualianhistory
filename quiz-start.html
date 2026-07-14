@@ -108,66 +108,16 @@
                 <div class="text-8xl mb-8 floating">⚔️</div>
                 <h2 class="text-5xl font-black mb-4 text-red-400">大决战模式</h2>
                 <p class="text-xl opacity-70 leading-relaxed mb-4">支持双人决战 & 组别对决两种玩法！</p>
-                <p class="text-lg opacity-50 leading-relaxed mb-4">6种像素勇士 + 被动技能 + 大招系统 + 赢家守擂制</p>
+                <p class="text-lg opacity-50 leading-relaxed mb-4">6种像素勇士 + 大招系统 + 弑王者 King Slayer + 赢家守擂制</p>
                 <ul class="text-left text-base opacity-50 mb-6 space-y-1 mx-auto" style="max-width:260px;">
                     <li>⚔️ 双人决战：1v1抢答 + 赢者留</li>
                     <li>🏰 组别对决：多组混战 + 组别总分</li>
                     <li>💥 连胜3场抽取大招技能</li>
+                    <li>👑 对手≥3分时打败对方，分数翻倍</li>
                 </ul>
                 <div class="mt-auto px-10 py-4 bg-red-600 rounded-full text-2xl font-black shadow-xl">开启终极对决</div>
             </div>
 
-        </div>
-
-        <!-- 📖 使用说明 -->
-        <div class="w-full max-w-6xl mt-8">
-            <button onclick="document.getElementById('usage-guide').classList.toggle('hidden')" class="glass-card w-full p-5 text-center cursor-pointer text-2xl font-black hover:scale-105 transition-all">
-                📖 使用说明 ▾
-            </button>
-            <div id="usage-guide" class="glass-card p-8 mt-4 hidden space-y-6 text-lg">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h3 class="text-2xl font-black mb-3" style="color:#fbbf24;">⚔️ 大决战模式 · 双人决战</h3>
-                        <ol class="space-y-2 opacity-80 list-decimal list-inside">
-                            <li>输入学生名单 → AI生成对战题目</li>
-                            <li>轮盘随机抽取两名学生 → 各自选择像素勇士角色</li>
-                            <li>题目出现 + 倒计时 → 双方<b>抢答</b>（按键盘 Q / P 键）</li>
-                            <li>先抢到者作答 → 答对加分，答错对手得分</li>
-                            <li><b>赢者留下</b>继续守擂，输者换下一个学生</li>
-                            <li>题目用完或只剩一人 → 显示排行榜</li>
-                        </ol>
-                    </div>
-                    <div>
-                        <h3 class="text-2xl font-black mb-3" style="color:#c084fc;">🏰 大决战模式 · 组别对决</h3>
-                        <ol class="space-y-2 opacity-80 list-decimal list-inside">
-                            <li>设定组别和每组玩家 → AI生成对战题目</li>
-                            <li>轮盘抽取两组 → 各自选玩家代表 → 选角色</li>
-                            <li><b>赢者组守擂</b>（同一玩家继续），输者组换人</li>
-                            <li>组内所有玩家被淘汰 → 该组退出战场</li>
-                            <li>剩唯一组别 或 题目用完 → 按<b>组别总分</b>排名</li>
-                        </ol>
-                    </div>
-                </div>
-                <hr class="border-white/20">
-                <div>
-                    <h3 class="text-2xl font-black mb-3" style="color:#fbbf24;">✨ 角色技能说明</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="glass-card p-4">
-                            <p class="font-black text-xl mb-2">💥 大招（主动技能）</p>
-                            <p class="opacity-70">连胜<b>3场</b>自动触发技能轮盘。从攻击/防御/反弹/毒雾中随机抽取大招，可能一击反杀对手！</p>
-                        </div>
-                        <div class="glass-card p-4">
-                            <p class="font-black text-xl mb-2">✨ 被动技能（自动触发）</p>
-                            <p class="opacity-70">每个像素勇士有独特被动：如狂战士残血伤害翻倍、圣骑士可格挡致死攻击、法师限时答对三题、忍者可额外偷取对手分数等。</p>
-                        </div>
-                    </div>
-                    <ul class="mt-4 space-y-1 opacity-60">
-                        <li>⚔️ <b>狂战士</b>：血量越低伤害越高 | 🛡️ <b>圣骑士</b>：受致命伤时概率格挡（剩1血）</li>
-                        <li>🧙 <b>法师</b>：三题内答对双倍加分 | 🥷 <b>忍者</b>：抢答成功额外+1分</li>
-                        <li>🏹 <b>弓箭手</b>：对手答错时额外扣血 | 🔮 <b>术士</b>：初次受伤反弹一半伤害</li>
-                    </ul>
-                </div>
-            </div>
         </div>
 
         <footer class="mt-20 text-center opacity-40 font-bold text-sm tracking-widest">
