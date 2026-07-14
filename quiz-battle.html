@@ -200,9 +200,73 @@ body {
     70% { transform: translate(2px, 1px) scale(1.04); }
     90% { transform: translate(-1px, 0) scale(1.02); }
 }
+
+/* Group player buttons */
+.group-player-btn {
+    padding: 0.8rem 2rem; border-radius: 999px; border: 3px solid rgba(255,255,255,0.3);
+    background: rgba(139,92,246,0.3); color: #fff; font-size: 1.3rem; font-weight: 800;
+    cursor: pointer; transition: all 0.2s; min-width: 140px;
+}
+.group-player-btn:hover { background: rgba(139,92,246,0.6); border-color: #c084fc; transform: scale(1.05); }
+.group-player-btn.selected { background: #7c3aed; border-color: #fff; box-shadow: 0 0 20px rgba(139,92,246,0.7); }
+.group-player-btn.eliminated { background: rgba(100,100,100,0.2); border-color: rgba(100,100,100,0.2); color: rgba(255,255,255,0.3); pointer-events: none; text-decoration: line-through; }
+
+/* Group card in setup */
+.group-setup-card {
+    background: rgba(139,92,246,0.1); border: 2px solid rgba(139,92,246,0.3);
+    border-radius: 16px; padding: 1.5rem;
+}
+.group-setup-card .group-name-input {
+    font-size: 1.3rem; font-weight: 900; padding: 0.5rem 1rem;
+    border: 2px solid rgba(139,92,246,0.4); border-radius: 10px;
+    background: rgba(255,255,255,0.1); color: #fff; width: 200px;
+}
+.group-setup-card .group-name-input:focus { border-color: #c084fc; outline: none; }
+.group-setup-card .player-name-input {
+    font-size: 1rem; font-weight: 700; padding: 0.4rem 0.8rem;
+    border: 2px solid rgba(255,255,255,0.2); border-radius: 8px;
+    background: rgba(255,255,255,0.08); color: #fff; width: 180px;
+}
+.group-setup-card .player-name-input:focus { border-color: #a78bfa; outline: none; }
 </style>
 </head>
 <body class="theme-tech" onclick="initAudio()">
+
+<!-- ENTRY VIEW -->
+<div id="entry-view" class="container mx-auto p-8 max-w-6xl flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-center text-7xl font-black mb-6" style="color: var(--primary)">⚔️ AI 全能竞技场</h1>
+    <p class="text-center text-2xl font-bold mb-16 opacity-60">选择你的对战模式</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-5xl">
+        <!-- Solo Duel Card -->
+        <div onclick="enterDuelMode()" class="glass-panel p-10 text-center cursor-pointer hover:scale-105 transition-transform border-4 border-transparent hover:border-yellow-400 group" style="min-height:380px;">
+            <div style="font-size:6rem;margin-bottom:1rem;">⚔️</div>
+            <h2 class="text-4xl font-black mb-4" style="color:#fbbf24;">双人决战</h2>
+            <p class="text-xl opacity-70 mb-4">经典 1v1 对战模式</p>
+            <ul class="text-left text-lg opacity-60 space-y-2 mx-auto" style="max-width:280px;">
+                <li>🎯 轮盘随机抽选两名学生</li>
+                <li>🎨 各自选择像素战士角色</li>
+                <li>⚡ 抢答对决，赢者留败者换</li>
+                <li>🏆 连胜三场抽取大招技能</li>
+            </ul>
+            <div class="mt-8 text-2xl font-black text-yellow-400 group-hover:scale-110 transition-transform">进入 →</div>
+        </div>
+
+        <!-- Group Battle Card -->
+        <div onclick="enterGroupMode()" class="glass-panel p-10 text-center cursor-pointer hover:scale-105 transition-transform border-4 border-transparent hover:border-purple-400 group" style="min-height:380px;">
+            <div style="font-size:6rem;margin-bottom:1rem;">🏰</div>
+            <h2 class="text-4xl font-black mb-4" style="color:#c084fc;">组别对决</h2>
+            <p class="text-xl opacity-70 mb-4">多组轮流对战 · 小组荣誉之战</p>
+            <ul class="text-left text-lg opacity-60 space-y-2 mx-auto" style="max-width:280px;">
+                <li>👥 多组别，每组多名玩家</li>
+                <li>🎡 轮盘抽组别，公平轮转</li>
+                <li>⚡ 组内派代表出战对决</li>
+                <li>🏆 全组淘汰才退出战场</li>
+            </ul>
+            <div class="mt-8 text-2xl font-black text-purple-400 group-hover:scale-110 transition-transform">进入 →</div>
+        </div>
+    </div>
+</div>
 
 <!-- Loading -->
 <div id="loading" class="fixed inset-0 bg-black/95 flex flex-col items-center justify-center text-white z-[9999] hidden text-center">
@@ -218,9 +282,9 @@ body {
 </div>
 
 <!-- SETUP VIEW -->
-<div id="setup-view" class="container mx-auto p-8 max-w-6xl">
-    <h1 class="text-center text-7xl font-black mb-8" style="color: var(--primary)">⚔️ AI 全能竞技场 · 大决战版</h1>
-    <p class="text-center text-2xl font-bold mb-10 opacity-60">双人对战 · 像素勇士 · 抢答对决</p>
+<div id="setup-view" class="container mx-auto p-8 max-w-6xl hidden">
+    <h1 class="text-center text-7xl font-black mb-8" style="color: var(--primary)" id="setup-title">⚔️ AI 全能竞技场 · 大决战版</h1>
+    <p class="text-center text-2xl font-bold mb-10 opacity-60" id="setup-subtitle">双人对战 · 像素勇士 · 抢答对决</p>
 
     <div class="glass-panel p-10 space-y-10">
         <!-- Model -->
@@ -313,13 +377,37 @@ body {
             </div>
         </section>
 
-        <!-- Student List -->
-        <section class="p-8 border-4 border-dashed border-blue-200 rounded-3xl">
+        <!-- Student List (Solo Mode) -->
+        <section class="p-8 border-4 border-dashed border-blue-200 rounded-3xl" id="solo-student-section">
             <h3 class="text-3xl font-black mb-4 text-center">👥 学生名单</h3>
             <textarea id="student-list" class="setup-input h-32 text-lg" placeholder="输入学生姓名，用逗号或空格分隔&#10;例如：小明, 小华, 小丽, 小强, ..."></textarea>
             <div class="mt-4 flex items-center gap-4">
                 <input type="checkbox" id="allow-repeat" class="w-8 h-8 cursor-pointer">
                 <label for="allow-repeat" class="text-xl font-black cursor-pointer">🔄 允许同一学生重复被抽中</label>
+            </div>
+        </section>
+
+        <!-- Group Setup (Group Mode, initially hidden) -->
+        <section class="p-8 border-4 border-dashed border-purple-200 rounded-3xl hidden" id="group-setup-section">
+            <h3 class="text-3xl font-black mb-6 text-center">👥 组别配置</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="p-6 bg-purple-50 rounded-2xl border-2 border-purple-200">
+                    <label class="block text-2xl font-black mb-4">🏁 组别数量</label>
+                    <div class="flex items-center gap-4">
+                        <input type="range" id="group-count" min="2" max="10" value="4" class="flex-grow h-4" oninput="document.getElementById('group-count-val').innerText=this.value;renderGroupCards()">
+                        <span id="group-count-val" class="text-5xl font-black text-purple-600 w-16 text-center">4</span>
+                    </div>
+                </div>
+                <div class="p-6 bg-purple-50 rounded-2xl border-2 border-purple-200">
+                    <label class="block text-2xl font-black mb-4">👤 每组玩家数量</label>
+                    <div class="flex items-center gap-4">
+                        <input type="range" id="players-per-group" min="1" max="10" value="3" class="flex-grow h-4" oninput="document.getElementById('players-per-group-val').innerText=this.value;renderGroupCards()">
+                        <span id="players-per-group-val" class="text-5xl font-black text-purple-600 w-16 text-center">3</span>
+                    </div>
+                </div>
+            </div>
+            <div id="group-cards-container" class="space-y-6">
+                <!-- JS dynamic -->
             </div>
         </section>
 
@@ -348,6 +436,17 @@ body {
         <div class="flex gap-4">
             <button id="confirm-student-btn" onclick="confirmStudent()" class="hidden px-10 py-5 bg-green-500 hover:bg-green-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-green-300">✅ 确认出战</button>
             <button id="skip-student-btn" onclick="skipCurrentStudent()" class="hidden px-8 py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-orange-300">⏭️ 学生缺席，跳过并重抽</button>
+        </div>
+    </div>
+
+    <!-- Group Player Selection (Group Mode) -->
+    <div id="group-player-pick-panel" class="hidden mt-8 p-8 glass-panel rounded-2xl w-full max-w-2xl">
+        <h3 class="text-3xl font-black mb-4 text-center" id="group-player-pick-label">从 <span id="group-player-pick-group-name" class="text-purple-400"></span> 中选择出战玩家</h3>
+        <div id="group-player-buttons" class="flex flex-wrap gap-4 justify-center">
+            <!-- JS dynamic -->
+        </div>
+        <div class="text-center mt-6">
+            <button id="group-player-confirm-btn" onclick="confirmGroupPlayer()" class="hidden px-10 py-4 bg-green-500 hover:bg-green-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-green-300">✅ 确认出战</button>
         </div>
     </div>
 </div>
@@ -497,6 +596,22 @@ const SKILL_KEYS = Object.keys(SKILLS); // 6 keys (for lookup only)
 // Wheel slots: 7 sectors, 2× try_again → 5/7 ≈ 71% chance to get a skill
 const SKILL_WHEEL_SLOTS = ['shield','revive','time_freeze','double_score','preemptive','try_again','try_again'];
 
+// Game mode: 'solo' (1v1 duel) or 'group' (team battle)
+let gameMode = 'solo';
+
+// Group battle state
+let groups = [];          // groups[i] = { name, players: [{name, eliminated, character, level, wins, ...}], aliveCount, totalWins }
+let groupQueue = [];      // round-robin queue of group indices
+let groupWheelState = {
+    phase: 'leftGroup',   // 'leftGroup' | 'leftPlayer' | 'rightGroup' | 'rightPlayer' | 'done'
+    leftGroupIdx: null,
+    rightGroupIdx: null,
+    leftPlayer: null,     // player name string
+    rightPlayer: null,
+    isSpinning: false,
+    selectedPlayerIdx: null  // currently selected player in the group player pick UI
+};
+
 let skillState = {
     leftSkill: null, rightSkill: null,
     leftSkillConsumed: false, rightSkillConsumed: false,
@@ -592,6 +707,79 @@ function toggleBGM() {
     bgmOn = !bgmOn;
 }
 function updateVolume(v) { sounds.bgm.volume = v / 100; }
+
+// ============ ENTRY MODE FUNCTIONS ============
+function enterDuelMode() {
+    gameMode = 'solo';
+    document.getElementById('entry-view').classList.add('hidden');
+    document.getElementById('setup-view').classList.remove('hidden');
+    document.getElementById('solo-student-section').classList.remove('hidden');
+    document.getElementById('group-setup-section').classList.add('hidden');
+    document.getElementById('setup-title').innerText = '⚔️ AI 全能竞技场 · 大决战版';
+    document.getElementById('setup-subtitle').innerText = '双人对战 · 像素勇士 · 抢答对决';
+    if (!window._modelsDetected) detectModels();
+    document.getElementById('launch-btn').classList.remove('hidden');
+    document.getElementById('post-generate-actions').classList.add('hidden');
+}
+
+function enterGroupMode() {
+    gameMode = 'group';
+    document.getElementById('entry-view').classList.add('hidden');
+    document.getElementById('setup-view').classList.remove('hidden');
+    document.getElementById('solo-student-section').classList.add('hidden');
+    document.getElementById('group-setup-section').classList.remove('hidden');
+    document.getElementById('setup-title').innerText = '🏰 AI 全能竞技场 · 组别对决';
+    document.getElementById('setup-subtitle').innerText = '多组轮流对战 · 小组荣誉之战';
+    if (!window._modelsDetected) detectModels();
+    document.getElementById('launch-btn').classList.remove('hidden');
+    document.getElementById('post-generate-actions').classList.add('hidden');
+    renderGroupCards();
+}
+
+function renderGroupCards() {
+    var container = document.getElementById('group-cards-container');
+    if (!container) return;
+    var numGroups = parseInt(document.getElementById('group-count').value) || 4;
+    var playersPerGroup = parseInt(document.getElementById('players-per-group').value) || 3;
+
+    // Save existing values before re-rendering
+    var existingData = {};
+    container.querySelectorAll('.group-setup-card').forEach(function(card, gi) {
+        var gName = card.querySelector('.group-name-input');
+        var gData = { name: gName ? gName.value : '', players: [] };
+        card.querySelectorAll('.player-name-input').forEach(function(inp) {
+            gData.players.push(inp.value);
+        });
+        existingData[gi] = gData;
+    });
+
+    var html = '';
+    for (var g = 0; g < numGroups; g++) {
+        var gNum = g + 1;
+        var saved = existingData[g] || {};
+        var groupName = saved.name || ('组别' + gNum);
+        html += '<div class="group-setup-card">';
+        html += '<div class="flex items-center gap-4 mb-3 flex-wrap">';
+        html += '<span class="text-2xl font-black text-purple-400">🏁</span>';
+        html += '<input class="group-name-input" value="' + escHTML(groupName) + '" placeholder="组别' + gNum + '">';
+        html += '<span class="text-lg font-bold opacity-60">— ' + playersPerGroup + ' 名玩家</span>';
+        html += '</div>';
+        html += '<div class="flex flex-wrap gap-3 ml-10">';
+        for (var p = 0; p < playersPerGroup; p++) {
+            var pNum = p + 1;
+            var playerName = (saved.players && saved.players[p]) ? saved.players[p] : (groupName + '玩家' + pNum);
+            html += '<input class="player-name-input" value="' + escHTML(playerName) + '" placeholder="' + escHTML(groupName) + '玩家' + pNum + '">';
+        }
+        html += '</div></div>';
+    }
+    container.innerHTML = html;
+}
+
+function escHTML(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
 
 // ============ SECTION 2: PIXEL ART CHARACTERS (48x48, 3 levels) ============
 const CHARACTERS = {
@@ -1394,15 +1582,45 @@ async function launchBattleAI() {
         allowRepeat: document.getElementById('allow-repeat').checked
     };
 
-    // Parse students
-    const raw = document.getElementById('student-list').value.trim();
-    if (!raw) return alert('请输入学生名单！');
-    const names = raw.split(/[,，\s\n]+/).filter(Boolean);
-    if (names.length < 2) return alert('至少需要 2 名学生！');
-    students = {};
-    names.forEach(n => {
-        students[n] = { name: n, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
-    });
+    // Parse students (solo) or groups (group mode)
+    if (gameMode === 'group') {
+        // Build students + groups from group cards
+        groups = [];
+        students = {};
+        var cards = document.querySelectorAll('#group-cards-container .group-setup-card');
+        if (cards.length < 2) return alert('至少需要 2 个组别！');
+        var totalPlayers = 0;
+        cards.forEach(function(card, gi) {
+            var gNameInput = card.querySelector('.group-name-input');
+            var groupName = (gNameInput && gNameInput.value.trim()) ? gNameInput.value.trim() : ('组别' + (gi + 1));
+            var playerInputs = card.querySelectorAll('.player-name-input');
+            var playerList = [];
+            playerInputs.forEach(function(inp, pi) {
+                var pName = inp.value.trim() || (groupName + '玩家' + (pi + 1));
+                playerList.push({ name: pName, eliminated: false, character: null, level: 1, wins: 0, losses: 0, streak: 0, bestStreak: 0, totalQuestions: 0, correctAnswers: 0, usedCount: 0 });
+                students[pName] = { name: pName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
+                totalPlayers++;
+            });
+            groups.push({ name: groupName, players: playerList, aliveCount: playerList.length, totalWins: 0 });
+        });
+        if (totalPlayers < 2) return alert('至少需要 2 名玩家！');
+        // Initialize round-robin queue
+        groupQueue = [];
+        for (var gi = 0; gi < groups.length; gi++) { groupQueue.push(gi); }
+        config.allowRepeat = false; // group mode never repeats
+    } else {
+        // Solo mode: parse from textarea
+        const raw = document.getElementById('student-list').value.trim();
+        if (!raw) return alert('请输入学生名单！');
+        const names = raw.split(/[,，\s\n]+/).filter(Boolean);
+        if (names.length < 2) return alert('至少需要 2 名学生！');
+        students = {};
+        names.forEach(n => {
+            students[n] = { name: n, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 0, totalQuestions: 0, correctAnswers: 0 };
+        });
+        groups = [];
+        groupQueue = [];
+    }
 
     document.getElementById('loading').classList.remove('hidden');
     const easyN = config.easyCount, medN = config.mediumCount, hardN = config.hardCount;
@@ -1492,6 +1710,7 @@ Output ONLY valid JSON array, no markdown, no code blocks.`;
 }
 
 function startBattle() {
+    if (gameMode === 'group') { startGroupBattle(); return; }
     document.getElementById('post-generate-actions').classList.add('hidden');
     battleState = {
         phase: 'battle', questionIndex: 0,
@@ -1865,6 +2084,8 @@ function startWheelPhase() {
     document.getElementById('wheel-result-actions').classList.add('hidden');
     document.getElementById('confirm-student-btn').classList.add('hidden');
     document.getElementById('skip-student-btn').classList.add('hidden');
+    // Hide group player pick panel
+    document.getElementById('group-player-pick-panel').classList.add('hidden');
     clearTimeout(wheelTimeout);
     wheelState.spinCount = 0; wheelState.firstStudent = null; wheelState.secondStudent = null;
     wheelState.excludeStudent = null; wheelState.lastSpunName = null;
@@ -1872,8 +2093,393 @@ function startWheelPhase() {
     initWheel(avail);
 }
 
+// ============ GROUP BATTLE WHEEL ============
+
+function startGroupBattle() {
+    document.getElementById('post-generate-actions').classList.add('hidden');
+    battleState = {
+        phase: 'battle', questionIndex: 0,
+        leftStudent: null, rightStudent: null,
+        leftCharacter: null, rightCharacter: null,
+        leftLevel: 1, rightLevel: 1,
+        buzzerWinner: null, secondChance: false, roundResolved: false,
+        timerInterval: null, timerRemaining: 0, timerPhase: 'waiting', timerActiveSide: null,
+        shieldBlocked: false
+    };
+    // Reset skill state
+    skillState = {
+        leftSkill: null, rightSkill: null,
+        leftSkillConsumed: false, rightSkillConsumed: false,
+        leftReviveUsedThisRound: false, rightReviveUsedThisRound: false,
+        leftFreezeBonus: 0, rightFreezeBonus: 0,
+        showFreezeOverlay: false, freezeOverlaySide: null,
+        leftDoubleScore: false, rightDoubleScore: false,
+        leftLastSkillStreak: 0, rightLastSkillStreak: 0,
+    };
+    skillWheelState = { targetSkill: null, isSpinning: false, pendingSide: null, pendingName: null };
+
+    // Reset player eliminated flags for all groups
+    groups.forEach(function(g) {
+        g.aliveCount = g.players.length;
+        g.players.forEach(function(p) { p.eliminated = false; });
+    });
+    // Reset round-robin queue
+    groupQueue = [];
+    for (var gi = 0; gi < groups.length; gi++) { groupQueue.push(gi); }
+
+    groupWheelState = {
+        phase: 'leftGroup', leftGroupIdx: null, rightGroupIdx: null,
+        leftPlayer: null, rightPlayer: null, isSpinning: false, selectedPlayerIdx: null
+    };
+    startGroupWheelPhase();
+}
+
+function startGroupWheelPhase() {
+    document.getElementById('setup-view').classList.add('hidden');
+    document.getElementById('battle-view').classList.add('hidden');
+    document.getElementById('wheel-view').classList.remove('hidden');
+    document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('wheel-result-actions').classList.add('hidden');
+    document.getElementById('confirm-student-btn').classList.add('hidden');
+    document.getElementById('skip-student-btn').classList.add('hidden');
+    document.getElementById('group-player-pick-panel').classList.add('hidden');
+    document.getElementById('spin-btn').classList.remove('hidden');
+    clearTimeout(wheelTimeout);
+
+    if (groupWheelState.phase === 'leftGroup' || groupWheelState.phase === 'rightGroup') {
+        // Show group wheel
+        var eligible = groupQueue.slice(); // copy
+        if (groupWheelState.phase === 'rightGroup' && groupWheelState.leftGroupIdx !== null) {
+            // For right group, temporarily remove left group from queue display
+            // but the actual selection comes from queue[1] in the deterministic logic
+        }
+        document.getElementById('wheel-label').innerText = groupWheelState.phase === 'leftGroup' ? '🔴 抽选左方组别...' : '🔵 抽选右方组别...';
+
+        // For group wheel, we use deterministic queue ordering but show wheel for excitement
+        // The wheel canvas shows all groups in groupQueue
+        initGroupWheel();
+        // Override the spin button handler
+        var spinBtn = document.getElementById('spin-btn');
+        spinBtn.onclick = spinGroupWheel;
+        spinBtn.classList.remove('hidden');
+    }
+}
+
+function initGroupWheel() {
+    var canvas = document.getElementById('wheelCanvas'), ctx = canvas.getContext('2d');
+    if (!canvas || !ctx) return;
+    var groupNames = groupQueue.map(function(idx) { return groups[idx].name; });
+    var num = groupNames.length;
+    if (num === 0) return;
+    var arc = (2 * Math.PI) / num;
+    var colors = ['#c084fc','#a78bfa','#8b5cf6','#7c3aed','#6d28d9','#5b21b6','#4c1d95','#8b5cf6','#c084fc','#a78bfa'];
+    ctx.clearRect(0, 0, 600, 600);
+    for (var i = 0; i < num; i++) {
+        var angle = wheelState.startAngle + i * arc;
+        ctx.beginPath(); ctx.moveTo(300, 300); ctx.arc(300, 300, 280, angle, angle + arc);
+        ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.save(); ctx.translate(300, 300); ctx.rotate(angle + arc / 2);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 24px "Noto Sans SC"'; ctx.textAlign = 'right';
+        ctx.fillText(groupNames[i], 270, 10); ctx.restore();
+    }
+}
+
+function spinGroupWheel() {
+    if (wheelState.isSpinning) return;
+    wheelState.isSpinning = true;
+    document.getElementById('spin-btn').disabled = true;
+    document.getElementById('wheel-result').classList.add('hidden');
+    document.getElementById('wheel-result-actions').classList.add('hidden');
+    clearTimeout(wheelTimeout);
+
+    var speed = 0.3 + Math.random() * 0.4, duration = 3000;
+    var start = null, lastTick = 0;
+
+    // Determine the target group index (deterministic from queue)
+    var targetQueueIdx;
+    if (groupWheelState.phase === 'leftGroup') {
+        targetQueueIdx = 0; // first in queue
+    } else {
+        targetQueueIdx = 1; // second in queue
+    }
+    var targetGroupIdx = groupQueue[targetQueueIdx];
+    var groupNames = groupQueue.map(function(idx) { return groups[idx].name; });
+    var targetArc = (2 * Math.PI) / groupNames.length;
+    var targetIdxInNames = groupQueue.indexOf(targetGroupIdx);
+    // Calculate the angle needed so the pointer lands on the target
+    var targetCenterAngle = targetIdxInNames * targetArc + targetArc / 2;
+    var pointerAngle = 1.5 * Math.PI; // top of wheel
+    var neededAngle = pointerAngle - targetCenterAngle;
+    // Add multiple full rotations for excitement
+    var totalExtra = 6 * 2 * Math.PI + neededAngle;
+    var startAngle = wheelState.startAngle;
+    var targetStartAngle = startAngle + totalExtra;
+
+    function animate(time) {
+        if (!start) start = time;
+        var progress = Math.min((time - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        wheelState.startAngle = startAngle + totalExtra * eased;
+        if (wheelState.startAngle - lastTick > 0.08) { playWheelTick(); lastTick = wheelState.startAngle; }
+        initGroupWheel();
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            wheelState.startAngle = targetStartAngle;
+            wheelState.isSpinning = false;
+            document.getElementById('spin-btn').disabled = false;
+            onGroupWheelComplete(targetGroupIdx);
+        }
+    }
+    requestAnimationFrame(animate);
+}
+
+function onGroupWheelComplete(groupIdx) {
+    playCorrectSound();
+    var groupName = groups[groupIdx].name;
+
+    if (groupWheelState.phase === 'leftGroup') {
+        groupWheelState.leftGroupIdx = groupIdx;
+        document.getElementById('wheel-label').innerText = '左方组别：' + groupName + ' ✅';
+        // Show player pick for this group
+        document.getElementById('spin-btn').classList.add('hidden');
+        renderGroupPlayerList(groupIdx, 'left');
+        groupWheelState.phase = 'leftPlayer';
+    } else if (groupWheelState.phase === 'rightGroup') {
+        groupWheelState.rightGroupIdx = groupIdx;
+        document.getElementById('wheel-label').innerText = '右方组别：' + groupName + ' ✅';
+        document.getElementById('spin-btn').classList.add('hidden');
+        renderGroupPlayerList(groupIdx, 'right');
+        groupWheelState.phase = 'rightPlayer';
+    }
+}
+
+function renderGroupPlayerList(groupIdx, side) {
+    var panel = document.getElementById('group-player-pick-panel');
+    var label = document.getElementById('group-player-pick-label');
+    var groupNameEl = document.getElementById('group-player-pick-group-name');
+    var buttonsDiv = document.getElementById('group-player-buttons');
+    var confirmBtn = document.getElementById('group-player-confirm-btn');
+
+    panel.classList.remove('hidden');
+    groupNameEl.innerText = groups[groupIdx].name;
+    buttonsDiv.innerHTML = '';
+    groupWheelState.selectedPlayerIdx = null;
+    confirmBtn.classList.add('hidden');
+
+    var players = groups[groupIdx].players;
+    players.forEach(function(p, pi) {
+        var btn = document.createElement('button');
+        btn.className = 'group-player-btn';
+        if (p.eliminated) {
+            btn.className += ' eliminated';
+            btn.innerText = '❌ ' + p.name + ' (已淘汰)';
+            btn.disabled = true;
+        } else {
+            btn.innerText = '⚔️ ' + p.name;
+            btn.onclick = function() { selectGroupPlayer(pi); };
+        }
+        buttonsDiv.appendChild(btn);
+    });
+}
+
+function selectGroupPlayer(playerIdx) {
+    groupWheelState.selectedPlayerIdx = playerIdx;
+    document.getElementById('group-player-confirm-btn').classList.remove('hidden');
+    // Highlight selected
+    var buttons = document.querySelectorAll('#group-player-buttons .group-player-btn');
+    buttons.forEach(function(b, i) {
+        if (i === playerIdx) { b.classList.add('selected'); }
+        else { b.classList.remove('selected'); }
+    });
+}
+
+function confirmGroupPlayer() {
+    if (groupWheelState.selectedPlayerIdx === null) return;
+    var groupIdx, playerName, side;
+    if (groupWheelState.phase === 'leftPlayer') {
+        groupIdx = groupWheelState.leftGroupIdx;
+        side = 'left';
+    } else {
+        groupIdx = groupWheelState.rightGroupIdx;
+        side = 'right';
+    }
+
+    playerName = groups[groupIdx].players[groupWheelState.selectedPlayerIdx].name;
+
+    if (side === 'left') {
+        groupWheelState.leftPlayer = playerName;
+        battleState.leftStudent = playerName;
+        // Update student tracking if needed
+        if (!students[playerName]) {
+            students[playerName] = { name: playerName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
+        } else {
+            students[playerName].usedCount = (students[playerName].usedCount || 0) + 1;
+        }
+
+        // Move to right group pick
+        document.getElementById('group-player-pick-panel').classList.add('hidden');
+        document.getElementById('wheel-label').innerText = '左方：' + playerName + ' ✅ — 准备抽选右方组别';
+        groupWheelState.phase = 'rightGroup';
+        setTimeout(function() { startGroupWheelPhase(); }, 1000);
+    } else {
+        groupWheelState.rightPlayer = playerName;
+        battleState.rightStudent = playerName;
+        if (!students[playerName]) {
+            students[playerName] = { name: playerName, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
+        } else {
+            students[playerName].usedCount = (students[playerName].usedCount || 0) + 1;
+        }
+
+        // Done! Proceed to character selection
+        document.getElementById('group-player-pick-panel').classList.add('hidden');
+        document.getElementById('wheel-view').classList.add('hidden');
+        groupWheelState.phase = 'done';
+        startCharacterSelection();
+    }
+}
+
+// ============ GROUP BATTLE PROCEED ============
+
+function groupProceedAfterRound() {
+    document.getElementById('battle-note').classList.add('hidden');
+    battleState.questionIndex++;
+
+    if (battleState.questionIndex >= scenes.length) {
+        stopRenderLoop();
+        document.getElementById('battle-view').classList.add('hidden');
+        showGroupLeaderboard();
+        return;
+    }
+
+    var leftName = battleState.leftStudent, rightName = battleState.rightStudent;
+    var leftAlive = students[leftName] && !students[leftName].eliminated;
+    var rightAlive = students[rightName] && !students[rightName].eliminated;
+
+    // Update group alive counts and queue
+    updateGroupElimination();
+
+    // Check if game is over (only 1 or 0 groups left)
+    var aliveGroups = groupQueue.length;
+    if (aliveGroups <= 1) {
+        stopRenderLoop();
+        document.getElementById('battle-view').classList.add('hidden');
+        showGroupLeaderboard();
+        return;
+    }
+
+    // Move left and right groups to back of queue (round-robin rotation)
+    var leftGid = groupWheelState.leftGroupIdx;
+    var rightGid = groupWheelState.rightGroupIdx;
+
+    // Remove both from current positions and push to back
+    var newQueue = [];
+    for (var i = 0; i < groupQueue.length; i++) {
+        if (groupQueue[i] !== leftGid && groupQueue[i] !== rightGid) {
+            newQueue.push(groupQueue[i]);
+        }
+    }
+    // Push both to back (if they still exist in queue)
+    if (groupQueue.indexOf(leftGid) !== -1) newQueue.push(leftGid);
+    if (groupQueue.indexOf(rightGid) !== -1 && leftGid !== rightGid) newQueue.push(rightGid);
+    groupQueue = newQueue;
+
+    // Reset group wheel state for next round
+    stopRenderLoop();
+
+    // Update levels from students
+    if (students[leftName]) {
+        battleState.leftCharacter = students[leftName].character || battleState.leftCharacter;
+        battleState.leftLevel = students[leftName].level || 1;
+    }
+    if (students[rightName]) {
+        battleState.rightCharacter = students[rightName].character || battleState.rightCharacter;
+        battleState.rightLevel = students[rightName].level || 1;
+    }
+
+    // If both alive (shield block), keep same players
+    if (leftAlive && rightAlive && battleState.shieldBlocked) {
+        battleState.shieldBlocked = false;
+        document.getElementById('battle-view').classList.add('hidden');
+        showVSCountdown();
+        return;
+    }
+
+    // Otherwise, start a fresh group wheel phase
+    groupWheelState = {
+        phase: 'leftGroup', leftGroupIdx: null, rightGroupIdx: null,
+        leftPlayer: null, rightPlayer: null, isSpinning: false, selectedPlayerIdx: null
+    };
+    startGroupWheelPhase();
+}
+
+function updateGroupElimination() {
+    var leftGid = groupWheelState.leftGroupIdx;
+    var rightGid = groupWheelState.rightGroupIdx;
+
+    [leftGid, rightGid].forEach(function(gid) {
+        if (gid === null || gid === undefined) return;
+        var g = groups[gid];
+        if (!g) return;
+        var alive = 0;
+        g.players.forEach(function(p) {
+            if (students[p.name] && students[p.name].eliminated) {
+                p.eliminated = true;
+            }
+            if (!p.eliminated) alive++;
+        });
+        g.aliveCount = alive;
+        if (alive === 0) {
+            // Remove from queue
+            groupQueue = groupQueue.filter(function(qid) { return qid !== gid; });
+        }
+    });
+}
+
+function showGroupLeaderboard() {
+    stopRenderLoop();
+    document.getElementById('battle-view').classList.add('hidden');
+    document.getElementById('wheel-view').classList.add('hidden');
+    var lb = document.getElementById('leaderboard-view');
+    lb.classList.remove('hidden');
+
+    // Sort groups by aliveCount desc, then totalWins desc
+    var sortedGroups = groups.slice().sort(function(a, b) {
+        if (b.aliveCount !== a.aliveCount) return b.aliveCount - a.aliveCount;
+        return b.totalWins - a.totalWins;
+    });
+
+    var html = '<h2 class="text-5xl font-black mb-6 text-center" style="color:#c084fc">🏆 组别对决 · 最终排名</h2>';
+    html += '<div class="glass-panel p-8 space-y-6 max-w-4xl mx-auto">';
+
+    sortedGroups.forEach(function(g, rank) {
+        var medal = rank === 0 ? '🥇' : (rank === 1 ? '🥈' : (rank === 2 ? '🥉' : ''));
+        var isChampion = g.aliveCount > 0 && rank === 0;
+        html += '<div class="p-6 rounded-2xl" style="background:' + (isChampion ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.05)') + ';border:2px solid ' + (isChampion ? '#fbbf24' : 'rgba(255,255,255,0.1)') + ';">';
+        html += '<div class="flex items-center justify-between">';
+        html += '<div><span class="text-3xl mr-3">' + medal + '</span><span class="text-3xl font-black">' + escHTML(g.name) + '</span>';
+        if (isChampion) html += ' <span class="text-2xl ml-3">👑 冠军组！</span>';
+        html += '</div>';
+        html += '<div class="text-right"><span class="text-2xl font-black text-green-400">' + g.aliveCount + ' 人存活</span>';
+        html += ' <span class="text-xl opacity-60">/ ' + g.players.length + '</span></div>';
+        html += '</div>';
+        html += '<div class="mt-3 flex flex-wrap gap-2">';
+        g.players.forEach(function(p) {
+            var pStudent = students[p.name] || p;
+            var pElim = p.eliminated || (pStudent && pStudent.eliminated);
+            html += '<span class="px-3 py-1 rounded-full text-sm font-bold" style="background:' + (pElim ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)') + ';color:' + (pElim ? '#fca5a5' : '#86efac') + ';">' + escHTML(p.name) + (pElim ? ' ❌' : ' ✅') + ' (' + (pStudent.wins || p.wins || 0) + '胜)</span>';
+        });
+        html += '</div></div>';
+    });
+
+    html += '<div class="text-center mt-8"><button onclick="location.reload()" class="bg-purple-600 text-white font-black px-12 py-6 rounded-2xl shadow-xl text-2xl hover:scale-105 transition-transform border-4 border-purple-400">🔄 返回主页</button></div>';
+    html += '</div>';
+
+    lb.innerHTML = html;
+}
+
 function startSingleCharSelect(slot) {
-    // Only the new challenger picks; the staying winner keeps their character
     document.getElementById('char-select-view').classList.remove('hidden');
     var otherChar = slot === 'left' ? battleState.rightCharacter : battleState.leftCharacter;
     charSelectState = {
@@ -2339,6 +2945,19 @@ function resolveRound(result, winningSide) {
         skillState[loserSide + 'DoubleScore'] = false;
         skillState[loserSide + 'LastSkillStreak'] = 0;  // reset on loss
 
+        // Update group stats (group mode)
+        if (gameMode === 'group' && groups.length > 0) {
+            var wGid = winningSide === 'left' ? groupWheelState.leftGroupIdx : groupWheelState.rightGroupIdx;
+            var lGid = winningSide === 'left' ? groupWheelState.rightGroupIdx : groupWheelState.leftGroupIdx;
+            if (wGid !== null && wGid !== undefined && groups[wGid]) groups[wGid].totalWins++;
+            // Mark loser player as eliminated in group
+            if (lGid !== null && lGid !== undefined && groups[lGid]) {
+                groups[lGid].players.forEach(function(p) {
+                    if (p.name === loserName) p.eliminated = true;
+                });
+            }
+        }
+
         // Play animations and sounds
         playCorrectSound();
         // The skill flag is cleared once its bonus win is awarded above, so use the
@@ -2377,6 +2996,18 @@ function resolveRound(result, winningSide) {
         skillState.rightSkill = null; skillState.rightSkillConsumed = false;
         skillState.leftDoubleScore = false; skillState.rightDoubleScore = false;
         skillState.leftLastSkillStreak = 0; skillState.rightLastSkillStreak = 0;
+
+        // Update group stats: both players eliminated
+        if (gameMode === 'group' && groups.length > 0) {
+            [groupWheelState.leftGroupIdx, groupWheelState.rightGroupIdx].forEach(function(gid) {
+                if (gid !== null && gid !== undefined && groups[gid]) {
+                    groups[gid].players.forEach(function(p) {
+                        if (p.name === leftName || p.name === rightName) p.eliminated = true;
+                    });
+                }
+            });
+        }
+
         playWrongSound();
         addFallAnimation('left', leftChar, battleState.leftLevel);
         setTimeout(function() { addFallAnimation('right', rightChar, battleState.rightLevel); }, 300);
@@ -2399,6 +3030,7 @@ function resolveRound(result, winningSide) {
 }
 
 function proceedAfterRound() {
+    if (gameMode === 'group') { groupProceedAfterRound(); return; }
     document.getElementById('battle-note').classList.add('hidden');
     battleState.questionIndex++;
 
@@ -2610,6 +3242,7 @@ function handleTimerExpired(phase, side) {
 
 // ============ SECTION 9: LEADERBOARD ============
 function showLeaderboard() {
+    if (gameMode === 'group') { showGroupLeaderboard(); return; }
     stopRenderLoop();
     playVictorySound();
     document.getElementById('battle-view').classList.add('hidden');
@@ -2766,6 +3399,7 @@ async function detectModels() {
         });
         sel.selectedIndex = 0; selectedModel = sel.value; sel.style.display = 'block';
     }
+    window._modelsDetected = true;
 }
 
 function adjustDiffCount(diff, delta) {
@@ -2850,8 +3484,8 @@ document.addEventListener('keydown', function(e) {
 window.onload = function() {
     var style = localStorage.getItem('quiz_style') || 'tech';
     document.body.className = 'theme-' + style;
-    detectModels();
     loadSettings();
+    // Entry page is shown by default; detectModels will be called when user enters a mode
     // Auto-save config
     document.querySelectorAll('#setup-view input, #setup-view select, #setup-view textarea').forEach(function(el) {
         el.addEventListener('change', saveSettings);
