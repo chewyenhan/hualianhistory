@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 全能竞技场 · 大决战版</title>
+    <title>大决战模式 · AI 全能竞技场</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Orbitron:wght@700&family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -67,7 +67,7 @@ body {
 /* Tech theme overrides */
 .theme-tech .bg-white { background-color: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.1) !important; }
 .theme-tech .bg-green-50, .theme-tech .bg-yellow-50, .theme-tech .bg-red-50,
-.theme-tech .bg-blue-50 { background-color: rgba(0,0,0,0.2) !important; border-color: rgba(255,255,255,0.1) !important; }
+.theme-tech .bg-blue-50, .theme-tech .bg-gray-50, .theme-tech .bg-purple-50 { background-color: rgba(0,0,0,0.2) !important; border-color: rgba(255,255,255,0.1) !important; }
 .theme-tech .text-green-700, .theme-tech .text-green-800 { color: #4ade80 !important; }
 .theme-tech .text-yellow-700, .theme-tech .text-yellow-800 { color: #fbbf24 !important; }
 .theme-tech .text-red-700, .theme-tech .text-red-800 { color: #f87171 !important; }
@@ -228,42 +228,105 @@ body {
     background: rgba(255,255,255,0.08); color: #fff; width: 180px;
 }
 .group-setup-card .player-name-input:focus { border-color: #a78bfa; outline: none; }
+
+/* Cream theme — group setup inputs fix */
+.theme-cute .group-setup-card .group-name-input,
+.theme-cute .group-setup-card .player-name-input {
+    color: #5c5246 !important; background: #ffffff !important; border-color: #f0e6d2;
+}
+.theme-cute .group-setup-card .group-name-input::placeholder,
+.theme-cute .group-setup-card .player-name-input::placeholder { color: #a0a0a0; }
 </style>
 </head>
 <body class="theme-tech" onclick="initAudio()">
 
 <!-- ENTRY VIEW -->
 <div id="entry-view" class="container mx-auto p-8 max-w-6xl flex flex-col items-center justify-center min-h-screen">
-    <h1 class="text-center text-7xl font-black mb-6" style="color: var(--primary)">⚔️ AI 全能竞技场</h1>
+    <h1 class="text-center text-7xl font-black mb-6" style="color: var(--primary)">⚔️ 大决战模式</h1>
     <p class="text-center text-2xl font-bold mb-16 opacity-60">选择你的对战模式</p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-5xl">
         <!-- Solo Duel Card -->
-        <div onclick="enterDuelMode()" class="glass-panel p-10 text-center cursor-pointer hover:scale-105 transition-transform border-4 border-transparent hover:border-yellow-400 group" style="min-height:380px;">
+        <div onclick="enterDuelMode()" class="glass-panel p-10 text-center cursor-pointer hover:scale-105 transition-transform border-4 border-transparent hover:border-yellow-400 group" style="min-height:440px;">
             <div style="font-size:6rem;margin-bottom:1rem;">⚔️</div>
             <h2 class="text-4xl font-black mb-4" style="color:#fbbf24;">双人决战</h2>
             <p class="text-xl opacity-70 mb-4">经典 1v1 对战模式</p>
-            <ul class="text-left text-lg opacity-60 space-y-2 mx-auto" style="max-width:280px;">
+            <ul class="text-left text-lg opacity-60 space-y-2 mx-auto" style="max-width:300px;">
                 <li>🎯 轮盘随机抽选两名学生</li>
-                <li>🎨 各自选择像素战士角色</li>
+                <li>🎨 各自选择6种像素勇士角色</li>
                 <li>⚡ 抢答对决，赢者留败者换</li>
-                <li>🏆 连胜三场抽取大招技能</li>
+                <li>✨ 每位角色自带<b>被动技能</b>（自动触发）</li>
+                <li>💥 连胜<b>3场</b>可抽取<b>大招技能</b></li>
+                <li>🛡️ 大招/被动可格挡或反杀</li>
             </ul>
-            <div class="mt-8 text-2xl font-black text-yellow-400 group-hover:scale-110 transition-transform">进入 →</div>
+            <div class="mt-6 text-2xl font-black text-yellow-400 group-hover:scale-110 transition-transform">进入 →</div>
         </div>
 
         <!-- Group Battle Card -->
-        <div onclick="enterGroupMode()" class="glass-panel p-10 text-center cursor-pointer hover:scale-105 transition-transform border-4 border-transparent hover:border-purple-400 group" style="min-height:380px;">
+        <div onclick="enterGroupMode()" class="glass-panel p-10 text-center cursor-pointer hover:scale-105 transition-transform border-4 border-transparent hover:border-purple-400 group" style="min-height:440px;">
             <div style="font-size:6rem;margin-bottom:1rem;">🏰</div>
             <h2 class="text-4xl font-black mb-4" style="color:#c084fc;">组别对决</h2>
             <p class="text-xl opacity-70 mb-4">多组轮流对战 · 小组荣誉之战</p>
-            <ul class="text-left text-lg opacity-60 space-y-2 mx-auto" style="max-width:280px;">
+            <ul class="text-left text-lg opacity-60 space-y-2 mx-auto" style="max-width:300px;">
                 <li>👥 多组别，每组多名玩家</li>
-                <li>🎡 轮盘抽组别，公平轮转</li>
+                <li>🎡 轮盘抽组别，赢家守擂制</li>
                 <li>⚡ 组内派代表出战对决</li>
-                <li>🏆 全组淘汰才退出战场</li>
+                <li>🏆 全组淘汰才退出，计<b>组别总分</b></li>
+                <li>✨ 每位角色自带<b>被动技能</b>（自动触发）</li>
+                <li>💥 连胜<b>3场</b>可抽取<b>大招技能</b></li>
             </ul>
-            <div class="mt-8 text-2xl font-black text-purple-400 group-hover:scale-110 transition-transform">进入 →</div>
+            <div class="mt-6 text-2xl font-black text-purple-400 group-hover:scale-110 transition-transform">进入 →</div>
+        </div>
+    </div>
+
+    <!-- 📖 使用说明（可展开） -->
+    <div class="w-full max-w-5xl mt-8">
+        <button onclick="document.getElementById('usage-guide').classList.toggle('hidden')" class="glass-panel w-full p-5 text-center cursor-pointer text-2xl font-black hover:scale-105 transition-transform">
+            📖 使用说明 ▾
+        </button>
+        <div id="usage-guide" class="glass-panel p-8 mt-4 hidden space-y-6 text-lg">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-2xl font-black mb-3" style="color:#fbbf24;">⚔️ 双人决战流程</h3>
+                    <ol class="space-y-2 opacity-80 list-decimal list-inside">
+                        <li>输入学生名单 → AI生成对战题目</li>
+                        <li>轮盘随机抽取两名学生 → 各自选择像素勇士角色</li>
+                        <li>题目出现 + 倒计时 → 双方<b>抢答</b>（按键盘 Q / P 键）</li>
+                        <li>先抢到者作答 → 答对加分，答错对手得分</li>
+                        <li><b>赢者留下</b>继续守擂，输者换下一个学生</li>
+                        <li>题目用完或只剩一人 → 显示排行榜</li>
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black mb-3" style="color:#c084fc;">🏰 组别对决流程</h3>
+                    <ol class="space-y-2 opacity-80 list-decimal list-inside">
+                        <li>设定组别和每组玩家 → AI生成对战题目</li>
+                        <li>轮盘抽取两组 → 各自选玩家代表 → 选角色</li>
+                        <li><b>赢者组守擂</b>（同一玩家继续），输者组换人</li>
+                        <li>组内所有玩家被淘汰 → 该组退出战场</li>
+                        <li>剩唯一组别 或 题目用完 → 按<b>组别总分</b>排名</li>
+                    </ol>
+                </div>
+            </div>
+            <hr class="border-white/20">
+            <div>
+                <h3 class="text-2xl font-black mb-3" style="color:#fbbf24;">✨ 角色技能说明</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-4">
+                        <p class="font-black text-xl mb-2">💥 大招（主动技能）</p>
+                        <p class="opacity-70">连胜<b>3场</b>自动触发技能轮盘。从攻击/防御/反弹/毒雾中随机抽取大招，可能一击反杀对手！</p>
+                    </div>
+                    <div class="glass-panel p-4">
+                        <p class="font-black text-xl mb-2">✨ 被动技能（自动触发）</p>
+                        <p class="opacity-70">每个像素勇士有独特被动：如狂战士残血伤害翻倍、圣骑士可格挡致死攻击、法师限时答对三题、忍者可额外偷取对手分数等。</p>
+                    </div>
+                </div>
+                <ul class="mt-4 space-y-1 opacity-60">
+                    <li>⚔️ <b>狂战士</b>：血量越低伤害越高 | 🛡️ <b>圣骑士</b>：受致命伤时概率格挡（剩1血）</li>
+                    <li>🧙 <b>法师</b>：三题内答对双倍加分 | 🥷 <b>忍者</b>：抢答成功额外+1分</li>
+                    <li>🏹 <b>弓箭手</b>：对手答错时额外扣血 | 🔮 <b>术士</b>：初次受伤反弹一半伤害</li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
@@ -283,7 +346,7 @@ body {
 
 <!-- SETUP VIEW -->
 <div id="setup-view" class="container mx-auto p-8 max-w-6xl hidden">
-    <h1 class="text-center text-7xl font-black mb-8" style="color: var(--primary)" id="setup-title">⚔️ AI 全能竞技场 · 大决战版</h1>
+    <h1 class="text-center text-7xl font-black mb-8" style="color: var(--primary)" id="setup-title">⚔️ 大决战模式 · 双人决战</h1>
     <p class="text-center text-2xl font-bold mb-10 opacity-60" id="setup-subtitle">双人对战 · 像素勇士 · 抢答对决</p>
 
     <div class="glass-panel p-10 space-y-10">
@@ -715,7 +778,7 @@ function enterDuelMode() {
     document.getElementById('setup-view').classList.remove('hidden');
     document.getElementById('solo-student-section').classList.remove('hidden');
     document.getElementById('group-setup-section').classList.add('hidden');
-    document.getElementById('setup-title').innerText = '⚔️ AI 全能竞技场 · 大决战版';
+    document.getElementById('setup-title').innerText = '⚔️ 大决战模式 · 双人决战';
     document.getElementById('setup-subtitle').innerText = '双人对战 · 像素勇士 · 抢答对决';
     if (!window._modelsDetected) detectModels();
     document.getElementById('launch-btn').classList.remove('hidden');
@@ -728,7 +791,7 @@ function enterGroupMode() {
     document.getElementById('setup-view').classList.remove('hidden');
     document.getElementById('solo-student-section').classList.add('hidden');
     document.getElementById('group-setup-section').classList.remove('hidden');
-    document.getElementById('setup-title').innerText = '🏰 AI 全能竞技场 · 组别对决';
+    document.getElementById('setup-title').innerText = '🏰 大决战模式 · 组别对决';
     document.getElementById('setup-subtitle').innerText = '多组轮流对战 · 小组荣誉之战';
     if (!window._modelsDetected) detectModels();
     document.getElementById('launch-btn').classList.remove('hidden');
