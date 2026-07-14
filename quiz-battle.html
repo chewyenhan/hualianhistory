@@ -3484,8 +3484,8 @@ document.addEventListener('keydown', function(e) {
 window.onload = function() {
     var style = localStorage.getItem('quiz_style') || 'tech';
     document.body.className = 'theme-' + style;
+    detectModels();  // Always load models on page load
     loadSettings();
-    // Entry page is shown by default; detectModels will be called when user enters a mode
     // Auto-save config
     document.querySelectorAll('#setup-view input, #setup-view select, #setup-view textarea').forEach(function(el) {
         el.addEventListener('change', saveSettings);
