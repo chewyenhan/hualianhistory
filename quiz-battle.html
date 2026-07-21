@@ -507,6 +507,11 @@ body {
             <button id="group-player-confirm-btn" onclick="confirmGroupPlayer()" class="hidden px-10 py-4 bg-green-500 hover:bg-green-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-green-300">✅ 确认出战</button>
         </div>
     </div>
+
+    <!-- Early End Button -->
+    <div id="early-end-section" class="mt-10 text-center">
+        <button id="early-end-btn" onclick="endGameEarly()" class="px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-amber-300 opacity-70 hover:opacity-100">🏆 提前结束 · 查看排行榜</button>
+    </div>
 </div>
 
 <!-- CHARACTER SELECT VIEW -->
@@ -749,6 +754,9 @@ function playVictorySound(){ [262,330,392,523,659].forEach((f,i)=>setTimeout(()=
 function playWheelTick()   { playSynth(523,'sine',0.06,0.08); }
 function playCorrectSound(){ sounds.correct.currentTime=0; sounds.correct.play().catch(()=>{}); }
 function playWrongSound()  { sounds.wrong.currentTime=0; sounds.wrong.play().catch(()=>{}); }
+
+// Track which students have been picked at least once (for early-end detection)
+var pickedStudentSet = {};
 
 // TTS
 function speak(text) {
@@ -1790,6 +1798,7 @@ function startBattle() {
         leftLastSkillStreak: 0, rightLastSkillStreak: 0,
     };
     skillWheelState = { targetSkill: null, isSpinning: false, pendingSide: null, pendingName: null };
+    pickedStudentSet = {}; // Reset picked student tracking for new game
     startWheelPhase();
 }
 
@@ -1988,6 +1997,15 @@ function spinWheel() {
     document.getElementById('skip-student-btn').classList.add('hidden');
     clearTimeout(wheelTimeout);
 
+    var wheelCandidates = getWheelCandidateNames();
+    if (wheelCandidates.length === 0) {
+        wheelState.isSpinning = false;
+        document.getElementById('spin-btn').disabled = false;
+        document.getElementById('wheel-label').innerText = '⚠️ 没有可抽选的学生了';
+        document.getElementById('spin-btn').classList.add('hidden');
+        return;
+    }
+
     const speed = 0.4 + Math.random() * 0.5, duration = 3500;
     let start = null, lastTick = 0;
     function animate(time) {
@@ -2035,6 +2053,9 @@ function onWheelComplete(name) {
     } else {
         students[name].usedCount = (students[name].usedCount || 0) + 1;
     }
+
+    // Track that this student has been picked at least once
+    markStudentPicked(name);
 
     if (wheelState.spinCount === 0) {
         wheelState.firstStudent = name;
@@ -2148,6 +2169,12 @@ function startWheelPhase() {
     wheelState.spinCount = 0; wheelState.firstStudent = null; wheelState.secondStudent = null;
     wheelState.excludeStudent = null; wheelState.lastSpunName = null;
     const avail = getWheelCandidateNames();
+    if (avail.length === 0) {
+        // No candidates available — all students eliminated and picked
+        document.getElementById('wheel-label').innerText = '⚠️ 没有可出战的学生了';
+        document.getElementById('spin-btn').classList.add('hidden');
+        return;
+    }
     initWheel(avail);
 }
 
@@ -2190,6 +2217,7 @@ function startGroupBattle() {
         leftPlayer: null, rightPlayer: null, isSpinning: false, selectedPlayerIdx: null,
         replacementSide: null
     };
+    pickedStudentSet = {}; // Reset picked student tracking for new game
     startGroupWheelPhase();
 }
 
@@ -2374,6 +2402,7 @@ function confirmGroupPlayer() {
     } else {
         students[playerName].usedCount = (students[playerName].usedCount || 0) + 1;
     }
+    markStudentPicked(playerName);
     students[playerName].eliminated = false; // Reset for re-entering players
 
     if (side === 'left') {
@@ -3217,6 +3246,13 @@ function spinForSlot(slot) {
     var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     var available = uneliminated.filter(function(n) { return n !== winnerName; });
     if (available.length < 1) {
+        // If all students have been picked at least once, show leaderboard instead of recycling
+        if (allStudentsPicked()) {
+            document.getElementById('battle-view').classList.add('hidden');
+            document.getElementById('wheel-view').classList.add('hidden');
+            endGameEarly();
+            return;
+        }
         // Reset eliminated students except the current battle participants
         Object.keys(students).forEach(function(n) {
             if (n !== loserName && n !== winnerName) { students[n].eliminated = false; }
@@ -3257,6 +3293,7 @@ function spinForSlot(slot) {
         } else {
             students[name].usedCount = (students[name].usedCount || 0) + 1;
         }
+        markStudentPicked(name);
         if (wheelState._spinForSlot === 'left') {
             battleState.leftStudent = name;
             document.getElementById('wheel-label').innerText = '左方新战士：' + name + ' ✅';
@@ -3294,6 +3331,11 @@ function spinForBoth() {
     var guardRight = battleState.rightStudent;
     var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     if (uneliminated.length < 2) {
+        // If all students have been picked at least once, show leaderboard instead of recycling
+        if (allStudentsPicked()) {
+            endGameEarly();
+            return;
+        }
         // First pass: reset eliminated students NOT currently in battle
         Object.keys(students).forEach(function(n) {
             if (n !== guardLeft && n !== guardRight) { students[n].eliminated = false; }
@@ -3374,6 +3416,38 @@ function handleTimerExpired(phase, side) {
             speak('时间到！双方都未答对！');
         }
     }
+}
+
+// ============ SECTION 8.5: EARLY END ============
+function endGameEarly() {
+    stopRenderLoop();
+    stopBattleTimer();
+    clearTimeout(wheelTimeout);
+    wheelState.isSpinning = false;
+    groupWheelState.isSpinning = false;
+    document.getElementById('wheel-view').classList.add('hidden');
+    document.getElementById('battle-view').classList.add('hidden');
+    document.getElementById('char-select-view').classList.add('hidden');
+    document.getElementById('vs-overlay').classList.add('hidden');
+    document.getElementById('battle-note').classList.add('hidden');
+    if (gameMode === 'group') {
+        showGroupLeaderboard();
+    } else {
+        showLeaderboard();
+    }
+}
+
+function allStudentsPicked() {
+    var allNames = Object.keys(students);
+    if (allNames.length === 0) return false;
+    for (var i = 0; i < allNames.length; i++) {
+        if (!pickedStudentSet[allNames[i]]) return false;
+    }
+    return true;
+}
+
+function markStudentPicked(name) {
+    if (name) pickedStudentSet[name] = true;
 }
 
 // ============ SECTION 9: LEADERBOARD ============
