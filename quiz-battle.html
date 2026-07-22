@@ -482,9 +482,16 @@ body {
 <!-- WHEEL VIEW -->
 <div id="wheel-view" class="hidden container mx-auto p-8 flex flex-col items-center justify-center min-h-screen">
     <h2 class="text-5xl font-black mb-4 text-center" id="wheel-label">🔴 左方战士抽选中...</h2>
-    <div class="relative">
-        <canvas id="wheelCanvas" width="600" height="600" class="max-w-full"></canvas>
-        <button id="spin-btn" onclick="spinWheel()" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-black font-black text-3xl px-10 py-6 rounded-full shadow-2xl border-4 border-yellow-200 hover:scale-110 transition-transform z-10">🎯 抽签</button>
+    <div class="flex items-start gap-16">
+        <!-- Early End Button (left side) -->
+        <div class="flex-shrink-0 pt-48">
+            <button onclick="endGameEarly()" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-lg font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-amber-300 opacity-70 hover:opacity-100">🏆 提前结束 · 查看排行榜</button>
+        </div>
+        <!-- Wheel Canvas -->
+        <div>
+            <canvas id="wheelCanvas" width="600" height="600" class="max-w-full"></canvas>
+            <button id="spin-btn" onclick="spinWheel()" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-black font-black text-3xl px-10 py-6 rounded-full shadow-2xl border-4 border-yellow-200 hover:scale-110 transition-transform z-10">🎯 抽签</button>
+        </div>
     </div>
     <div id="wheel-result-actions" class="hidden mt-8 flex flex-col items-center gap-4">
         <div id="wheel-result" class="hidden text-center">
@@ -506,11 +513,6 @@ body {
         <div class="text-center mt-6">
             <button id="group-player-confirm-btn" onclick="confirmGroupPlayer()" class="hidden px-10 py-4 bg-green-500 hover:bg-green-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-green-300">✅ 确认出战</button>
         </div>
-    </div>
-
-    <!-- Early End Button -->
-    <div id="early-end-section" class="mt-10 text-center">
-        <button id="early-end-btn" onclick="endGameEarly()" class="px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-amber-300 opacity-70 hover:opacity-100">🏆 提前结束 · 查看排行榜</button>
     </div>
 </div>
 
