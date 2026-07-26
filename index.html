@@ -34,6 +34,25 @@
             font-weight: 500;
             margin: 0; padding: 0;
             scroll-behavior: smooth;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%; left: -10%;
+            width: 40vw; height: 40vw;
+            background: radial-gradient(circle, rgba(212,175,55,0.05), transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -20%; right: -10%;
+            width: 40vw; height: 40vw;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.05), transparent 70%);
+            z-index: -1;
+            pointer-events: none;
         }
 
         /* ── Header ── */
@@ -640,15 +659,23 @@
 
         // 自动滑动逻辑
         document.querySelectorAll('.scroll-container').forEach(container => {
+            const list = container.querySelector('.flex.overflow-x-auto');
+            const leftArrow = container.querySelector('.scroll-arrow.left');
+            const rightArrow = container.querySelector('.scroll-arrow.right');
             let scrollInterval;
-            container.addEventListener('mouseenter', () => {
-                const list = container.querySelector('.flex.overflow-x-auto');
+
+            const startScroll = (direction) => {
                 scrollInterval = setInterval(() => {
-                    list.scrollLeft += 2;
-                    if (list.scrollLeft >= list.scrollWidth - list.clientWidth) list.scrollLeft = 0;
+                    list.scrollLeft += direction * 5;
                 }, 30);
-            });
-            container.addEventListener('mouseleave', () => clearInterval(scrollInterval));
+            };
+
+            const stopScroll = () => clearInterval(scrollInterval);
+
+            leftArrow.addEventListener('mouseenter', () => startScroll(-1));
+            leftArrow.addEventListener('mouseleave', stopScroll);
+            rightArrow.addEventListener('mouseenter', () => startScroll(1));
+            rightArrow.addEventListener('mouseleave', stopScroll);
         });
 
         // ═══════════════ 滚动渐显动画 ═══════════════
