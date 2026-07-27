@@ -3614,7 +3614,7 @@ async function detectModels() {
         console.warn('Model detection failed', e);
         status.innerText = '⚠️ 自动连接失败，使用内置线路';
         sel.innerHTML = '';
-        ['models/gemini-3.5-flash-lite'].forEach(function(m) {
+        ['models/gemini-3.5-flash-lite','models/gemini-2.5-flash','models/gemini-2.0-flash','models/gemini-1.5-flash'].forEach(function(m) {
             var opt = document.createElement('option'); opt.value = m; opt.textContent = m.replace('models/',''); sel.appendChild(opt);
         });
         sel.selectedIndex = 0; selectedModel = sel.value; sel.style.display = 'block';
