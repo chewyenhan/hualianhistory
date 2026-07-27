@@ -1719,7 +1719,10 @@ Output ONLY valid JSON array, no markdown, no code blocks.`;
             body: JSON.stringify({ model, contents: [{ parts: [{ text: prompt }] }] })
         });
         const data = await res.json();
+        if (data._timing) console.log('⏱️ API 耗时:', data._timing.total_ms + 'ms (API:', data._timing.api_ms + 'ms, 传body:', data._timing.body_ms + 'ms)');
         if (!res.ok) throw new Error(data.error?.message || 'API failed');
+        // 去掉 _timing 再处理，防止 parse 报错
+        delete data._timing;
         const aiTxt = data.candidates[0].content.parts[0].text;
         const match = aiTxt.match(/\[[\s\S]*\]/);
         if (!match) throw new Error('AI format error');

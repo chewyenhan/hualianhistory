@@ -70,21 +70,28 @@ export default {
 
       try {
         const body = await request.json();
-        const model = 'gemini-3.5-flash-lite';
+        const model = body.model || 'gemini-3.5-flash-lite';
+        const usedModel = model.replace('models/', '');
 
         const geminiBody = { contents: body.contents };
         if (body.system_instruction) geminiBody.system_instruction = body.system_instruction;
         if (body.generationConfig) geminiBody.generationConfig = body.generationConfig;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+        const t0 = Date.now();
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${usedModel}:generateContent?key=${env.GEMINI_API_KEY}`;
         const resp = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(geminiBody)
         });
+        const t1 = Date.now();
         const respText = await resp.text();
+        const t2 = Date.now();
 
-        return new Response(respText, {
+        const geminiResp = JSON.parse(respText);
+        geminiResp._timing = { api_ms: t1 - t0, body_ms: t2 - t1, total_ms: t2 - t0 };
+
+        return new Response(JSON.stringify(geminiResp), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (e) {
