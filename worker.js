@@ -32,11 +32,21 @@ export default {
 
     const url = new URL(request.url);
 
+    // --- GET /health (diagnostic) ---
+    if (url.pathname === '/health' && request.method === 'GET') {
+      const hasKey = !!env.GEMINI_API_KEY;
+      const keyPrefix = hasKey ? env.GEMINI_API_KEY.substring(0, 8) + '...' : 'MISSING';
+      return new Response(JSON.stringify({
+        keySet: hasKey, keyPrefix,
+        hasPaidKey: !!env.GEMINI_API_KEY_PAID
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     // --- GET /models ---
     if (url.pathname === '/models' && request.method === 'GET') {
       return new Response(JSON.stringify({
         models: [
-          { name: 'models/gemini-3.5-flash-lite', displayName: 'Gemini 3.5 Flash Lite (推荐)' }
+          { name: 'models/gemini-2.5-flash', displayName: 'Gemini 2.5 Flash (免费推荐)' }
         ]
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -70,30 +80,25 @@ export default {
 
       try {
         const body = await request.json();
-        const model = 'gemini-3.5-flash-lite';
+        const model = 'gemini-2.5-flash';
 
         const geminiBody = { contents: body.contents };
         if (body.system_instruction) geminiBody.system_instruction = body.system_instruction;
         if (body.generationConfig) geminiBody.generationConfig = body.generationConfig;
 
-        const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': env.GEMINI_API_KEY
-            },
-            body: JSON.stringify(geminiBody)
-          }
-        );
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+        const resp = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geminiBody)
+        });
         const respText = await resp.text();
 
         return new Response(respText, {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (e) {
-        return new Response(JSON.stringify({ error: 'AI 请求失败: ' + e.message }), {
+        return new Response(JSON.stringify({ error: 'AI 请求失败: ' + e.message, stack: e.stack }), {
           status: 502,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
