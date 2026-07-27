@@ -434,7 +434,7 @@
 
         const WORKER_URL = 'https://hualianhistory-ai.chewyenhan.workers.dev';
         let customApiKey = 'worker';   // ⚠️ 必须是 truthy 值，防止旧代码的 !customApiKey 检查阻断
-        let selectedModel = 'models/gemini-2.5-flash';
+        let selectedModel = 'models/gemini-3.5-flash-lite';
 
         window.onload = () => {
             const style = localStorage.getItem('quiz_style') || 'tech';
@@ -547,7 +547,7 @@
                 console.warn('模型加载失败，使用默认列表', e);
                 if (status) status.innerText = '⚠️ 自动连接失败，使用内置线路';
                 sel.innerHTML = '';
-                ['models/gemini-2.5-flash', 'models/gemini-2.5-pro', 'models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-1.5-pro'].forEach(m => {
+                ['models/gemini-3.5-flash-lite'].forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = m;
                     opt.textContent = m.replace('models/', '');
@@ -662,27 +662,10 @@ ${text}
 - 难度分布：简单 ${easyN} 题、中等 ${medN} 题、困难 ${hardN} 题
 - 简单题 = 资料中直接提及的事实
 - 中等题 = 需要理解+推理
-- 困难题 = 需要深层次分析或跨段落关联`;
+- 困难题 = 需要深层次分析或跨段落关联
 
-            const responseSchema = {
-                type: "array",
-                items: {
-                    type: "object",
-                    properties: {
-                        q: { type: "string", description: "题目内容" },
-                        options: {
-                            type: "array",
-                            items: { type: "string" },
-                            minItems: 3, maxItems: 3,
-                            description: "3个选项"
-                        },
-                        ans: { type: "integer", minimum: 0, maximum: 2, description: "正确答案索引 0/1/2" },
-                        note: { type: "string", description: "2-3句知识讲解" },
-                        difficulty: { type: "string", enum: ["easy", "medium", "hard"], description: "难度等级" }
-                    },
-                    required: ["q", "options", "ans", "note", "difficulty"]
-                }
-            };
+⚠️ 必须以纯 JSON 数组格式输出（不要用 markdown 代码块包裹），格式示例：
+[{"q":"题目","options":["A选项","B选项","C选项"],"ans":0,"note":"知识讲解","difficulty":"easy"}]`;
 
             let isOfflineMode = false;
             try {
@@ -690,17 +673,15 @@ ${text}
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         model: model,
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            response_mime_type: "application/json",
-                            response_schema: responseSchema
-                        }
+                        contents: [{ parts: [{ text: prompt }] }]
                     })
                 });
                 const data = await res.json();
                 if(!res.ok) throw new Error(data.error?.message || "API 调用失败");
                 const aiTxt = data.candidates[0].content.parts[0].text;
-                scenes = JSON.parse(aiTxt);
+                // 用正则提取 JSON 数组（兼容非结构化输出）
+                const match = aiTxt.match(/\[[\s\S]*\]/);
+                scenes = match ? JSON.parse(match[0]) : JSON.parse(aiTxt);
                 shuffleOptions(scenes);
             } catch(e) {
                 console.warn('⚠️ API 调用失败，使用离线 fallback 模式', e);
