@@ -32,16 +32,6 @@ export default {
 
     const url = new URL(request.url);
 
-    // --- GET /health (diagnostic) ---
-    if (url.pathname === '/health' && request.method === 'GET') {
-      const hasKey = !!env.GEMINI_API_KEY;
-      const keyPrefix = hasKey ? env.GEMINI_API_KEY.substring(0, 8) + '...' : 'MISSING';
-      return new Response(JSON.stringify({
-        keySet: hasKey, keyPrefix,
-        hasPaidKey: !!env.GEMINI_API_KEY_PAID
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
     // --- GET /models ---
     if (url.pathname === '/models' && request.method === 'GET') {
       return new Response(JSON.stringify({
