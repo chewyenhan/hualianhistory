@@ -30,11 +30,21 @@
         body {
             background-color: #0f172a;
             color: #f1f5f9;
-            font-family: 'Noto Serif SC', 'SimSun', 'STSong', 'Microsoft YaHei', serif;
+            font-family: 'Outfit', 'Noto Sans SC', 'SimSun', 'Microsoft YaHei', sans-serif;
             font-weight: 500;
             margin: 0; padding: 0;
             scroll-behavior: smooth;
             position: relative;
+        }
+
+        /* 标题使用衬线字体，营造历史感 */
+        h1, h2, h3, .section-title {
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        /* 正文使用无衬线字体，提升可读性 */
+        p, button, a, .section-subtitle {
+            font-family: 'Outfit', 'Noto Sans SC', sans-serif;
         }
         body::before {
             content: '';
@@ -111,46 +121,58 @@
             margin: 1rem auto;
         }
         .section-subtitle {
-            font-size: 1.25rem; font-weight: 500; color: #94a3b8;
+            font-size: 1.25rem; font-weight: 500; color: #cbd5e1;
             text-align: center; margin-bottom: 3rem;
+        }
+
+        /* 键盘焦点样式 */
+        a:focus-visible, button:focus-visible {
+            outline: 2px solid #d4af37;
+            outline-offset: 2px;
         }
 
         /* ── Cards ── */
         .game-card, .tool-card {
             background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
             border: 1px solid #334155;
-            border-radius: 22px; overflow: hidden;
+            border-radius: 16px; overflow: hidden;
             transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             box-shadow: 0 8px 30px rgba(0,0,0,0.35);
         }
-        .game-card p, .tool-card p {
-            font-weight: 500; font-size: 0.95rem;
+
+        /* 统一卡片文本样式 */
+        .game-card p, .tool-card p, .resource-item p {
+            font-weight: 500;
+            font-size: 0.95rem;
         }
+
+        /* 卡片悬停效果 */
         .game-card:hover, .tool-card:hover {
             transform: translateY(-12px) scale(1.02);
             border-color: var(--primary-gold);
             box-shadow: 0 20px 50px rgba(212,175,55,0.35);
         }
 
+        /* 资源卡片特殊样式 */
+        .resource-item {
+            background: #1e293b;
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            border-left: 5px solid var(--accent-blue);
+        }
+
         /* ── Buttons ── */
         .btn-play {
-            position: relative; overflow: hidden;
             background: var(--deep-red); color: white;
             padding: 0.75rem 1.4rem; border-radius: 12px;
             font-weight: 700; display: inline-block;
             transition: all 0.3s; letter-spacing: 0.5px;
         }
         .btn-play:hover { background: #b91c1c; transform: scale(1.04); }
-        .btn-play::before {
-            content: ''; position: absolute;
-            top: 50%; left: 50%;
-            width: 0; height: 0;
-            background: rgba(255,255,255,0.15);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-        .btn-play:hover::before { width: 350px; height: 350px; }
 
         .btn-info {
             background: transparent;
@@ -183,7 +205,6 @@
             font-size: 20px; cursor: pointer;
             transition: all 0.3s; z-index: 10;
             display: flex; align-items: center; justify-content: center;
-            animation: glowPulse 3s infinite;
             opacity: 0.3;
         }
         .scroll-arrow:hover { background: rgba(212, 175, 55, 1); transform: translateY(-50%) scale(1.1); }
@@ -249,7 +270,24 @@
         <canvas id="particle-canvas"></canvas>
         <div class="container mx-auto px-4">
             <p class="text-base uppercase tracking-[0.3em] text-[#d4af37] mb-4 opacity-75">Taiping Hua Lian High School · History Department</p>
-            <h1 class="text-5xl md:text-6xl font-black mb-6 tracking-tight">
+
+            <!-- 数据统计 -->
+            <div class="flex justify-center gap-8 mb-8">
+                <div class="text-center">
+                    <p class="text-5xl md:text-6xl font-black text-[#d4af37] animate-float">16</p>
+                    <p class="text-sm text-gray-300 mt-2">个教育项目</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-5xl md:text-6xl font-black text-[#d4af37] animate-float">5</p>
+                    <p class="text-sm text-gray-300 mt-2">个沉浸式历史游戏</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-5xl md:text-6xl font-black text-[#d4af37] animate-float">2</p>
+                    <p class="text-sm text-gray-300 mt-2">套视觉风格</p>
+                </div>
+            </div>
+
+            <h1 class="text-4xl md:text-5xl font-black mb-6 tracking-tight">
                 历史科互动学习门户
             </h1>
 
@@ -304,7 +342,7 @@
                     </div>
 
                     <h3 class="text-3xl font-black mb-2 text-center">三模竞技 · 双重风格</h3>
-                    <p class="text-center text-gray-400 mb-6">一套题库，三种玩法 — 先选风格，再选模式</p>
+                    <p class="text-center text-gray-300 mb-6">一套题库，三种玩法 — 先选风格，再选模式</p>
 
                     <!-- 风格预览 -->
                     <div class="grid grid-cols-2 gap-4 mb-6">
@@ -321,7 +359,7 @@
                     </div>
 
                     <!-- 亮点摘要 -->
-                    <ul class="text-gray-400 text-sm space-y-1.5 mb-7 leading-relaxed text-center">
+                    <ul class="text-gray-300 text-sm space-y-1.5 mb-7 leading-relaxed text-center">
                         <li>🛡️ 组别对战：最高 10 组 · 抢答机制 · 动态排行榜</li>
                         <li>🏆 个人挑战：幸运大转轮 · 卡牌选题 · 英雄榜</li>
                         <li>⚔️ 大决战：双人对战 · 6 种像素勇士 · 抢答对决</li>
@@ -351,7 +389,7 @@
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-2">Snaptext OCR</h3>
                         <p class="text-sm text-green-400 mb-4 font-semibold">— 批量拍照 · 一键完整提取文字</p>
-                        <p class="text-gray-400 mb-6 text-sm">• 批量上传多张照片｜一次性快速提取文字｜支持复制和编辑｜导出 TXT 和 PDF 格式｜精准识别多种语言</p>
+                        <p class="text-gray-300 mb-6 text-sm">• 批量上传多张照片｜一次性快速提取文字｜支持复制和编辑｜导出 TXT 和 PDF 格式｜精准识别多种语言</p>
                         <div class="mt-auto">
                             <a href="https://chewyenhan.github.io/my-ocr-app/" target="_blank" class="btn-play">开始提取</a>
                             <a href="https://github.com/chewyenhan/my-ocr-app/blob/main/README.md" target="_blank" class="btn-info">📖 使用指南</a>
@@ -365,7 +403,7 @@
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-2">焕灯 · Huandeng</h3>
                         <p class="text-sm text-green-400 mb-4 font-semibold">— AI 原生 PPT 生成器 · 一句话变演示文稿</p>
-                        <p class="text-gray-400 mb-6 text-sm">• 一句话/大纲/文档翻新｜四种创建模式随心选｜可编辑 PPTX + PDF + 视频导出｜教学课件制作利器</p>
+                        <p class="text-gray-300 mb-6 text-sm">• 一句话/大纲/文档翻新｜四种创建模式随心选｜可编辑 PPTX + PDF + 视频导出｜教学课件制作利器</p>
                         <div class="mt-auto">
                             <a href="https://empty5354-huandeng.hf.space/" target="_blank" class="btn-play">开始创作</a>
                             <a href="https://github.com/chewyenhan/huandeng/blob/main/README.md" target="_blank" class="btn-info">📖 使用指南</a>
@@ -379,7 +417,7 @@
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-2">国际象棋比赛系统</h3>
                         <p class="text-sm text-green-400 mb-4 font-semibold">— 瑞士制配对 · 实时积分榜 · 一键生成对阵</p>
-                        <p class="text-gray-400 mb-6 text-sm">• 老师创建比赛导入名单｜瑞士制自动配对｜实时成绩发布｜学生手机查看对阵和排名｜支持破同分排序与数据导出</p>
+                        <p class="text-gray-300 mb-6 text-sm">• 老师创建比赛导入名单｜瑞士制自动配对｜实时成绩发布｜学生手机查看对阵和排名｜支持破同分排序与数据导出</p>
                         <div class="mt-auto">
                             <a href="https://chewyenhan.github.io/chess-system/" target="_blank" class="btn-play">管理比赛</a>
                         </div>
@@ -404,7 +442,7 @@
                     <img src="melaka.png" class="h-48 w-full object-cover">
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-3">马六甲：东方十字路口</h3>
-                        <p class="text-gray-400 mb-6">穿越到马六甲王朝，在贸易与权力的旋涡中做出你的历史抉择。</p>
+                        <p class="text-gray-300 mb-6">穿越到马六甲王朝，在贸易与权力的旋涡中做出你的历史抉择。</p>
                         <div class="mt-auto">
                             <a href="https://chewyenhan.github.io/Melaka_Project/" target="_blank" class="btn-play">开始穿越</a>
                             <a href="https://github.com/chewyenhan/Melaka_Project/blob/main/README.md" target="_blank" class="btn-info">📖 玩法说明</a>
@@ -417,7 +455,7 @@
                     <img src="louisAuguste.png" class="h-48 w-full object-cover">
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-3">法国大革命 1789</h3>
-                        <p class="text-gray-400 mb-6">身处革命中心的巴黎，亲历历史的巨变与生存的挑战。</p>
+                        <p class="text-gray-300 mb-6">身处革命中心的巴黎，亲历历史的巨变与生存的挑战。</p>
                         <div class="mt-auto">
                             <a href="https://chewyenhan.github.io/-/" target="_blank" class="btn-play">亲历风云</a>
                             <a href="https://github.com/chewyenhan/-/blob/main/README.md" target="_blank" class="btn-info">📖 玩法说明</a>
@@ -430,7 +468,7 @@
                     <img src="https://images.unsplash.com/photo-1535905557558-afc4877a26fc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Enlightenment" class="h-48 w-full object-cover">
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-3">启蒙运动</h3>
-                        <p class="text-gray-400 mb-6">在启蒙时代，探索思想的火花，塑造现代世界的面貌。</p>
+                        <p class="text-gray-300 mb-6">在启蒙时代，探索思想的火花，塑造现代世界的面貌。</p>
                         <div class="mt-auto">
                             <a href="https://chewyenhan.github.io/Enlightment/" target="_blank" class="btn-play">进入启蒙</a>
                             <a href="https://github.com/chewyenhan/Enlightment/blob/main/README.md" target="_blank" class="btn-info">📖 玩法说明</a>
@@ -443,7 +481,7 @@
                     <img src="napoleon.png" class="h-48 w-full object-cover">
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-3">拿破仑：法兰西的荣光与倾覆</h3>
-                        <p class="text-gray-400 mb-6">化身拿破仑·波拿巴，在19世纪初的欧洲亲历帝国的崛起与陨落。</p>
+                        <p class="text-gray-300 mb-6">化身拿破仑·波拿巴，在19世纪初的欧洲亲历帝国的崛起与陨落。</p>
                         <div class="mt-auto">
                             <a href="https://chewyenhan.github.io/Napoleon_Empire/" target="_blank" class="btn-play">开始征战</a>
                             <a href="https://github.com/chewyenhan/Napoleon_Empire/blob/master/README.md" target="_blank" class="btn-info">📖 玩法说明</a>
@@ -456,7 +494,7 @@
                     <img src="malaya1941.png" class="h-48 w-full object-cover" alt="马来亚1941">
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-3">马来亚1941：抉择的十字路口</h3>
-                        <p class="text-gray-400 mb-6">1941年日军入侵马来半岛，身为民族主义领袖，在殖民者与侵略者之间做出你的历史抉择。</p>
+                        <p class="text-gray-300 mb-6">1941年日军入侵马来半岛，身为民族主义领袖，在殖民者与侵略者之间做出你的历史抉择。</p>
                         <div class="mt-auto">
                             <a href="https://chewyenhan.github.io/Japan_conquer_Malaya/" target="_blank" class="btn-play">进入抉择</a>
                             <a href="https://github.com/chewyenhan/Japan_conquer_Malaya/blob/main/README.md" target="_blank" class="btn-info">📖 玩法说明</a>
@@ -476,14 +514,14 @@
             <p class="section-subtitle" style="font-size:1.2rem; color:#cbd5e1; font-style:normal;">
                 课间放松时光 · 挑战生存极限
             </p>
-            <div class="flex flex-wrap justify-center gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
 
                 <!-- Game: Tank vs Zerg -->
                 <div class="game-card flex-none w-80 flex flex-col">
                     <img src="tankvszerg.png" class="h-48 w-full object-cover" alt="Tank vs Zerg">
                     <div class="p-6 flex-grow">
                         <h3 class="text-2xl font-bold mb-3">Tank vs Zerg</h3>
-                        <p class="text-gray-400 mb-6">操控坦克，抵御无尽虫群——在沙漠战场上坚持多久是你的纪录。</p>
+                        <p class="text-gray-300 mb-6">操控坦克，抵御无尽虫群——在沙漠战场上坚持多久是你的纪录。</p>
                         <div class="mt-auto">
                             <a href="https://chewyenhan.github.io/TankVsZerg/" target="_blank" class="btn-play">开始游戏</a>
                         </div>
@@ -499,12 +537,12 @@
             <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
                 <a href="https://s3f-reports.pages.dev" target="_blank" class="game-card p-6 block transition-all duration-400 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] hover:-translate-y-3 hover:border-[#d4af37] hover:shadow-[0_20px_50px_rgba(212,175,55,0.25)]" style="text-decoration:none; color:inherit;">
                     <h4 class="text-xl font-bold mb-2">📋 S3F 高三孝评语系统</h4>
-                    <p class="text-sm text-gray-400">多老师协作评语录入与家长报告</p>
+                    <p class="text-sm text-gray-300">多老师协作评语录入与家长报告</p>
                     <div class="mt-4 text-[#d4af37] font-bold text-sm">→ 立即进入</div>
                 </a>
                 <a href="https://j2y-reports.pages.dev" target="_blank" class="game-card p-6 block transition-all duration-400 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] hover:-translate-y-3 hover:border-[#d4af37] hover:shadow-[0_20px_50px_rgba(212,175,55,0.25)]" style="text-decoration:none; color:inherit;">
                     <h4 class="text-xl font-bold mb-2">📋 J2Y 初二忠评语系统</h4>
-                    <p class="text-sm text-gray-400">学生评语录入与综合报告查看</p>
+                    <p class="text-sm text-gray-300">学生评语录入与综合报告查看</p>
                     <div class="mt-4 text-[#d4af37] font-bold text-sm">→ 立即进入</div>
                 </a>
             </div>
@@ -523,66 +561,6 @@
     </footer>
 
     <script>
-        // ═══════════════ 音效系统 ═══════════════
-        let audioCtx = null;
-        function getAudioCtx() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            return audioCtx;
-        }
-        function playSound(type) {
-            try {
-                const ctx = getAudioCtx();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-
-                if (type === 'hover') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(880, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.04, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-                    osc.start(ctx.currentTime);
-                    osc.stop(ctx.currentTime + 0.08);
-                } else if (type === 'click') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(600, ctx.currentTime);
-                    osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.1);
-                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-                    osc.start(ctx.currentTime);
-                    osc.stop(ctx.currentTime + 0.12);
-                } else if (type === 'page') {
-                    // 双音入门铃
-                    [523.25, 659.25].forEach((freq, i) => {
-                        const o = ctx.createOscillator();
-                        const g = ctx.createGain();
-                        o.type = 'sine';
-                        o.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.15);
-                        g.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.15);
-                        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
-                        o.connect(g); g.connect(ctx.destination);
-                        o.start(ctx.currentTime + i * 0.15);
-                        o.stop(ctx.currentTime + i * 0.15 + 0.3);
-                    });
-                }
-            } catch(e) { /* 静默失败 */ }
-        }
-
-        // 交互元素音效绑定
-        document.addEventListener('mouseover', e => {
-            const el = e.target.closest('.btn-play, .btn-info, .game-card, .tool-card, a[href]');
-            if (el) playSound('hover');
-        });
-        document.addEventListener('click', e => {
-            const el = e.target.closest('.btn-play, .btn-info, .scroll-arrow, #back-to-top, a[href^="#"]');
-            if (el) playSound('click');
-        });
-
-        // 页面加载完成音效
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => playSound('page'), 400);
-        });
-
         // ═══════════════ 粒子背景 ═══════════════
         (function initParticles() {
             const canvas = document.getElementById('particle-canvas');
@@ -599,22 +577,23 @@
 
             function createParticles() {
                 particles = [];
-                const count = Math.min(60, Math.floor(canvas.width * canvas.height / 15000));
+                // 增加粒子数量到 50，提升可见性
+                const count = Math.min(50, Math.floor(canvas.width * canvas.height / 20000));
                 for (let i = 0; i < count; i++) {
                     particles.push({
                         x: Math.random() * canvas.width,
                         y: Math.random() * canvas.height,
-                        r: Math.random() * 2 + 0.8,
-                        dx: (Math.random() - 0.5) * 0.5,
-                        dy: (Math.random() - 0.5) * 0.5,
-                        alpha: Math.random() * 0.5 + 0.15,
+                        r: Math.random() * 3 + 1,  // 半径：1-4px
+                        dx: (Math.random() - 0.5) * 0.8,  // 速度：0.4-1.2
+                        dy: (Math.random() - 0.5) * 0.8,
+                        alpha: Math.random() * 0.8 + 0.3,  // 透明度：0.3-1.1（最高不超1）
                     });
                 }
             }
 
             function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                particles.forEach(p => {
+                particles.forEach((p, i) => {
                     p.x += p.dx;
                     p.y += p.dy;
                     if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
@@ -622,20 +601,21 @@
 
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(212,175,55,${p.alpha})`;
+                    ctx.fillStyle = `rgba(212,175,55,${Math.min(p.alpha, 1)})`;
                     ctx.fill();
 
-                    // 连线近距离粒子
-                    particles.forEach(p2 => {
+                    // 优化：只连接最近的邻居（降低时间复杂度）
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
                         const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-                        if (dist < 100) {
+                        if (dist < 80) {  // 缩短连线距离
                             ctx.beginPath();
                             ctx.moveTo(p.x, p.y);
                             ctx.lineTo(p2.x, p2.y);
-                            ctx.strokeStyle = `rgba(212,175,55,${0.06 * (1 - dist/100)})`;
+                            ctx.strokeStyle = `rgba(212,175,55,${0.06 * (1 - dist/80)})`;
                             ctx.stroke();
                         }
-                    });
+                    }
                 });
                 requestAnimationFrame(animate);
             }
@@ -678,22 +658,6 @@
             rightArrow.addEventListener('mouseleave', stopScroll);
         });
 
-        // ═══════════════ 滚动渐显动画 ═══════════════
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, { threshold: 0.1 });
-
-        document.querySelectorAll('.game-card, .tool-card, .resource-item').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
-            el.style.transition = 'all 0.6s ease-out';
-            observer.observe(el);
-        });
     </script>
 </body>
 </html>

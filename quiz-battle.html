@@ -3468,7 +3468,14 @@ function showLeaderboard() {
     });
 
     var body = document.getElementById('leaderboard-body');
-    body.innerHTML = sorted.map(function(s, i) {
+    if (sorted.length === 0 || sorted.every(function(s) { return s.totalQuestions === 0; })) {
+        // No battles have been played yet — show early-end message
+        body.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-4xl font-black opacity-70">🏆 尚未开始对战，当前参战名单</td></tr>';
+        sorted.forEach(function(s, i) {
+            body.innerHTML += '<tr><td colspan="6" class="p-4 text-center text-2xl">' + ('🥇🥈🥉'[i]||' ') + ' ' + escapeHtml(s.name) + '</td></tr>';
+        });
+    } else {
+        body.innerHTML = sorted.map(function(s, i) {
         var badge = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
         var winRate = s.totalQuestions > 0 ? Math.round(s.correctAnswers / s.totalQuestions * 100) : 0;
         var charEmoji = s.character ? CHARACTERS[s.character].emoji : '❓';
@@ -3486,6 +3493,7 @@ function showLeaderboard() {
 
     document.getElementById('leaderboard-view').classList.remove('hidden');
     speak('决战结束！恭喜获胜者！');
+    }
 }
 
 function escapeHtml(value) {

@@ -1,0 +1,24 @@
+{
+  "name": "hualianhistory",
+  "version": "1.0.0",
+  "description": "![License](https://img.shields.io/badge/License-MIT-blue.svg)\r ![AI-Powered](https://img.shields.io/badge/Powered%20by-Google%20Gemini-orange.svg)\r ![Education](https://img.shields.io/badge/Category-EdTech-green.svg)\r ![History](https://img.shields.io/badge/Subject-History-red.svg)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chewyenhan/hualianhistory.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/chewyenhan/hualianhistory/issues"
+  },
+  "homepage": "https://github.com/chewyenhan/hualianhistory#readme",
+  "devDependencies": {
+    "wrangler": "^4.101.0"
+  }
+}
