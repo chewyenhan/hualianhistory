@@ -102,6 +102,223 @@
             50%      { transform: translateY(-8px); }
         }
 
+        /* ══════════════ 电影开场动画 — 知识之门 ══════════════ */
+        @keyframes doorGlow {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scaleY(0.95); }
+            50%      { opacity: 1;   transform: translate(-50%, -50%) scaleY(1); }
+        }
+        @keyframes glowFadeOut {
+            0%, 40%  { opacity: 1; }
+            100%     { opacity: 0; visibility: hidden; }
+        }
+        @keyframes doorOpenLeft {
+            0%    { transform: translateX(0); }
+            100%  { transform: translateX(-101%); }
+        }
+        @keyframes doorOpenRight {
+            0%    { transform: translateX(0); }
+            100%  { transform: translateX(101%); }
+        }
+        @keyframes introShowText {
+            from { opacity: 0; transform: translateY(40px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes introHideScreen {
+            0%, 82%  { opacity: 1; }
+            100%     { opacity: 0; visibility: hidden; }
+        }
+        @keyframes introLineGrow {
+            from { width: 0; }
+            to   { width: 120px; }
+        }
+        @keyframes sceneBgFade {
+            0%, 48%  { opacity: 1; }
+            100%     { opacity: 0; }
+        }
+
+        .intro-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100vh;
+            z-index: 99999;
+            animation: introHideScreen 7.5s forwards;
+            animation-play-state: paused;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .intro-screen.active {
+            animation-play-state: running;
+        }
+
+        /* 门后场景背景 — 门打开后露出 */
+        .intro-scene {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a0a0a 30%, #0f172a 70%, #0a1520 100%);
+            z-index: 1;
+        }
+        .intro-scene::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(212,175,55,0.12), transparent 70%);
+            pointer-events: none;
+        }
+
+        /* 中央金色光芒 */
+        .door-glow {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 60%;
+            background: linear-gradient(0deg, transparent, #d4af37, #ffd700, #fff8dc, #ffd700, #d4af37, transparent);
+            border-radius: 3px;
+            box-shadow: 0 0 30px rgba(212,175,55,0.7),
+                        0 0 80px rgba(212,175,55,0.4),
+                        0 0 150px rgba(212,175,55,0.2);
+            z-index: 5;
+            animation: doorGlow 1.5s ease-in-out infinite,
+                       glowFadeOut 7.5s forwards;
+        }
+
+        /* 两扇巨门 */
+        .door {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: url('door.png') no-repeat;
+            background-size: 200% 100%;
+            z-index: 4;
+            /* 门框阴影增强立体感 */
+        }
+        .door::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, rgba(0,0,0,0.15), transparent 30%, transparent 70%, rgba(0,0,0,0.15));
+            pointer-events: none;
+        }
+
+        .door-left {
+            left: 0;
+            background-position: 0% 50%;
+            animation: doorOpenLeft 2.8s 0.6s cubic-bezier(0.75, 0, 0.25, 1) forwards;
+        }
+
+        .door-right {
+            right: 0;
+            background-position: 100% 50%;
+            animation: doorOpenRight 2.8s 0.6s cubic-bezier(0.75, 0, 0.25, 1) forwards;
+        }
+
+        /* 门后浮现的文字 */
+        .intro-content {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            text-align: center;
+        }
+
+        .intro-year {
+            font-family: 'Outfit', sans-serif;
+            font-size: 52px;
+            font-weight: 900;
+            color: #d4af37;
+            letter-spacing: 12px;
+            opacity: 0;
+            animation: introShowText 1.5s 3.4s forwards;
+        }
+
+        .intro-divider {
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #d4af37, transparent);
+            margin: 24px auto;
+            opacity: 0;
+            animation: introShowText 0.6s 3.9s forwards,
+                       introLineGrow 0.8s 3.9s forwards;
+        }
+
+        .intro-content h2 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #f1f5f9;
+            letter-spacing: 6px;
+            margin-top: 8px;
+            opacity: 0;
+            animation: introShowText 1.5s 4.2s forwards;
+        }
+
+        .intro-content .intro-sub {
+            font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+            color: #94a3b8;
+            letter-spacing: 4px;
+            margin-top: 32px;
+            opacity: 0;
+            animation: introShowText 1.5s 4.8s forwards;
+        }
+
+        /* 默认暂停所有动画，等待用户点击启幕 */
+        .door-glow,
+        .door-left,
+        .door-right,
+        .intro-year,
+        .intro-divider,
+        .intro-content h2,
+        .intro-content .intro-sub {
+            animation-play-state: paused;
+        }
+        .intro-screen.active .door-glow,
+        .intro-screen.active .door-left,
+        .intro-screen.active .door-right,
+        .intro-screen.active .intro-year,
+        .intro-screen.active .intro-divider,
+        .intro-screen.active .intro-content h2,
+        .intro-screen.active .intro-content .intro-sub {
+            animation-play-state: running;
+        }
+
+        /* 点击启幕提示 */
+        .intro-hint {
+            position: absolute;
+            bottom: 12%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            color: rgba(212, 175, 55, 0.7);
+            font-family: 'Noto Serif SC', serif;
+            font-size: 16px;
+            letter-spacing: 6px;
+            animation: hintPulse 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes hintPulse {
+            0%, 100% { opacity: 0.4; }
+            50%      { opacity: 1; }
+        }
+        .intro-screen.active .intro-hint {
+            animation: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        @media (max-width: 768px) {
+            .door-glow { height: 40%; }
+            .intro-year { font-size: 34px; letter-spacing: 8px; }
+            .intro-content h2 { font-size: 24px; letter-spacing: 4px; }
+            .intro-content .intro-sub { font-size: 14px; letter-spacing: 2px; }
+        }
+
         .animate-in {
             animation: fadeInUp 0.7s ease-out both;
         }
@@ -265,6 +482,32 @@
     </style>
 </head>
 <body>
+
+    <!-- ══════════════ 电影开场动画 — 知识之门 ══════════════ -->
+    <div class="intro-screen">
+        <!-- 门后场景 -->
+        <div class="intro-scene"></div>
+
+        <!-- 门后文字（先隐藏在门后面） -->
+        <div class="intro-content">
+            <p class="intro-year">华 联 中 学</p>
+            <div class="intro-divider"></div>
+            <h2>历史科互动学习门户</h2>
+            <p class="intro-sub">探 索 历 史  ·  触 摸 真 实</p>
+        </div>
+
+        <!-- 中央金色光芒 -->
+        <div class="door-glow"></div>
+
+        <!-- 左门 -->
+        <div class="door door-left"></div>
+
+        <!-- 右门 -->
+        <div class="door door-right"></div>
+
+        <!-- 点击启幕提示 -->
+        <p class="intro-hint">点 击 启 幕</p>
+    </div>
 
     <header class="header-bg">
         <canvas id="particle-canvas"></canvas>
@@ -657,6 +900,132 @@
             rightArrow.addEventListener('mouseenter', () => startScroll(1));
             rightArrow.addEventListener('mouseleave', stopScroll);
         });
+
+        // ═══════════════ 开场动画音效 + 点击启幕 ═══════════════
+        (function initIntro() {
+            const introScreen = document.querySelector('.intro-screen');
+            if (!introScreen) return;
+
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            let ctx = null;
+            let started = false;
+
+            function ensureCtx() {
+                if (!AudioCtx) return false;
+                if (!ctx) ctx = new AudioCtx();
+                if (ctx.state === 'suspended') ctx.resume();
+                return ctx.state === 'running';
+            }
+
+            // ── 钟声/编钟 ──
+            function playBell(freq, volume, duration) {
+                if (!ctx || ctx.state !== 'running') return;
+                const now = ctx.currentTime;
+                const master = ctx.createGain();
+                master.gain.setValueAtTime(0, now);
+                master.gain.linearRampToValueAtTime(volume, now + 0.02);
+                master.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                master.connect(ctx.destination);
+
+                [{f:freq,v:1},{f:freq*2,v:.55},{f:freq*3,v:.3},{f:freq*4.7,v:.2},{f:freq*5.4,v:.12}]
+                    .forEach(h => {
+                        const o = ctx.createOscillator(), g = ctx.createGain();
+                        o.type = 'sine'; o.frequency.setValueAtTime(h.f, now);
+                        g.gain.setValueAtTime(0, now);
+                        g.gain.linearRampToValueAtTime(h.v * .5, now + .005);
+                        g.gain.exponentialRampToValueAtTime(.001, now + duration * .6);
+                        o.connect(g); g.connect(master);
+                        o.start(now); o.stop(now + duration);
+                    });
+            }
+
+            // ── 石门开启音 ──
+            function playDoorOpen() {
+                if (!ctx || ctx.state !== 'running') return;
+                const now = ctx.currentTime, dur = 2.8;
+
+                [24,30,36,48].forEach(f => {
+                    const o = ctx.createOscillator(), g = ctx.createGain();
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(f, now);
+                    o.frequency.linearRampToValueAtTime(f * 1.6, now + dur);
+                    g.gain.setValueAtTime(0, now);
+                    g.gain.linearRampToValueAtTime(.15, now + .15);
+                    g.gain.setValueAtTime(.15, now + .8);
+                    g.gain.exponentialRampToValueAtTime(.001, now + dur);
+                    o.connect(g); g.connect(ctx.destination);
+                    o.start(now); o.stop(now + dur);
+                });
+
+                const thud = ctx.createOscillator(), thudG = ctx.createGain();
+                thud.type = 'triangle';
+                thud.frequency.setValueAtTime(55, now);
+                thud.frequency.exponentialRampToValueAtTime(12, now + .5);
+                thudG.gain.setValueAtTime(.25, now);
+                thudG.gain.exponentialRampToValueAtTime(.001, now + .5);
+                thud.connect(thudG); thudG.connect(ctx.destination);
+                thud.start(now); thud.stop(now + .5);
+
+                const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+                const noise = ctx.createBufferSource(); noise.buffer = buf;
+                const bp = ctx.createBiquadFilter();
+                bp.type = 'bandpass'; bp.Q.setValueAtTime(1.5, now);
+                bp.frequency.setValueAtTime(200, now);
+                bp.frequency.linearRampToValueAtTime(600, now + dur * .5);
+                bp.frequency.linearRampToValueAtTime(300, now + dur);
+                const nG = ctx.createGain();
+                nG.gain.setValueAtTime(0, now);
+                nG.gain.linearRampToValueAtTime(.04, now + .1);
+                nG.gain.setValueAtTime(.04, now + 1.5);
+                nG.gain.exponentialRampToValueAtTime(.001, now + dur);
+                noise.connect(bp); bp.connect(nG); nG.connect(ctx.destination);
+                noise.start(now); noise.stop(now + dur);
+            }
+
+            function playFadeOut() {
+                if (!ctx || ctx.state !== 'running') return;
+                const now = ctx.currentTime;
+                const o = ctx.createOscillator(), g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(60, now);
+                o.frequency.exponentialRampToValueAtTime(20, now + 1);
+                g.gain.setValueAtTime(.08, now);
+                g.gain.exponentialRampToValueAtTime(.001, now + 1);
+                o.connect(g); g.connect(ctx.destination);
+                o.start(now); o.stop(now + 1);
+            }
+
+            // ── 点击触发 ──
+            function startIntro() {
+                if (started) return;
+                started = true;
+
+                // 激活音频
+                ensureCtx();
+
+                // 启动 CSS 动画
+                introScreen.classList.add('active');
+
+                // 调度音效（时间线与 CSS 动画一致）
+                setTimeout(() => playDoorOpen(), 600);
+                setTimeout(() => playBell(330, 0.3, 2.5), 3400);
+                setTimeout(() => playBell(440, 0.2, 2.0), 3900);
+                setTimeout(() => playBell(392, 0.28, 2.5), 4200);
+                setTimeout(() => playBell(523, 0.22, 2.0), 4800);
+                setTimeout(() => playFadeOut(), 6200);
+            }
+
+            introScreen.addEventListener('click', startIntro);
+
+            // 键盘回车也可触发
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !started) startIntro();
+            });
+
+            console.log('🚪 点击巨门启幕，体验完整视听开场');
+        })();
 
     </script>
 </body>
