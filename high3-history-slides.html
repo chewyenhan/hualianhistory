@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高三马史&东南亚史课件 · 太平华联中学</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: { 500: '#d4af37', 600: '#b8960f' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Outfit:wght@300;500;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary-gold: #d4af37; --deep-red: #8b0000; }
+        * { box-sizing: border-box; }
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+            font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+            margin: 0; padding: 0;
+        }
+        h1, h2, h3 { font-family: 'Noto Serif SC', serif; }
+        .header-bg {
+            position: relative;
+            background: linear-gradient(rgba(15,23,42,0.9), rgba(15,23,42,0.9)),
+                        url('https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover; background-position: center;
+            padding: 80px 20px 60px; text-align: center;
+            border-bottom: 4px solid var(--primary-gold);
+        }
+        .card {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 16px; overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+        }
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--primary-gold);
+            box-shadow: 0 20px 50px rgba(212,175,55,0.35);
+        }
+        .btn-back {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #94a3b8; text-decoration: none;
+            font-size: 0.95rem; transition: color 0.2s;
+        }
+        .btn-back:hover { color: #d4af37; }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header-bg">
+    <a href="index.html" class="btn-back mb-8">← 返回华联历史门户</a>
+    <h1 class="text-4xl md:text-5xl font-black mb-3">📚 高三马史 & 东南亚史课件</h1>
+    <p class="text-lg text-gray-400">太平华联中学 · 历史科 · 统考备考</p>
+    <p class="text-sm text-gray-500 mt-2">点击课程名称直接进入幻灯片，支持全屏投屏与键盘翻页</p>
+</div>
+
+<!-- Main Content -->
+<main class="max-w-5xl mx-auto px-6 py-16">
+
+    <!-- 马来西亚史 -->
+    <div class="mb-12">
+        <h2 class="text-2xl font-bold mb-2 text-[#d4af37]">🇲🇾 马来西亚史</h2>
+        <p class="text-gray-500 text-sm mb-8">S3 统考板块 · 1.8 独立后发展</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- W26 -->
+            <a href="slides/W26/index.html" target="_blank" class="card block p-6">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">独立后的经济发展概况</h3>
+                        <p class="text-sm text-gray-400 mb-3">NEP · 油棕取代橡胶 · Proton Saga · MSC · 金融风暴 · 中等收入陷阱</p>
+                    </div>
+                    <span class="text-2xl">📊</span>
+                </div>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="text-xs text-gray-500">S3 · W26 · 统考考点 1.8.1.5</span>
+                    <span class="text-[#d4af37] font-bold text-sm">打开课件 →</span>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- 东南亚史 -->
+    <div class="mb-12">
+        <h2 class="text-2xl font-bold mb-2 text-[#d4af37]">🌏 东南亚史</h2>
+        <p class="text-gray-500 text-sm mb-8">S3 统考板块 · 2.x</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 暂无课件，预留位 -->
+            <div class="card block p-6 opacity-50">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">（待添加）</h3>
+                        <p class="text-sm text-gray-500 mb-3">东南亚史课件将陆续更新</p>
+                    </div>
+                    <span class="text-2xl">🔜</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="text-center py-8 border-t border-gray-800">
+    <p class="text-gray-500 text-sm">© 2026 太平华联中学 · 历史科</p>
+    <p class="text-gray-600 text-xs mt-1">开发：Chew Yen Han</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>独立后的经济发展概况 · S3 历史 · W26</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@10..1440,400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===========================================
+   VIEWPORT-BASE.CSS — MANDATORY (frontend-slides)
+   =========================================== */
+:root {
+    --stage-bg: #efe7d4;
+    --slide-bg: #efe7d4;
+}
+html, body {
+    width: 100%; height: 100%; margin: 0; overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+.deck-viewport {
+    position: fixed; inset: 0; overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+.deck-stage {
+    position: absolute; left: 0; top: 0;
+    width: 1920px; height: 1080px; overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+.slide {
+    position: absolute; inset: 0; width: 1920px; height: 1080px;
+    overflow: hidden; display: block;
+    visibility: hidden; opacity: 0; pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+.slide.active, .slide.visible {
+    visibility: visible; opacity: 1; pointer-events: auto; z-index: 1;
+}
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 1000;
+}
+@media print {
+    html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+    .deck-viewport { position: static; overflow: visible; background: #fff; }
+    .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+    .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; }
+    .slide:last-child { break-after: auto; }
+    .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* ===========================================
+   EDITORIAL FOREST THEME
+   =========================================== */
+:root {
+    --green: #2e4a2a;
+    --green-deep: #243a21;
+    --green-lite: #3a5a36;
+    --pink: #e89cb1;
+    --pink-deep: #d27e96;
+    --cream: #efe7d4;
+    --cream-2: #e6dcc4;
+    --ink: #1a1a17;
+    --paper: #f5f0e8;
+    --accent: #8b1a1a;
+    --font-display: 'Source Serif 4', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --pad-horizontal: 120px;
+    --pad-vertical: 80px;
+}
+
+/* === ANIMATIONS === */
+.reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.reveal-up {
+    opacity: 0; transform: translateY(70px);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide.visible .reveal-up { opacity: 1; transform: translateY(0); }
+.reveal-left {
+    opacity: 0; transform: translateX(-50px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide.visible .reveal-left { opacity: 1; transform: translateX(0); }
+
+/* ===========================================
+   SLIDE 1 · TITLE (.s1)
+   =========================================== */
+.s1 { background: var(--green-deep); }
+.s1 .bg-img {
+    position: absolute; inset: 0;
+    background: url('https://upload.wikimedia.org/wikipedia/commons/7/77/Kuala_Lumpur%27s_skyline_dominated_by_the_Petronas_Towers_%2818977925005%29.jpg') center/cover no-repeat;
+    opacity: 0.25;
+    filter: grayscale(0.7) sepia(0.3);
+}
+.s1 .content {
+    position: relative; z-index: 2; height: 100%;
+    display: flex; flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 0 140px 140px;
+}
+.s1 .eyebrow {
+    font-family: var(--font-mono); font-size: 22px;
+    color: var(--pink); letter-spacing: 8px;
+    margin-bottom: 32px; text-transform: uppercase;
+}
+.s1 h1 {
+    font-family: var(--font-display); font-size: 108px;
+    font-weight: 500; color: var(--paper);
+    line-height: 1.05; letter-spacing: -0.02em;
+    margin: 0 0 28px 0;
+}
+.s1 .subtitle {
+    font-family: var(--font-display); font-size: 38px;
+    font-weight: 400; font-style: italic;
+    color: var(--pink); margin: 0 0 44px 0;
+}
+.s1 .meta {
+    display: flex; gap: 48px;
+    font-family: var(--font-mono); font-size: 18px;
+    color: rgba(239, 231, 212, 0.6);
+}
+.s1 .accent-line {
+    position: absolute; left: 140px; top: 0;
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, var(--pink) 0%, transparent 65%);
+    z-index: 3;
+}
+
+/* ===========================================
+   CONTENT SLIDE (.cs) — split layout
+   =========================================== */
+.cs { background: var(--paper); }
+.cs .grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    height: 100%;
+}
+.cs .text {
+    display: flex; flex-direction: column;
+    justify-content: center;
+    padding: 100px 90px 100px 140px;
+}
+.cs .eyebrow {
+    font-family: var(--font-mono); font-size: 20px;
+    color: var(--pink-deep); letter-spacing: 6px;
+    margin-bottom: 18px; text-transform: uppercase;
+}
+.cs h2 {
+    font-family: var(--font-display); font-size: 76px;
+    font-weight: 500; color: var(--ink);
+    line-height: 1.1; margin: 0 0 40px 0;
+    letter-spacing: -0.015em;
+}
+.cs .point {
+    font-family: var(--font-display); font-size: 34px;
+    font-weight: 400; color: var(--green-deep);
+    line-height: 1.65; padding: 14px 0 14px 36px;
+    position: relative;
+}
+.cs .point::before {
+    content: ''; position: absolute; left: 0; top: 30px;
+    width: 14px; height: 14px; background: var(--pink);
+    border-radius: 50%;
+}
+.cs .point b { color: var(--ink); font-weight: 600; }
+.cs .point .key {
+  background: rgba(139, 26, 26, 0.10);
+  color: #8b1a1a;
+  font-weight: 700;
+  border-radius: 3px;
+  padding: 0 4px;
+  margin: 0 2px;
+  display: inline;
+}
+.cs .vis { overflow: hidden; }
+.cs .vis img {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block; filter: sepia(0.15);
+}
+
+/* ===========================================
+   SECTION DIVIDER (.dv) — dark + full photo
+   =========================================== */
+.dv { background: var(--green-deep); }
+.dv .bg-img-full {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    background-repeat: no-repeat; opacity: 0.28;
+    filter: grayscale(0.6) sepia(0.2);
+}
+.dv .inner {
+    position: relative; z-index: 2; height: 100%;
+    display: flex; flex-direction: column;
+    justify-content: center; padding: 0 180px;
+}
+.dv .era {
+    font-family: var(--font-mono); font-size: 24px;
+    color: var(--pink); letter-spacing: 10px;
+    margin-bottom: 24px; text-transform: uppercase;
+}
+.dv h2 {
+    font-family: var(--font-display); font-size: 92px;
+    font-weight: 500; color: var(--paper);
+    line-height: 1.1; margin: 0 0 32px 0;
+    letter-spacing: -0.02em;
+}
+.dv .subline {
+    font-family: var(--font-display); font-size: 36px;
+    font-weight: 400; font-style: italic;
+    color: rgba(239, 231, 212, 0.7); margin: 0;
+}
+
+/* ===========================================
+   CLOSING SLIDE (.cn) — centered
+   =========================================== */
+.cn { background: var(--green-deep); }
+.cn .cn-inner {
+    height: 100%; display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center; padding: 0 240px;
+}
+.cn h2 {
+    font-family: var(--font-display); font-size: 80px;
+    font-weight: 500; color: var(--paper);
+    margin: 0 0 48px 0; letter-spacing: -0.015em;
+}
+.cn .cn-q {
+    font-family: var(--font-display); font-size: 38px;
+    color: rgba(239, 231, 212, 0.85);
+    line-height: 1.8; margin: 0 0 24px 0;
+    font-style: italic;
+}
+.cn .cn-q b { color: var(--pink); font-style: normal; font-weight: 600; }
+
+/* ===========================================
+   PAGE NUM & CREDIT
+   =========================================== */
+.pn {
+    position: absolute; bottom: 48px; right: 80px;
+    font-family: var(--font-mono); font-size: 18px;
+    color: rgba(0, 0, 0, 0.2); z-index: 10;
+}
+.dark .pn { color: rgba(255, 255, 255, 0.15); }
+.credit {
+    position: absolute; bottom: 36px; left: 48px;
+    font-family: var(--font-mono); font-size: 13px;
+    color: rgba(0, 0, 0, 0.15); z-index: 10;
+}
+.dark .credit { color: rgba(255, 255, 255, 0.12); }
+
+/* ===========================================
+   CONTROLS
+   =========================================== */
+.deck-controls {
+    display: flex; gap: 16px; align-items: center;
+    font-family: var(--font-mono); font-size: 14px; color: #888;
+}
+.deck-controls button {
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: #555; padding: 10px 22px;
+    border-radius: 4px; cursor: pointer;
+    font-family: var(--font-mono); font-size: 13px;
+    transition: background 0.2s, color 0.2s;
+}
+.deck-controls button:hover { background: rgba(0,0,0,0.12); color: #111; }
+.dark .deck-controls button {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+    color: #aaa;
+}
+.dark .deck-controls button:hover { background: rgba(255,255,255,0.18); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="deck-viewport" id="viewport">
+<div class="deck-stage" id="stage">
+
+<!-- ===== SLIDE 1 · TITLE ===== -->
+<div class="slide s1 active" id="s1">
+  <div class="bg-img"></div>
+  <div class="accent-line"></div>
+  <div class="content">
+    <div class="eyebrow reveal" style="transition-delay:0.2s">马来西亚史 · 1.8.1 独立后各领域的发展</div>
+    <h1 class="reveal" style="transition-delay:0.4s">独立后的经济发展概况</h1>
+    <div class="subtitle reveal" style="transition-delay:0.6s">从农矿出口国到工业国的转型之路</div>
+    <div class="meta reveal" style="transition-delay:0.8s">
+      <span>S3 高三历史</span><span>W26</span><span>星期三</span>
+    </div>
+  </div>
+  <div class="pn dark">1 / 16</div>
+  <div class="credit dark">背景：吉隆坡天际线 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 2 · HOOK ===== -->
+<div class="slide cs" id="s2">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">想一想</div>
+      <h2 class="reveal" style="transition-delay:0.15s">独立后的马来西亚经济</h2>
+      <div class="point reveal" style="transition-delay:0.4s">马来西亚独立之初，主要依赖<span class="key">橡胶和锡矿</span>出口。</div>
+      <div class="point reveal" style="transition-delay:0.55s">数十年间，这个国家完成了从农矿出口国向<span class="key">制造业强国</span>的转型。</div>
+      <div class="point reveal" style="transition-delay:0.7s">今天，它又面临新的挑战——如何走出"<span class="key">中等收入陷阱</span>"？</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Oil_palm_plantation_in_Mersing_District.jpg" alt="马来西亚油棕园">
+    </div>
+  </div>
+  <div class="pn">2 / 16</div>
+  <div class="credit">图：Mersing 油棕园 · Chan Denys · CC BY-SA 3.0 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 3 · 第一阶段分隔 ===== -->
+<div class="slide dv dark" id="s3">
+  <div class="bg-img-full" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/41/Jalan_Raja_Musa_Sime_Darby_Plantation_%28230318%29.jpg')"></div>
+  <div class="inner">
+    <div class="era reveal">第一阶段 · 1971–1990</div>
+    <h2 class="reveal" style="transition-delay:0.2s">转型起步</h2>
+    <div class="subline reveal" style="transition-delay:0.4s">新经济政策 · 重工业 · 基础设施建设</div>
+  </div>
+  <div class="pn dark">3 / 16</div>
+  <div class="credit dark">背景：Sime Darby 油棕园 · Chong Soon Wah · CC BY-SA 3.0 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 4 · NEP + 油棕 ===== -->
+<div class="slide cs" id="s4">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">NEP · 新经济政策</div>
+      <h2 class="reveal" style="transition-delay:0.15s">向制造业转型</h2>
+      <div class="point reveal" style="transition-delay:0.35s">在第二至第四个马来西亚计划 ( 1971-1985 )，主要贯彻<span class="key">新经济政策</span>。</div>
+      <div class="point reveal" style="transition-delay:0.5s">鼓励以<span class="key">电子业</span>与<span class="key">纺织成衣业</span>为主的出口导向型经济。</div>
+      <div class="point reveal" style="transition-delay:0.65s">其中<span class="key">油棕业</span>取代橡胶业成为最重要的出口产业。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Oil_palm_plantation_in_Mersing_District.jpg" alt="油棕园">
+    </div>
+  </div>
+  <div class="pn">4 / 16</div>
+  <div class="credit">图：Mersing 油棕园 · Chan Denys · CC BY-SA 3.0 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 5 · 投资法 ===== -->
+<div class="slide cs" id="s5">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">促进投资法</div>
+      <h2 class="reveal" style="transition-delay:0.15s">鼓励外资与中小企业</h2>
+      <div class="point reveal" style="transition-delay:0.35s">政府推行《<span class="key">促进投资法</span>》，积极鼓励外国投资。</div>
+      <div class="point reveal" style="transition-delay:0.5s">鼓励国内资本发展中小型企业，为中小企业提供各种便利。</div>
+      <div class="point reveal" style="transition-delay:0.65s">以华人资本为主的中小型企业迅速发展起来。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/a/ab/CRAFT_COMPLEX_10_0804.jpg" alt="马来西亚工业区">
+    </div>
+  </div>
+  <div class="pn">5 / 16</div>
+  <div class="credit">图：马来西亚工业区（促进投资法带动的外资制造业）· Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 6 · 石油与重工业 ===== -->
+<div class="slide cs" id="s6">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">能源与重工业</div>
+      <h2 class="reveal" style="transition-delay:0.15s">国家石油与重工业起步</h2>
+      <div class="point reveal" style="transition-delay:0.35s">1973年发现油田，次年成立<span class="key">国家石油集团公司</span>，石油化学工业成为国家财库重要支柱。</div>
+      <div class="point reveal" style="transition-delay:0.5s">第五、第六个马来西亚计划（1986-1995）强调发展<span class="key">重工业</span>。</div>
+      <div class="point reveal" style="transition-delay:0.65s">成立<span class="key">马来西亚重工业机构</span>。</div>
+    </div>
+    <div class="vis">
+      <img src="assets/imgs/W26/1.png" alt="Petronas Logo">
+    </div>
+  </div>
+  <div class="pn">6 / 16</div>
+  <div class="credit">图：Petronas 国家石油公司 Logo</div>
+</div>
+
+<!-- ===== SLIDE 7 · 国产车与基建 ===== -->
+<div class="slide cs" id="s7">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">汽车与基建</div>
+      <h2 class="reveal" style="transition-delay:0.15s">国产车与南北大道</h2>
+      <div class="point reveal" style="transition-delay:0.35s">与<span class="key">日本三菱</span>集团联营，制造<span class="key">国产车</span>。</div>
+      <div class="point reveal" style="transition-delay:0.5s"><span class="key">南北大道</span>和<span class="key">槟威大桥</span>建设，便利货物运输。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Proton_Saga_1985.jpg" alt="Proton Saga 1985">
+    </div>
+  </div>
+  <div class="pn">7 / 16</div>
+  <div class="credit">图：Proton Saga（马来西亚第一款国产车）· Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 8 · 第二阶段分隔 ===== -->
+<div class="slide dv dark" id="s8">
+  <div class="bg-img-full" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/7/77/Kuala_Lumpur%27s_skyline_dominated_by_the_Petronas_Towers_%2818977925005%29.jpg')"></div>
+  <div class="inner">
+    <div class="era reveal">第二阶段 · 1991–2000</div>
+    <h2 class="reveal" style="transition-delay:0.2s">腾飞与风暴</h2>
+    <div class="subline reveal" style="transition-delay:0.4s">国家发展政策 · 多媒体超级走廊 · 亚洲金融风暴</div>
+  </div>
+  <div class="pn dark">8 / 16</div>
+  <div class="credit dark">背景：吉隆坡天际线 · J.L.S. · CC BY 2.0 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 9 · NDP + 2020宏愿 ===== -->
+<div class="slide cs" id="s9">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">NDP · 国家发展政策</div>
+      <h2 class="reveal" style="transition-delay:0.15s">国家发展政策与2020宏愿</h2>
+      <div class="point reveal" style="transition-delay:0.35s"><span class="key">1991年</span>，新经济政策推行届满，政府的数据显示，马来人在工商业股份占有的比例，并未达到理想的目标。</div>
+      <div class="point reveal" style="transition-delay:0.5s">为持续加强马来人的经济实力，也消除其他民族对政府保护马来人经济政策的不满。</div>
+      <div class="point reveal" style="transition-delay:0.65s">政府提出"<span class="key">国家发展政策</span>"的二十年中长期经济计划，以便我国<span class="key">2020年</span>时在经济、政治和社会等方面达到发达国家水平。</div>
+      <div class="point reveal" style="transition-delay:0.8s">提出国家发展政策和"<span class="key">2020宏愿</span>"，以提高生产力作为经济增长的主要动力，实现经济结构由劳动密集型转向<span class="key">技术密集型</span>。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/0/02/Petronas_Twin_Towers.jpg" alt="双子塔">
+    </div>
+  </div>
+  <div class="pn">9 / 16</div>
+  <div class="credit">图：Petronas 双子塔 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 10 · 马云与MSC ===== -->
+<div class="slide cs" id="s10">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">课外拓展</div>
+      <h2 class="reveal" style="transition-delay:0.15s">马云：MSC启发了阿里巴巴</h2>
+      <div class="point reveal" style="transition-delay:0.35s">2018年，马云访问马来西亚时，当众感谢首相马哈迪。</div>
+      <div class="point reveal" style="transition-delay:0.5s">他说："我当时在读报纸，看到有关<span class="key">多媒体超级走廊</span>的新闻。我觉得，'哇，这是绝妙的点子'。"</div>
+      <div class="point reveal" style="transition-delay:0.65s">"<span class="key">马来西亚启发我打造阿里巴巴</span>。"</div>
+    </div>
+    <div class="vis">
+      <img src="assets/imgs/W26/马云_MSC_阿里巴巴.jpg" alt="马云谈MSC启发">
+    </div>
+  </div>
+  <div class="pn">10 / 16</div>
+  <div class="credit">图：马云 2018 年访马谈 MSC · 当今大马 Malaysiakini</div>
+</div>
+
+<!-- ===== SLIDE 11 · MSC + 东方硅谷 ===== -->
+<div class="slide cs" id="s11">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">MSC · 多媒体超级走廊</div>
+      <h2 class="reveal" style="transition-delay:0.15s">多媒体超级走廊与东方硅谷</h2>
+      <div class="point reveal" style="transition-delay:0.35s">"<span class="key">多媒体超级走廊</span>"是实践这个宏愿的主要计划。</div>
+      <div class="point reveal" style="transition-delay:0.5s"><span class="key">1996年</span>后的大马计划，明确了资讯工艺在我国各个领域的发展。</div>
+      <div class="point reveal" style="transition-delay:0.65s">在通讯基础设施建设、人力资源开发和电子化行政作业等，都取得飞跃成长。</div>
+      <div class="point reveal" style="transition-delay:0.8s"><span class="key">槟城峇六拜</span>自由工业区因为吸引许多国际电子巨擘设厂，而有"<span class="key">东方矽谷</span>"美称。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Bayan_Lepas_Free_Trade_Zone_%282538356463%29.jpg" alt="峇六拜自由工业区">
+    </div>
+  </div>
+  <div class="pn">11 / 16</div>
+  <div class="credit">图：峇六拜自由工业区（东方硅谷）· Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 12 · 亚洲金融风暴 ===== -->
+<div class="slide cs" id="s12">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">⚠️ 危机</div>
+      <h2 class="reveal" style="transition-delay:0.15s">亚洲金融风暴的冲击</h2>
+      <div class="point reveal" style="transition-delay:0.35s"><span class="key">1990-1996年</span>间政府财政呈现盈余，被誉为亚洲的新兴经济小虎。</div>
+      <div class="point reveal" style="transition-delay:0.5s">此后十年间，制造业和服务业成为主要的经济支柱。</div>
+      <div class="point reveal" style="transition-delay:0.65s">但<span class="key">1997年</span>的<span class="key">亚洲金融风暴</span>，严重打击我国的经济发展，导致我国次年经济自独立后第一次出现负成长，政治发展也受到影响而动荡。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Bursa_Malaysia.JPG" alt="马来西亚证券交易所">
+    </div>
+  </div>
+  <div class="pn">12 / 16</div>
+  <div class="credit">图：Bursa Malaysia 马来西亚证券交易所 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 13 · 中等收入陷阱 ===== -->
+<div class="slide cs" id="s13">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">中等收入陷阱</div>
+      <h2 class="reveal" style="transition-delay:0.15s">2000年后的挑战</h2>
+      <div class="point reveal" style="transition-delay:0.35s"><span class="key">2000年</span>以后，我国经济成长走软。</div>
+      <div class="point reveal" style="transition-delay:0.5s">因收入分配结构失衡、经济转型乏力、人力资源发展滞后、腐败等问题，陷入"<span class="key">中等收入陷阱</span>"。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/14/GDP_per_capita_development_in_Malaysia.jpg" alt="马来西亚人均GDP增长">
+    </div>
+  </div>
+  <div class="pn">13 / 16</div>
+  <div class="credit">图：马来西亚人均 GDP 增长图表（1870-2018）· Our World in Data · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 14 · ETP 经济转型计划 ===== -->
+<div class="slide cs" id="s14">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">经济转型计划</div>
+      <h2 class="reveal" style="transition-delay:0.15s">ETP：以民为本，绩效为先</h2>
+      <div class="point reveal" style="transition-delay:0.35s"><span class="key">2010年</span>，政府发布"<span class="key">经济转型计划</span>"。</div>
+      <div class="point reveal" style="transition-delay:0.5s">大力发展服务业，投资建设公共基础产业。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Najib_Razak_%28cropped%29.jpg" alt="纳吉·阿都拉萨">
+    </div>
+  </div>
+  <div class="pn">14 / 16</div>
+  <div class="credit">图：纳吉·阿都拉萨（经济转型计划发布人）· Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 15 · GST + 通膨 ===== -->
+<div class="slide cs" id="s15">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">GST + 通膨</div>
+      <h2 class="reveal" style="transition-delay:0.15s">削减津贴与消费税</h2>
+      <div class="point reveal" style="transition-delay:0.35s">政府削减燃油和白糖两样必需品的政府津贴。</div>
+      <div class="point reveal" style="transition-delay:0.5s">对部分物品征收<span class="key">消费税 (GST)</span>。</div>
+      <div class="point reveal" style="transition-delay:0.65s">通膨率攀升，百姓收入不足以应付开支，引发怨言。</div>
+      <div class="point reveal" style="transition-delay:0.8s">如何摆脱"<span class="key">中等收入陷阱</span>"仍是政府现今的重要任务。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/7/77/Kuala_Lumpur%27s_skyline_dominated_by_the_Petronas_Towers_%2818977925005%29.jpg" alt="吉隆坡天际线">
+    </div>
+  </div>
+  <div class="pn">15 / 16</div>
+  <div class="credit">图：吉隆坡天际线（象征马来西亚经济发展与国家税收改革）· Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 16 · 总结页 ===== -->
+<div class="slide cn dark" id="s16">
+  <div class="cn-inner">
+    <h2 class="reveal" style="transition-delay:0.3s">核心问题</h2>
+    <div class="cn-q reveal" style="transition-delay:0.5s">1. 新经济政策的核心目标是什么？它对马来西亚经济转型起到了怎样的作用？</div>
+    <div class="cn-q reveal" style="transition-delay:0.7s">2. 1997年亚洲金融风暴对马来西亚造成了哪些影响？政府如何应对？</div>
+    <div class="cn-q reveal" style="transition-delay:0.9s">3. <b>中等收入陷阱</b>是什么意思？马来西亚至今仍在面对这个挑战。</div>
+  </div>
+  <div class="pn dark">16 / 16</div>
+</div>
+
+</div><!-- /deck-stage -->
+
+<!-- 翻页控件 -->
+<div class="deck-controls">
+  <button onclick="prev()" aria-label="上一页">◀ 上一页</button>
+  <span id="pg">1 / 16</span>
+  <button onclick="next()" aria-label="下一页">下一页 ▶</button>
+</div>
+</div><!-- /deck-viewport -->
+
+<!-- 翻页 JS（frontend-slides 标准） -->
+<script>
+const stage=document.getElementById('stage'),slides=Array.from(document.querySelectorAll('.slide')),ind=document.getElementById('pg');
+let cur=0;
+function fit(){const W=window.innerWidth,H=window.innerHeight,s=Math.min(W/1920,H/1080);stage.style.transform=`translate(${(W-1920*s)/2}px,${(H-1080*s)/2}px) scale(${s})`}
+function go(n){slides[cur].classList.remove('active','visible');cur=(n+slides.length)%slides.length;slides[cur].classList.add('active','visible');ind.textContent=`${cur+1} / ${slides.length}`}
+function next(){go(cur+1)};function prev(){go(cur-1)}
+fit();window.addEventListener('resize',fit);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();next()}else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prev()}else if(e.key==='Home'){e.preventDefault();go(0)}else if(e.key==='End'){e.preventDefault();go(slides.length-1)}});
+document.addEventListener('click',e=>{const x=e.clientX,w=window.innerWidth;if(x<w*.15)prev();if(x>w*.85)next()});
+</script>
+
+</body>
+</html>
