@@ -3,31 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>当代社会的发展概况 · S3 历史 · W26</title>
+<title>独立后的经济发展概况 · S3 历史 · W26</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;500;600&family=JetBrains+Mono:wght@400;500&family=LXGW+WenKai+TC&family=Noto+Serif+SC:wght@400;500;700&family=Noto+Sans+Mono+CJK+SC:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@10..1440,400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ===========================================
-   VIEWPORT-BASE.CSS (mandatory)
+   VIEWPORT-BASE.CSS — MANDATORY (frontend-slides)
    =========================================== */
+:root {
+    --stage-bg: #efe7d4;
+    --slide-bg: #efe7d4;
+}
 html, body {
     width: 100%; height: 100%; margin: 0; overflow: hidden;
-    background: var(--stage-bg, #1a1a17);
+    background: var(--stage-bg, #000);
 }
-.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #1a1a17); }
+.deck-viewport {
+    position: fixed; inset: 0; overflow: hidden;
+    background: var(--stage-bg, #000);
+}
 .deck-stage {
-    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
-    overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff);
+    position: absolute; left: 0; top: 0;
+    width: 1920px; height: 1080px; overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
 }
 .slide {
     position: absolute; inset: 0; width: 1920px; height: 1080px;
     overflow: hidden; display: block;
     visibility: hidden; opacity: 0; pointer-events: none;
+    background: var(--slide-bg, #fff);
 }
-.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+.slide.active, .slide.visible {
+    visibility: visible; opacity: 1; pointer-events: auto; z-index: 1;
+}
 img, video, canvas, svg { max-width: 100%; max-height: 100%; }
-.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+.deck-controls {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 1000;
+}
 @media print {
     html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
     .deck-viewport { position: static; overflow: visible; background: #fff; }
@@ -41,7 +56,7 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
 }
 
 /* ===========================================
-   EDITORIAL FOREST — DESIGN TOKENS
+   EDITORIAL FOREST THEME
    =========================================== */
 :root {
     --green: #2e4a2a;
@@ -52,246 +67,222 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
     --cream: #efe7d4;
     --cream-2: #e6dcc4;
     --ink: #1a1a17;
-    --font-display: 'Source Serif 4', 'LXGW WenKai TC', 'Noto Serif SC', Georgia, serif;
-    --font-body: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
-    --font-mono: 'JetBrains Mono', 'Noto Sans Mono CJK SC', ui-monospace, monospace;
-    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --paper: #f5f0e8;
+    --accent: #8b1a1a;
+    --font-display: 'Source Serif 4', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --pad-horizontal: 120px;
+    --pad-vertical: 80px;
 }
 
-/* ===========================================
-   CHROME: TOPBAR + FOOTLINE + MONOGRAM
-   =========================================== */
-.topbar {
-    position: absolute; top: 0; left: 0; right: 0; z-index: 10;
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 60px 120px 0;
-}
-.topbar .label {
-    font-family: var(--font-mono); font-size: 26px; font-weight: 500;
-    letter-spacing: 0.18em; text-transform: uppercase;
-}
-.topbar .counter {
-    font-family: var(--font-mono); font-size: 26px; font-weight: 500;
-    letter-spacing: 0.18em; text-transform: uppercase;
-}
-.footline {
-    position: absolute; bottom: 60px; left: 120px; right: 120px; z-index: 10;
-    display: flex; justify-content: space-between;
-    font-family: var(--font-mono); font-size: 24px; font-weight: 500;
-    letter-spacing: 0.14em; text-transform: uppercase;
-}
-
-/* Surface-colored topbar & footline */
-.surface-green .topbar .label,
-.surface-green .topbar .counter,
-.surface-green .footline { color: var(--pink); }
-.surface-cream .topbar .label,
-.surface-cream .topbar .counter,
-.surface-cream .footline { color: var(--green); }
-
-.surface-dark .topbar .label,
-.surface-dark .topbar .counter,
-.surface-dark .footline { color: var(--pink); }
-
-/* ===========================================
-   ANIMATION
-   =========================================== */
+/* === ANIMATIONS === */
 .reveal {
-    opacity: 0; transform: translateY(30px);
-    transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo);
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.reveal-up {
+    opacity: 0; transform: translateY(70px);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide.visible .reveal-up { opacity: 1; transform: translateY(0); }
+.reveal-left {
+    opacity: 0; transform: translateX(-50px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide.visible .reveal-left { opacity: 1; transform: translateX(0); }
 
 /* ===========================================
-   S1 · COVER — green surface, display-hero 220px
+   SLIDE 1 · TITLE (.s1)
    =========================================== */
 .s1 { background: var(--green-deep); }
 .s1 .bg-img {
     position: absolute; inset: 0;
-    background: url('assets/imgs/W26/traditional_dance.jpg') center/cover no-repeat;
-    opacity: 0.18;
+    background: url('https://upload.wikimedia.org/wikipedia/commons/7/77/Kuala_Lumpur%27s_skyline_dominated_by_the_Petronas_Towers_%2818977925005%29.jpg') center/cover no-repeat;
+    opacity: 0.25;
+    filter: grayscale(0.7) sepia(0.3);
 }
-.s1 .cover-body {
+.s1 .content {
     position: relative; z-index: 2; height: 100%;
     display: flex; flex-direction: column;
-    justify-content: center;
-    padding: 0 160px;
+    justify-content: flex-end;
+    padding: 0 0 140px 140px;
 }
-.s1 .cover-eyebrow {
-    font-family: var(--font-mono); font-size: 26px; font-weight: 500;
-    color: var(--pink); letter-spacing: 0.18em; text-transform: uppercase;
-    margin-bottom: 36px;
+.s1 .eyebrow {
+    font-family: var(--font-mono); font-size: 24px;
+    color: var(--pink); letter-spacing: 8px;
+    margin-bottom: 32px; text-transform: uppercase;
 }
 .s1 h1 {
-    font-family: var(--font-display); font-size: 180px; font-weight: 500;
-    color: var(--cream); line-height: 1.06; letter-spacing: -0.02em;
-    margin: 0 0 32px 0;
-}
-.s1 .cover-sub {
-    font-family: var(--font-body); font-size: 44px; font-weight: 400;
-    color: var(--pink); margin: 0 0 56px 0;
-}
-.s1 .cover-meta {
-    display: flex; gap: 48px;
-    font-family: var(--font-mono); font-size: 24px; font-weight: 500;
-    color: rgba(239, 231, 212, 0.45); letter-spacing: 0.14em; text-transform: uppercase;
-}
-
-/* ===========================================
-   S2 · HOOK — cream surface
-   =========================================== */
-.hook { background: var(--cream); }
-.hook .hook-body {
-    height: 100%; display: flex; flex-direction: column;
-    justify-content: center;
-    padding: 0 200px;
-}
-.hook .hook-tag {
-    font-family: var(--font-mono); font-size: 26px; font-weight: 500;
-    color: var(--pink-deep); letter-spacing: 0.18em; text-transform: uppercase;
-    margin-bottom: 32px;
-}
-.hook .hook-q {
-    font-family: var(--font-display); font-size: 68px; font-weight: 500;
-    color: var(--green); line-height: 1.25; margin: 0 0 40px 0;
-}
-.hook .hook-sub {
-    font-family: var(--font-body); font-size: 44px; font-weight: 400;
-    color: var(--green-deep); line-height: 1.5; margin: 0;
-}
-
-/* ===========================================
-   DV · DIVIDER — green surface, full bg photo
-   =========================================== */
-.dv { background: var(--green-deep); }
-.dv .bg-full {
-    position: absolute; inset: 0;
-    background-size: cover; background-position: center;
-    background-repeat: no-repeat; opacity: 0.22;
-}
-.dv .dv-body {
-    position: relative; z-index: 2; height: 100%;
-    display: flex; flex-direction: column;
-    justify-content: center;
-    padding: 0 180px;
-}
-.dv .era {
-    font-family: var(--font-mono); font-size: 26px; font-weight: 500;
-    color: var(--pink); letter-spacing: 0.18em; text-transform: uppercase;
-    margin-bottom: 28px;
-}
-.dv h2 {
-    font-family: var(--font-display); font-size: 180px; font-weight: 500;
-    color: var(--cream); line-height: 1.06; letter-spacing: -0.02em;
+    font-family: var(--font-display); font-size: 120px;
+    font-weight: 500; color: var(--paper);
+    line-height: 1.05; letter-spacing: -0.02em;
     margin: 0 0 28px 0;
 }
-.dv .subline {
-    font-family: var(--font-body); font-size: 44px; font-weight: 400;
-    color: rgba(239, 231, 212, 0.6); margin: 0;
+.s1 .subtitle {
+    font-family: var(--font-display); font-size: 44px;
+    font-weight: 400; font-style: italic;
+    color: var(--pink); margin: 0 0 44px 0;
+}
+.s1 .meta {
+    display: flex; gap: 48px;
+    font-family: var(--font-mono); font-size: 20px;
+    color: rgba(239, 231, 212, 0.6);
+}
+.s1 .accent-line {
+    position: absolute; left: 140px; top: 0;
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, var(--pink) 0%, transparent 65%);
+    z-index: 3;
 }
 
 /* ===========================================
-   CS · CONTENT — cream surface, left text + right image
+   CONTENT SLIDE (.cs) — split layout
    =========================================== */
-.cs { background: var(--cream); }
+.cs { background: var(--paper); }
 .cs .grid {
-    display: grid; grid-template-columns: 1fr 1fr; height: 100%;
+    display: grid; grid-template-columns: 1fr 1fr;
+    height: 100%;
 }
 .cs .text {
-    display: flex; flex-direction: column; justify-content: center;
-    padding: 130px 90px 100px 140px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    padding: 100px 90px 100px 140px;
 }
 .cs .eyebrow {
-    font-family: var(--font-display); font-size: 96px; font-weight: 500;
-    color: var(--green); line-height: 1.05; letter-spacing: -0.02em;
-    margin-bottom: 20px;
+    font-family: var(--font-mono); font-size: 22px;
+    color: var(--pink-deep); letter-spacing: 6px;
+    margin-bottom: 18px; text-transform: uppercase;
 }
 .cs h2 {
-    font-family: var(--font-display); font-size: 68px; font-weight: 500;
-    color: var(--pink-deep); line-height: 1.12; letter-spacing: -0.02em;
-    margin: 0 0 48px 0;
+    font-family: var(--font-display); font-size: 88px;
+    font-weight: 500; color: var(--ink);
+    line-height: 1.1; margin: 0 0 40px 0;
+    letter-spacing: -0.015em;
 }
 .cs .point {
-    font-family: var(--font-body); font-size: 44px; font-weight: 400;
-    color: var(--ink); line-height: 1.58;
-    margin: 0 0 22px 0;
+    font-family: var(--font-display); font-size: 40px;
+    font-weight: 400; color: var(--green-deep);
+    line-height: 1.65; padding: 14px 0 14px 36px;
+    position: relative;
 }
-.cs .point:last-child { margin-bottom: 0; }
-.cs .point b { font-weight: 600; color: var(--green-deep); }
-
-/* Key highlights — editorial adaptation */
+.cs .point::before {
+    content: ''; position: absolute; left: 0; top: 30px;
+    width: 14px; height: 14px; background: var(--pink);
+    border-radius: 50%;
+}
+.cs .point b { color: var(--ink); font-weight: 600; }
 .cs .point .key {
-    background: rgba(46, 74, 42, 0.08);
-    color: var(--green);
-    font-weight: 600;
-    border-radius: 2px;
-    padding: 0 4px;
-    margin: 0 2px;
-    display: inline;
+  background: rgba(139, 26, 26, 0.10);
+  color: #8b1a1a;
+  font-weight: 700;
+  border-radius: 3px;
+  padding: 0 4px;
+  margin: 0 2px;
+  display: inline;
 }
 .cs .vis { overflow: hidden; }
 .cs .vis img {
-    width: 100%; height: 100%; object-fit: cover; display: block;
+    width: 100%; height: 100%; object-fit: cover;
+    display: block; filter: sepia(0.15);
 }
 
 /* ===========================================
-   S7.5 · FULL IMAGE slide
+   SECTION DIVIDER (.dv) — dark + full photo
    =========================================== */
-.full-img { background: var(--ink); }
-.full-img img {
-    width: 100%; height: 100%; object-fit: cover; display: block;
+.dv { background: var(--green-deep); }
+.dv .bg-img-full {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    background-repeat: no-repeat; opacity: 0.28;
+    filter: grayscale(0.6) sepia(0.2);
+}
+.dv .inner {
+    position: relative; z-index: 2; height: 100%;
+    display: flex; flex-direction: column;
+    justify-content: center; padding: 0 180px;
+}
+.dv .era {
+    font-family: var(--font-mono); font-size: 26px;
+    color: var(--pink); letter-spacing: 10px;
+    margin-bottom: 24px; text-transform: uppercase;
+}
+.dv h2 {
+    font-family: var(--font-display); font-size: 100px;
+    font-weight: 500; color: var(--paper);
+    line-height: 1.1; margin: 0 0 32px 0;
+    letter-spacing: -0.02em;
+}
+.dv .subline {
+    font-family: var(--font-display); font-size: 40px;
+    font-weight: 400; font-style: italic;
+    color: rgba(239, 231, 212, 0.7); margin: 0;
 }
 
 /* ===========================================
-   CN · CLOSING — green surface
+   CLOSING SLIDE (.cn) — centered
    =========================================== */
 .cn { background: var(--green-deep); }
-.cn .cn-body {
+.cn .cn-inner {
     height: 100%; display: flex; flex-direction: column;
-    justify-content: center; align-items: center; text-align: center;
-    padding: 0 240px;
+    justify-content: center; align-items: center;
+    text-align: center; padding: 0 240px;
 }
 .cn h2 {
-    font-family: var(--font-display); font-size: 220px; font-weight: 500;
-    color: var(--cream); line-height: 0.92; letter-spacing: -0.02em;
-    margin: 0 0 64px 0;
+    font-family: var(--font-display); font-size: 90px;
+    font-weight: 500; color: var(--paper);
+    margin: 0 0 48px 0; letter-spacing: -0.015em;
 }
 .cn .cn-q {
-    font-family: var(--font-body); font-size: 44px; font-weight: 400;
-    color: rgba(239, 231, 212, 0.8); line-height: 1.8; margin: 0 0 16px 0;
-    max-width: 1200px;
+    font-family: var(--font-display); font-size: 42px;
+    color: rgba(239, 231, 212, 0.85);
+    line-height: 1.8; margin: 0 0 24px 0;
+    font-style: italic;
 }
-.cn .cn-q b { font-weight: 600; color: var(--pink); }
-.cn .cn-q .key {
-    background: rgba(232, 156, 177, 0.14);
-    color: var(--pink); font-weight: 700;
-    border-radius: 2px; padding: 0 6px; margin: 0 2px; display: inline;
+.cn .cn-q b { color: var(--pink); font-style: normal; font-weight: 600; }
+
+/* ===========================================
+   PAGE NUM & CREDIT
+   =========================================== */
+.pn {
+    position: absolute; bottom: 48px; right: 80px;
+    font-family: var(--font-mono); font-size: 18px;
+    color: rgba(0, 0, 0, 0.2); z-index: 10;
 }
+.dark .pn { color: rgba(255, 255, 255, 0.15); }
+.credit {
+    position: absolute; bottom: 36px; left: 48px;
+    font-family: var(--font-mono); font-size: 13px;
+    color: rgba(0, 0, 0, 0.15); z-index: 10;
+}
+.dark .credit { color: rgba(255, 255, 255, 0.12); }
 
 /* ===========================================
    CONTROLS
    =========================================== */
 .deck-controls {
     display: flex; gap: 16px; align-items: center;
-    font-family: var(--font-mono); font-size: 24px; color: rgba(255,255,255,0.5);
-    letter-spacing: 0.14em;
+    font-family: var(--font-mono); font-size: 14px; color: #888;
 }
 .deck-controls button {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.7); padding: 10px 24px;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: #555; padding: 10px 22px;
     border-radius: 4px; cursor: pointer;
-    font-family: var(--font-mono); font-size: 24px;
-    text-transform: uppercase; letter-spacing: 0.14em;
+    font-family: var(--font-mono); font-size: 13px;
     transition: background 0.2s, color 0.2s;
 }
-.deck-controls button:hover { background: rgba(255,255,255,0.18); color: #fff; }
-
-/* ===========================================
-   DARK OVERRIDES (slides with dark bg use pink labels)
-   =========================================== */
-.surface-green .counter { color: var(--pink); }
-.surface-dark .counter { color: var(--pink); }
+.deck-controls button:hover { background: rgba(0,0,0,0.12); color: #111; }
+.dark .deck-controls button {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+    color: #aaa;
+}
+.dark .deck-controls button:hover { background: rgba(255,255,255,0.18); color: #fff; }
 </style>
 </head>
 <body>
@@ -299,327 +290,293 @@ img, video, canvas, svg { max-width: 100%; max-height: 100%; }
 <div class="deck-viewport" id="viewport">
 <div class="deck-stage" id="stage">
 
-<!-- ===== S1 · COVER ===== -->
-<section class="slide s1 surface-green active" id="s1">
+<!-- ===== SLIDE 1 · TITLE ===== -->
+<div class="slide s1 active" id="s1">
   <div class="bg-img"></div>
-  <div class="topbar">
-    <span class="label">S3 高三历史 · W26</span>
-  </div>
-  <div class="cover-body">
-    <div class="cover-eyebrow reveal" style="transition-delay:0.15s">马来西亚史 · 1.8.2 独立后各领域的发展</div>
-    <h1 class="reveal" style="transition-delay:0.35s">当代社会的发展概况</h1>
-    <div class="cover-sub reveal" style="transition-delay:0.5s">涵化 · 问题 · 公民社会</div>
-    <div class="cover-meta reveal" style="transition-delay:0.65s">
-      <span>S3 高三历史</span><span>W26</span><span>星期一</span>
+  <div class="accent-line"></div>
+  <div class="content">
+    <div class="eyebrow reveal" style="transition-delay:0.2s">马来西亚史 · 1.8.1 独立后各领域的发展</div>
+    <h1 class="reveal" style="transition-delay:0.4s">独立后的经济发展概况</h1>
+    <div class="subtitle reveal" style="transition-delay:0.6s">从农矿出口国到工业国的转型之路</div>
+    <div class="meta reveal" style="transition-delay:0.8s">
+      <span>S3 高三历史</span><span>W26</span><span>星期三</span>
     </div>
   </div>
-  <div class="footline">
-    <span>独立后各领域的发展 · 1.8.2</span>
-    <span>1 / 17</span>
-  </div>
-</section>
+  <div class="pn dark">1 / 16</div>
+  <div class="credit dark">背景：吉隆坡天际线 · Wikimedia Commons</div>
+</div>
 
-<!-- ===== S2 · HOOK ===== -->
-<section class="slide hook surface-cream" id="s2">
-  <div class="topbar">
-    <span class="label">想一想</span>
-    <span class="counter">2 / 17</span>
-  </div>
-  <div class="hook-body">
-    <div class="hook-tag reveal">想一想</div>
-    <div class="hook-q reveal" style="transition-delay:0.2s">
-      为什么马来西亚人的餐桌上，<br>
-      会有 <b>椰浆饭、肉骨茶、印度煎饼</b>？
-    </div>
-    <div class="hook-sub reveal" style="transition-delay:0.5s">
-      不同民族的食物在同一张桌上——这就是"涵化"。
-    </div>
-  </div>
-</section>
-
-<!-- ===== S3 · DIVIDER I ===== -->
-<section class="slide dv surface-green" id="s3">
-  <div class="bg-full" style="background-image:url('assets/imgs/W26/traditional_dance.jpg')"></div>
-  <div class="topbar">
-    <span class="label">I · 经济政策下的社会变动</span>
-    <span class="counter">3 / 17</span>
-  </div>
-  <div class="dv-body">
-    <div class="era reveal">I. 经济政策下的社会变动</div>
-    <h2 class="reveal" style="transition-delay:0.2s">涵化与问题</h2>
-    <div class="subline reveal" style="transition-delay:0.4s">人才外流 · 贫富悬殊 · 城乡差异 · 外劳涌入</div>
-  </div>
-</section>
-
-<!-- ===== S4 · 涵化现象 ===== -->
-<section class="slide cs surface-cream" id="s4">
-  <div class="topbar">
-    <span class="label">（一）涵化现象</span>
-    <span class="counter">4 / 17</span>
-  </div>
+<!-- ===== SLIDE 2 · HOOK ===== -->
+<div class="slide cs" id="s2">
   <div class="grid">
     <div class="text">
-      <div class="eyebrow reveal">（一）涵化现象</div>
-      <h2 class="reveal" style="transition-delay:0.15s">文化融合的日常</h2>
-      <div class="point reveal" style="transition-delay:0.35s">我国社会各族经过长期相处互动，<span class="key">涵化现象</span>已出现在各族的生活和饮食习惯中。</div>
-      <div class="point reveal" style="transition-delay:0.5s">既保留各自民族的特色，又有其他民族的影子，形成具<span class="key">马来西亚特色</span>的社会文化。</div>
+      <div class="eyebrow reveal">想一想</div>
+      <h2 class="reveal" style="transition-delay:0.15s">独立后的马来西亚经济</h2>
+      <div class="point reveal" style="transition-delay:0.4s">马来西亚独立之初，主要依赖<span class="key">橡胶和锡矿</span>出口。</div>
+      <div class="point reveal" style="transition-delay:0.55s">数十年间，这个国家完成了从农矿出口国向<span class="key">制造业强国</span>的转型。</div>
+      <div class="point reveal" style="transition-delay:0.7s">今天，它又面临新的挑战——如何走出"<span class="key">中等收入陷阱</span>"？</div>
     </div>
-    <div class="vis"><img src="assets/imgs/W26/nasi_lemak.jpg" alt="椰浆饭"></div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Oil_palm_plantation_in_Mersing_District.jpg" alt="马来西亚油棕园">
+    </div>
   </div>
-</section>
+  <div class="pn">2 / 16</div>
+  <div class="credit">图：Mersing 油棕园 · Chan Denys · CC BY-SA 3.0 · Wikimedia Commons</div>
+</div>
 
-<!-- ===== S5 · 人才外流 ===== -->
-<section class="slide cs surface-cream" id="s5">
-  <div class="topbar">
-    <span class="label">（二）人才外流</span>
-    <span class="counter">5 / 17</span>
+<!-- ===== SLIDE 3 · 第一阶段分隔 ===== -->
+<div class="slide dv dark" id="s3">
+  <div class="bg-img-full" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/41/Jalan_Raja_Musa_Sime_Darby_Plantation_%28230318%29.jpg')"></div>
+  <div class="inner">
+    <div class="era reveal">第一阶段 · 1971–1990</div>
+    <h2 class="reveal" style="transition-delay:0.2s">转型起步</h2>
+    <div class="subline reveal" style="transition-delay:0.4s">新经济政策 · 重工业 · 基础设施建设</div>
   </div>
+  <div class="pn dark">3 / 16</div>
+  <div class="credit dark">背景：Sime Darby 油棕园 · Chong Soon Wah · CC BY-SA 3.0 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 4 · NEP + 油棕 ===== -->
+<div class="slide cs" id="s4">
   <div class="grid">
     <div class="text">
-      <div class="eyebrow reveal">（二）人才外流</div>
-      <h2 class="reveal" style="transition-delay:0.15s">为何离开？</h2>
-      <div class="point reveal" style="transition-delay:0.35s">由于国阵政府的政策的行政偏差，尤其<span class="key">"马来人优先"</span>措施使其他民族感受到排挤。</div>
-      <div class="point reveal" style="transition-delay:0.5s">许多受过<b>高等教育</b>的非土著因发展受限，选择到海外就业或定居，<span class="key">人才外流</span>现象严重。</div>
-      <div class="point reveal" style="transition-delay:0.65s">人才外流导致国家损失大量<span class="key">专业人才</span>，影响经济发展。</div>
+      <div class="eyebrow reveal">NEP · 新经济政策</div>
+      <h2 class="reveal" style="transition-delay:0.15s">向制造业转型</h2>
+      <div class="point reveal" style="transition-delay:0.35s">在第二至第四个马来西亚计划 ( 1971-1985 )，主要贯彻<span class="key">新经济政策</span>。</div>
+      <div class="point reveal" style="transition-delay:0.5s">鼓励以<span class="key">电子业</span>与<span class="key">纺织成衣业</span>为主的出口导向型经济。</div>
+      <div class="point reveal" style="transition-delay:0.65s">其中<span class="key">油棕业</span>取代橡胶业成为最重要的出口产业。</div>
     </div>
-    <div class="vis"><img src="assets/imgs/W26/klia.jpg" alt="KLIA2 航站楼"></div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Oil_palm_plantation_in_Mersing_District.jpg" alt="油棕园">
+    </div>
   </div>
-</section>
+  <div class="pn">4 / 16</div>
+  <div class="credit">图：Mersing 油棕园 · Chan Denys · CC BY-SA 3.0 · Wikimedia Commons</div>
+</div>
 
-<!-- ===== S6 · 贫富悬殊（上） ===== -->
-<section class="slide cs surface-cream" id="s6">
-  <div class="topbar">
-    <span class="label">（三）贫富悬殊（上）</span>
-    <span class="counter">6 / 17</span>
-  </div>
+<!-- ===== SLIDE 5 · 投资法 ===== -->
+<div class="slide cs" id="s5">
   <div class="grid">
     <div class="text">
-      <div class="eyebrow reveal">（三）贫富悬殊</div>
-      <h2 class="reveal" style="transition-delay:0.15s">政策受益者是谁？</h2>
-      <div class="point reveal" style="transition-delay:0.35s"><span class="key">新经济政策</span>使我国城市化程度显著提高，以马来人为主的农业人口逐渐转向城镇的工业和服务业。</div>
-      <div class="point reveal" style="transition-delay:0.5s">但新经济政策的最大受益者，并非私人资本，而是<span class="key">官僚资本</span>以及有官方背景的少数富人，广大马来人的经济差距<b>并未改善</b>。</div>
+      <div class="eyebrow reveal">促进投资法</div>
+      <h2 class="reveal" style="transition-delay:0.15s">鼓励外资与中小企业</h2>
+      <div class="point reveal" style="transition-delay:0.35s">政府推行《<span class="key">促进投资法</span>》，积极鼓励外国投资。</div>
+      <div class="point reveal" style="transition-delay:0.5s">鼓励国内资本发展中小型企业，为中小企业提供各种便利。</div>
+      <div class="point reveal" style="transition-delay:0.65s">以华人资本为主的中小型企业迅速发展起来。</div>
     </div>
-    <div class="vis"><img src="assets/imgs/W26/pekeliling_flats.jpg" alt="Pekeliling 平民组屋 · 摄于2009年拆迁前"></div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/a/ab/CRAFT_COMPLEX_10_0804.jpg" alt="马来西亚工业区">
+    </div>
   </div>
-</section>
+  <div class="pn">5 / 16</div>
+  <div class="credit">图：马来西亚工业区（促进投资法带动的外资制造业）· Wikimedia Commons</div>
+</div>
 
-<!-- ===== S7 · 贫富悬殊（下） ===== -->
-<section class="slide cs surface-cream" id="s7">
-  <div class="topbar">
-    <span class="label">（三）贫富悬殊（下）</span>
-    <span class="counter">7 / 17</span>
-  </div>
+<!-- ===== SLIDE 6 · 石油与重工业 ===== -->
+<div class="slide cs" id="s6">
   <div class="grid">
     <div class="text">
-      <div class="eyebrow reveal">（三）贫富悬殊（续）</div>
-      <h2 class="reveal" style="transition-delay:0.15s">族群内外的鸿沟</h2>
-      <div class="point reveal" style="transition-delay:0.35s">部分华人依靠政商合作致富，导致<span class="key">华社</span>内部也出现贫富差距现象。</div>
-      <div class="point reveal" style="transition-delay:0.5s">新经济政策下，贫富悬殊问题不仅存在于<span class="key">族群之间</span>，也存在于<span class="key">族群内部</span>，形成双重不平等。</div>
+      <div class="eyebrow reveal">能源与重工业</div>
+      <h2 class="reveal" style="transition-delay:0.15s">国家石油与重工业起步</h2>
+      <div class="point reveal" style="transition-delay:0.35s">1973年发现油田，次年成立<span class="key">国家石油集团公司</span>，石油化学工业成为国家财库重要支柱。</div>
+      <div class="point reveal" style="transition-delay:0.5s">第五、第六个马来西亚计划（1986-1995）强调发展<span class="key">重工业</span>。</div>
+      <div class="point reveal" style="transition-delay:0.65s">成立<span class="key">马来西亚重工业机构</span>。</div>
     </div>
-    <div class="vis"><img src="assets/imgs/W26/food_aid_kl.jpg" alt="吉隆坡食物救济 · 城市贫困现状"></div>
+    <div class="vis">
+      <img src="assets/imgs/W26/1.png" alt="Petronas Logo">
+    </div>
   </div>
-</section>
-<!-- ===== S8 · 城乡差异 ===== -->
-<section class="slide cs surface-cream" id="s8">
-  <div class="topbar">
-    <span class="label">（四）城乡差异</span>
-    <span class="counter">8 / 17</span>
-  </div>
+  <div class="pn">6 / 16</div>
+  <div class="credit">图：Petronas 国家石油公司 Logo</div>
+</div>
+
+<!-- ===== SLIDE 7 · 国产车与基建 ===== -->
+<div class="slide cs" id="s7">
   <div class="grid">
     <div class="text">
-      <div class="eyebrow reveal">（四）城乡差异</div>
-      <h2 class="reveal" style="transition-delay:0.15s">被忽略的群体</h2>
-      <div class="point reveal" style="transition-delay:0.35s">政府将<span class="key">"消除贫穷"</span>重心放在<span class="key">马来乡村</span>，忽略了其他民族。</div>
-      <div class="point reveal" style="transition-delay:0.5s">如华人所在的<span class="key">新村</span>、印度人聚集的<span class="key">园丘</span>，以及靠森林物资生活的<span class="key">原住民</span>的需要，尤其后者，更面临被发展<b>边缘化</b>的困境。</div>
+      <div class="eyebrow reveal">汽车与基建</div>
+      <h2 class="reveal" style="transition-delay:0.15s">国产车与南北大道</h2>
+      <div class="point reveal" style="transition-delay:0.35s">与<span class="key">日本三菱</span>集团联营，制造<span class="key">国产车</span>。</div>
+      <div class="point reveal" style="transition-delay:0.5s"><span class="key">南北大道</span>和<span class="key">槟威大桥</span>建设，便利货物运输。</div>
     </div>
-    <div class="vis"><img src="assets/imgs/W26/rural.jpg" alt="传统甘榜屋"></div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Proton_Saga_1985.jpg" alt="Proton Saga 1985">
+    </div>
   </div>
-</section>
+  <div class="pn">7 / 16</div>
+  <div class="credit">图：Proton Saga（马来西亚第一款国产车）· Wikimedia Commons</div>
+</div>
 
-<!-- ===== S9 · 图片展示 ===== -->
-<section class="slide full-img surface-dark" id="s9">
-  <img src="assets/imgs/W26/native.jpg" alt="原住民">
-  <div class="topbar">
-    <span class="label">被忽略的群体 · 原住民</span>
-    <span class="counter">9 / 17</span>
+<!-- ===== SLIDE 8 · 第二阶段分隔 ===== -->
+<div class="slide dv dark" id="s8">
+  <div class="bg-img-full" style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/7/77/Kuala_Lumpur%27s_skyline_dominated_by_the_Petronas_Towers_%2818977925005%29.jpg')"></div>
+  <div class="inner">
+    <div class="era reveal">第二阶段 · 1991–2000</div>
+    <h2 class="reveal" style="transition-delay:0.2s">腾飞与风暴</h2>
+    <div class="subline reveal" style="transition-delay:0.4s">国家发展政策 · 多媒体超级走廊 · 亚洲金融风暴</div>
   </div>
-</section>
+  <div class="pn dark">8 / 16</div>
+  <div class="credit dark">背景：吉隆坡天际线 · J.L.S. · CC BY 2.0 · Wikimedia Commons</div>
+</div>
 
-<!-- ===== S10 · 外劳涌入（上） ===== -->
-<section class="slide cs surface-cream" id="s10">
-  <div class="topbar">
-    <span class="label">（五）外劳涌入（上）</span>
-    <span class="counter">10 / 17</span>
-  </div>
+<!-- ===== SLIDE 9 · NDP + 2020宏愿 ===== -->
+<div class="slide cs" id="s9">
   <div class="grid">
     <div class="text">
-      <div class="eyebrow reveal">（五）外劳涌入</div>
-      <h2 class="reveal" style="transition-delay:0.15s">第四大种族</h2>
-      <div class="point reveal" style="transition-delay:0.35s">因应经济建设的需要，我国从<span class="key">1980 年代</span>起系统引进外籍劳工，从事劳力密集工作。</div>
-      <div class="point reveal" style="transition-delay:0.5s"><span class="key">外籍女佣</span>也成为双职家庭的重要帮手。</div>
-      <div class="point reveal" style="transition-delay:0.65s">许多国家的劳工以合法、非法途径大量涌入，俨然我国<span class="key">第四大种族</span>。</div>
+      <div class="eyebrow reveal">NDP · 国家发展政策</div>
+      <h2 class="reveal" style="transition-delay:0.15s">国家发展政策与2020宏愿</h2>
+      <div class="point reveal" style="transition-delay:0.35s"><span class="key">1991年</span>，新经济政策推行届满，政府的数据显示，马来人在工商业股份占有的比例，并未达到理想的目标。</div>
+      <div class="point reveal" style="transition-delay:0.5s">为持续加强马来人的经济实力，也消除其他民族对政府保护马来人经济政策的不满。</div>
+      <div class="point reveal" style="transition-delay:0.65s">政府提出"<span class="key">国家发展政策</span>"的二十年中长期经济计划，以便我国<span class="key">2020年</span>时在经济、政治和社会等方面达到发达国家水平。</div>
+      <div class="point reveal" style="transition-delay:0.8s">提出国家发展政策和"<span class="key">2020宏愿</span>"，以提高生产力作为经济增长的主要动力，实现经济结构由劳动密集型转向<span class="key">技术密集型</span>。</div>
     </div>
-    <div class="vis"><img src="assets/imgs/W26/tea_workers.jpg" alt="金马仑茶园采茶工人 · 外劳密集行业"></div>
-  </div>
-</section>
-
-<!-- ===== S11 · 外劳涌入（下） ===== -->
-<section class="slide cs surface-cream" id="s11">
-  <div class="topbar">
-    <span class="label">（五）外劳涌入（下）</span>
-    <span class="counter">11 / 17</span>
-  </div>
-  <div class="grid">
-    <div class="text">
-      <div class="eyebrow reveal">（五）外劳涌入（续）</div>
-      <h2 class="reveal" style="transition-delay:0.15s">社会代价</h2>
-      <div class="point reveal" style="transition-delay:0.35s">非法外劳的增加，衍生诸如<span class="key">治安隐患</span>、公共资源负担及劳工权益争议等社会问题。</div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/0/02/Petronas_Twin_Towers.jpg" alt="双子塔">
     </div>
-    <div class="vis"><img src="assets/imgs/W26/kl_construction.jpg" alt="吉隆坡建筑工地 · 外劳密集行业"></div>
   </div>
-</section>
-<!-- ===== S12 · DIVIDER II ===== -->
-<section class="slide dv surface-green" id="s12">
-  <div class="bg-full" style="background-image:url('assets/imgs/W26/parliament.jpg')"></div>
-  <div class="topbar">
-    <span class="label">II · 公民社会逐渐形成</span>
-    <span class="counter">12 / 17</span>
-  </div>
-  <div class="dv-body">
-    <div class="era reveal">II. 公民社会逐渐形成</div>
-    <h2 class="reveal" style="transition-delay:0.2s">非政府组织（NGO）的角色</h2>
-    <div class="subline reveal" style="transition-delay:0.4s">监督政府 · 推动政策 · 公民参与</div>
-  </div>
-</section>
+  <div class="pn">9 / 16</div>
+  <div class="credit">图：Petronas 双子塔 · Wikimedia Commons</div>
+</div>
 
-<!-- ===== S13 · 公民组织与NGO（上） ===== -->
-<section class="slide cs surface-cream" id="s13">
-  <div class="topbar">
-    <span class="label">公民社会（上）</span>
-    <span class="counter">13 / 17</span>
-  </div>
-  <div class="grid">
-    <div class="text">
-      <div class="eyebrow reveal">公民社会逐渐形成</div>
-      <h2 class="reveal" style="transition-delay:0.15s">什么是公民组织？</h2>
-      <div class="point reveal" style="transition-delay:0.35s"><span class="key">公民组织</span>是民众自发组成的社团，如华人的地缘、职业、宗亲组织，国际性或跨族群的环境保护、慈善团体等。</div>
-      <div class="point reveal" style="transition-delay:0.5s">这些非营利、不隶属任何政府机构的公民组织，统称为<span class="key">"非政府组织"</span>（NGO）。</div>
-    </div>
-    <div class="vis"><img src="assets/imgs/W26/khoo_kongsi.jpg" alt="槟城龙山堂邱公司 · 华人宗亲组织"></div>
-  </div>
-</section>
-
-<!-- ===== S14 · 公民组织与NGO（下） ===== -->
-<section class="slide cs surface-cream" id="s14">
-  <div class="topbar">
-    <span class="label">公民社会（下）</span>
-    <span class="counter">14 / 17</span>
-  </div>
-  <div class="grid">
-    <div class="text">
-      <div class="eyebrow reveal">公民社会逐渐形成（续）</div>
-      <h2 class="reveal" style="transition-delay:0.15s">公民社会的两面</h2>
-      <div class="point reveal" style="transition-delay:0.35s"><span class="key">亲政府型</span>：有些与政府关系密切，可以获得政府的财务资助，成为政府顺利推动政策的助手。</div>
-      <div class="point reveal" style="transition-delay:0.5s"><span class="key">监督型</span>：发挥监督政府政策的责任，通过出版刊物、发布文告等方式，引导民众关心社会利益、监督政府政策，充当民间发声筒施压于政府。</div>
-      <div class="point reveal" style="transition-delay:0.65s">如<span class="key">律师公会</span>、<span class="key">槟城消费者协会</span>。</div>
-    </div>
-    <div class="vis"><img src="assets/imgs/W26/bar_council.jpg" alt="马来西亚律师公会"></div>
-  </div>
-</section>
-
-<!-- ===== S15 · CAP 反电子烟运动 ===== -->
-<section class="slide full-img surface-dark" id="s15">
-  <img src="assets/imgs/W26/cap_anti_vape.png" alt="中国报 · 槟消协促禁电子烟">
-  <div class="topbar">
-    <span class="label">公民社会 · 实战案例 · 中国报 2025.05.09</span>
-    <span class="counter">15 / 17</span>
-  </div>
-</section>
-
-<!-- ===== S16 · 环保组织 ===== -->
-<section class="slide cs surface-cream" id="s16">
-  <div class="topbar">
-    <span class="label">课外拓展</span>
-    <span class="counter">16 / 17</span>
-  </div>
+<!-- ===== SLIDE 10 · 马云与MSC ===== -->
+<div class="slide cs" id="s10">
   <div class="grid">
     <div class="text">
       <div class="eyebrow reveal">课外拓展</div>
-      <h2 class="reveal" style="transition-delay:0.15s">谁来守护？</h2>
-      <div class="point reveal" style="transition-delay:0.35s">一些<span class="key">环保组织</span>协助推广环境和濒危动植物的<span class="key">保育课题</span>。</div>
-      <div class="point reveal" style="transition-delay:0.5s">如<span class="key">大马自然协会</span>、<span class="key">环节保护协会</span>、<span class="key">世界自然基金会</span>、<span class="key">地球之友</span>等。</div>
+      <h2 class="reveal" style="transition-delay:0.15s">马云：MSC启发了阿里巴巴</h2>
+      <div class="point reveal" style="transition-delay:0.35s">2018年，马云访问马来西亚时，当众感谢首相马哈迪。</div>
+      <div class="point reveal" style="transition-delay:0.5s">他说："我当时在读报纸，看到有关<span class="key">多媒体超级走廊</span>的新闻。我觉得，'哇，这是绝妙的点子'。"</div>
+      <div class="point reveal" style="transition-delay:0.65s">"<span class="key">马来西亚启发我打造阿里巴巴</span>。"</div>
     </div>
-    <div class="vis"><img src="assets/imgs/W26/borneo_rainforest.jpg" alt="婆罗洲热带雨林"></div>
+    <div class="vis">
+      <img src="assets/imgs/W26/马云_MSC_阿里巴巴.jpg" alt="马云谈MSC启发">
+    </div>
   </div>
-</section>
-<!-- ===== S17 · CLOSING ===== -->
-<section class="slide cn surface-green" id="s17">
-  <div class="topbar">
-    <span class="label">核心问题</span>
+  <div class="pn">10 / 16</div>
+  <div class="credit">图：马云 2018 年访马谈 MSC · 当今大马 Malaysiakini</div>
+</div>
+
+<!-- ===== SLIDE 11 · MSC + 东方硅谷 ===== -->
+<div class="slide cs" id="s11">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">MSC · 多媒体超级走廊</div>
+      <h2 class="reveal" style="transition-delay:0.15s">多媒体超级走廊与东方硅谷</h2>
+      <div class="point reveal" style="transition-delay:0.35s">"<span class="key">多媒体超级走廊</span>"是实践这个宏愿的主要计划。</div>
+      <div class="point reveal" style="transition-delay:0.5s"><span class="key">1996年</span>后的大马计划，明确了资讯工艺在我国各个领域的发展。</div>
+      <div class="point reveal" style="transition-delay:0.65s">在通讯基础设施建设、人力资源开发和电子化行政作业等，都取得飞跃成长。</div>
+      <div class="point reveal" style="transition-delay:0.8s"><span class="key">槟城峇六拜</span>自由工业区因为吸引许多国际电子巨擘设厂，而有"<span class="key">东方矽谷</span>"美称。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Bayan_Lepas_Free_Trade_Zone_%282538356463%29.jpg" alt="峇六拜自由工业区">
+    </div>
   </div>
-  <div class="cn-body">
-    <h2 class="reveal" style="transition-delay:0.2s">核心问题</h2>
-    <div class="cn-q reveal" style="transition-delay:0.4s">1. 什么是"<span class="key">涵化现象</span>"？请举例说明马来西亚社会中的涵化表现。</div>
-    <div class="cn-q reveal" style="transition-delay:0.6s">2. <span class="key">新经济政策</span>为何未能有效缩小各族间的经济差距？</div>
-    <div class="cn-q reveal" style="transition-delay:0.8s">3. <span class="key">非政府组织（NGO）</span>在公民社会中发挥什么作用？</div>
+  <div class="pn">11 / 16</div>
+  <div class="credit">图：峇六拜自由工业区（东方硅谷）· Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 12 · 亚洲金融风暴 ===== -->
+<div class="slide cs" id="s12">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">⚠️ 危机</div>
+      <h2 class="reveal" style="transition-delay:0.15s">亚洲金融风暴的冲击</h2>
+      <div class="point reveal" style="transition-delay:0.35s"><span class="key">1990-1996年</span>间政府财政呈现盈余，被誉为亚洲的新兴经济小虎。</div>
+      <div class="point reveal" style="transition-delay:0.5s">此后十年间，制造业和服务业成为主要的经济支柱。</div>
+      <div class="point reveal" style="transition-delay:0.65s">但<span class="key">1997年</span>的<span class="key">亚洲金融风暴</span>，严重打击我国的经济发展，导致我国次年经济自独立后第一次出现负成长，政治发展也受到影响而动荡。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Bursa_Malaysia.JPG" alt="马来西亚证券交易所">
+    </div>
   </div>
-  <div class="footline">
-    <span>华联中学 · S3 高三历史 · W26</span>
-    <span>17 / 17</span>
+  <div class="pn">12 / 16</div>
+  <div class="credit">图：Bursa Malaysia 马来西亚证券交易所 · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 13 · 中等收入陷阱 ===== -->
+<div class="slide cs" id="s13">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">中等收入陷阱</div>
+      <h2 class="reveal" style="transition-delay:0.15s">2000年后的挑战</h2>
+      <div class="point reveal" style="transition-delay:0.35s"><span class="key">2000年</span>以后，我国经济成长走软。</div>
+      <div class="point reveal" style="transition-delay:0.5s">因收入分配结构失衡、经济转型乏力、人力资源发展滞后、腐败等问题，陷入"<span class="key">中等收入陷阱</span>"。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/14/GDP_per_capita_development_in_Malaysia.jpg" alt="马来西亚人均GDP增长">
+    </div>
   </div>
-</section>
+  <div class="pn">13 / 16</div>
+  <div class="credit">图：马来西亚人均 GDP 增长图表（1870-2018）· Our World in Data · Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 14 · ETP 经济转型计划 ===== -->
+<div class="slide cs" id="s14">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">经济转型计划</div>
+      <h2 class="reveal" style="transition-delay:0.15s">ETP：以民为本，绩效为先</h2>
+      <div class="point reveal" style="transition-delay:0.35s"><span class="key">2010年</span>，政府发布"<span class="key">经济转型计划</span>"。</div>
+      <div class="point reveal" style="transition-delay:0.5s">大力发展服务业，投资建设公共基础产业。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Najib_Razak_%28cropped%29.jpg" alt="纳吉·阿都拉萨">
+    </div>
+  </div>
+  <div class="pn">14 / 16</div>
+  <div class="credit">图：纳吉·阿都拉萨（经济转型计划发布人）· Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 15 · GST + 通膨 ===== -->
+<div class="slide cs" id="s15">
+  <div class="grid">
+    <div class="text">
+      <div class="eyebrow reveal">GST + 通膨</div>
+      <h2 class="reveal" style="transition-delay:0.15s">削减津贴与消费税</h2>
+      <div class="point reveal" style="transition-delay:0.35s">政府削减燃油和白糖两样必需品的政府津贴。</div>
+      <div class="point reveal" style="transition-delay:0.5s">对部分物品征收<span class="key">消费税 (GST)</span>。</div>
+      <div class="point reveal" style="transition-delay:0.65s">通膨率攀升，百姓收入不足以应付开支，引发怨言。</div>
+      <div class="point reveal" style="transition-delay:0.8s">如何摆脱"<span class="key">中等收入陷阱</span>"仍是政府现今的重要任务。</div>
+    </div>
+    <div class="vis">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/7/77/Kuala_Lumpur%27s_skyline_dominated_by_the_Petronas_Towers_%2818977925005%29.jpg" alt="吉隆坡天际线">
+    </div>
+  </div>
+  <div class="pn">15 / 16</div>
+  <div class="credit">图：吉隆坡天际线（象征马来西亚经济发展与国家税收改革）· Wikimedia Commons</div>
+</div>
+
+<!-- ===== SLIDE 16 · 总结页 ===== -->
+<div class="slide cn dark" id="s16">
+  <div class="cn-inner">
+    <h2 class="reveal" style="transition-delay:0.3s">核心问题</h2>
+    <div class="cn-q reveal" style="transition-delay:0.5s">1. 新经济政策的核心目标是什么？它对马来西亚经济转型起到了怎样的作用？</div>
+    <div class="cn-q reveal" style="transition-delay:0.7s">2. 1997年亚洲金融风暴对马来西亚造成了哪些影响？政府如何应对？</div>
+    <div class="cn-q reveal" style="transition-delay:0.9s">3. <b>中等收入陷阱</b>是什么意思？马来西亚至今仍在面对这个挑战。</div>
+  </div>
+  <div class="pn dark">16 / 16</div>
+</div>
 
 </div><!-- /deck-stage -->
 
+<!-- 翻页控件 -->
 <div class="deck-controls">
-  <button id="prevBtn" aria-label="上一页">◀ 上一页</button>
-  <span id="pg">1 / 17</span>
-  <button id="nextBtn" aria-label="下一页">下一页 ▶</button>
+  <button onclick="prev()" aria-label="上一页">◀ 上一页</button>
+  <span id="pg">1 / 16</span>
+  <button onclick="next()" aria-label="下一页">下一页 ▶</button>
 </div>
 </div><!-- /deck-viewport -->
 
+<!-- 翻页 JS（frontend-slides 标准） -->
 <script>
-class SlidePresentation {
-  constructor() {
-    this.slides = document.querySelectorAll('.slide');
-    this.current = 0;
-    this.stage = document.getElementById('stage');
-    this.pg = document.getElementById('pg');
-    this.setupScale();
-    this.setupNav();
-    this.show(0);
-  }
-  setupScale() {
-    const fit = () => {
-      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-      this.stage.style.transform = `translate(${(window.innerWidth - 1920 * s) / 2}px, ${(window.innerHeight - 1080 * s) / 2}px) scale(${s})`;
-    };
-    fit(); window.addEventListener('resize', fit);
-  }
-  setupNav() {
-    document.getElementById('prevBtn').addEventListener('click', () => this.go(-1));
-    document.getElementById('nextBtn').addEventListener('click', () => this.go(1));
-    document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); this.go(1); }
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); this.go(-1); }
-      else if (e.key === 'Home') { e.preventDefault(); this.show(0); }
-      else if (e.key === 'End') { e.preventDefault(); this.show(this.slides.length - 1); }
-    });
-    document.addEventListener('click', e => {
-      const x = e.clientX, w = window.innerWidth;
-      if (x < w * 0.15) this.go(-1);
-      if (x > w * 0.85) this.go(1);
-    });
-  }
-  show(i) {
-    this.slides[this.current]?.classList.remove('active', 'visible');
-    this.current = Math.max(0, Math.min(i, this.slides.length - 1));
-    this.slides[this.current].classList.add('active', 'visible');
-    this.pg.textContent = `${this.current + 1} / ${this.slides.length}`;
-  }
-  go(delta) { this.show(this.current + delta); }
-}
-new SlidePresentation();
+const stage=document.getElementById('stage'),slides=Array.from(document.querySelectorAll('.slide')),ind=document.getElementById('pg');
+let cur=0;
+function fit(){const W=window.innerWidth,H=window.innerHeight,s=Math.min(W/1920,H/1080);stage.style.transform=`translate(${(W-1920*s)/2}px,${(H-1080*s)/2}px) scale(${s})`}
+function go(n){slides[cur].classList.remove('active','visible');cur=(n+slides.length)%slides.length;slides[cur].classList.add('active','visible');ind.textContent=`${cur+1} / ${slides.length}`}
+function next(){go(cur+1)};function prev(){go(cur-1)}
+fit();window.addEventListener('resize',fit);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();next()}else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prev()}else if(e.key==='Home'){e.preventDefault();go(0)}else if(e.key==='End'){e.preventDefault();go(slides.length-1)}});
+document.addEventListener('click',e=>{const x=e.clientX,w=window.innerWidth;if(x<w*.15)prev();if(x>w*.85)next()});
 </script>
 
 </body>
