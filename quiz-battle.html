@@ -2900,15 +2900,25 @@ function playIntro() {
         video.pause(); video.onloadeddata = null; video.onerror = null;
         video.style.display = 'none'; portrait.style.display = 'none';
 
-        // 视频：立绘作为 poster，加载期间无缝显示立绘，加载完成即播放，避免"照片→动画"切换停顿
+        // 视频：立绘作 poster 无缝过渡；网络差时 1.5s 兜底切回立绘，不卡流程
         let videoDur = 0;
         const videoPromise = new Promise(res => {
             if (!h.introVideo) { res(); return; }
             video.style.display = 'block';
             video.poster = h.portrait;
+            let settled = false;
+            const finish = () => { if (!settled) { settled = true; res(); } };
+            const bail = () => {   // 视频失败/超时 → 立绘兜底继续
+                video.onloadeddata = video.onerror = video.onloadedmetadata = null;
+                video.pause(); video.removeAttribute('src'); video.load();
+                video.style.display = 'none';
+                portrait.src = h.portrait; portrait.style.display = 'block';
+                finish();
+            };
+            const timer = setTimeout(bail, 1500);
             video.onloadedmetadata = () => { videoDur = video.duration || 2.2; };
-            video.onloadeddata = () => { video.play().catch(() => {}); res(); };
-            video.onerror = () => { video.style.display = 'none'; portrait.style.display = 'block'; res(); };
+            video.onloadeddata = () => { clearTimeout(timer); video.play().catch(() => {}); finish(); };
+            video.onerror = () => { clearTimeout(timer); bail(); };
             video.src = h.introVideo;
             video.load();
         });
