@@ -280,7 +280,7 @@ body {
                 <li>⚡ 抢答对决，赢者留败者换</li>
                 <li>💥 连胜<b>3场</b>可抽取<b>大招技能</b></li>
                 <li>👑 <b>弑王者 King Slayer</b></li>
-                <li>对手≥3分时打败对方，分数翻倍！</li>
+                <li>击败连胜≥3场的对手，额外+1胜场！</li>
             </ul>
             <div class="mt-6 text-2xl font-black text-yellow-400 group-hover:scale-110 transition-transform">进入 →</div>
         </div>
@@ -341,7 +341,7 @@ body {
                     </div>
                     <div class="glass-panel p-4">
                         <p class="font-black text-xl mb-2">👑 弑王者 King Slayer</p>
-                        <p class="opacity-70">只要对方有<b>3分及以上</b>，答题打败对方时——你的分数<b>直接翻一倍</b>！高风险高回报的翻盘神技。</p>
+                        <p class="opacity-70">只要对方<b>连胜3场及以上</b>，答题打败对方时——你<b>额外获得+1胜场</b>！高风险高回报的翻盘神技。</p>
                     </div>
                 </div>
             </div>
@@ -3703,10 +3703,11 @@ function showLeaderboard() {
             '<td class="p-6 text-center text-2xl font-black text-orange-400">🔥 ' + s.bestStreak + '</td>' +
             '<td class="p-6 text-center text-2xl">' + winRate + '%</td></tr>';
     }).join('');
+    }
 
+    // Show leaderboard view and speak in BOTH branches (including early-end when no battles were played)
     document.getElementById('leaderboard-view').classList.remove('hidden');
     speak('决战结束！恭喜获胜者！');
-    }
 }
 
 function escapeHtml(value) {

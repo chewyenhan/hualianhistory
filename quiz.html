@@ -505,6 +505,12 @@
         let bgmOn = false;
         let timerInterval = null, timerRemaining = 0;
 
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = String(value ?? '');
+            return element.innerHTML;
+        }
+
         const sounds = {
             start: new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'),
             click: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'),
@@ -896,7 +902,7 @@ Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid
             scenes[curIdx].options.forEach((opt, i) => {
                 const card = document.createElement('div');
                 card.className = "option-card shadow-lg";
-                card.innerHTML = `<span class="bg-gray-800 text-white w-20 h-20 rounded-2xl flex items-center justify-center mr-8 text-5xl">${String.fromCharCode(65+i)}</span> <span class="flex-grow">${opt}</span>`;
+                card.innerHTML = `<span class="bg-gray-800 text-white w-20 h-20 rounded-2xl flex items-center justify-center mr-8 text-5xl">${String.fromCharCode(65+i)}</span> <span class="flex-grow">${escapeHtml(opt)}</span>`;
                 card.onclick = () => selectChoice(i);
                 grid.appendChild(card);
             });
@@ -906,7 +912,7 @@ Include 'themeColor' (Hex code) matching the historical theme. Output ONLY valid
             const row = document.getElementById('manual-teams-row');
             row.innerHTML = teams.map((t, i) => `
                 <button onclick="pickTeam(${i}, false)" class="px-8 py-3 rounded-2xl border-4 font-black whitespace-nowrap text-xl transition-all ${t.selection !== null ? (t.selection === -1 ? 'opacity-30 grayscale bg-red-100 border-red-400' : 'opacity-20 grayscale') : (i === activeTeamIdx ? 'bg-yellow-400 border-black text-black scale-110 shadow-xl' : 'bg-white border-blue-500 text-blue-500 hover:scale-105')}">
-                    ${t.name}${t.selection === -1 ? ' ⏰' : ''}
+                    ${escapeHtml(t.name)}${t.selection === -1 ? ' ⏰' : ''}
                 </button>
             `).join('');
         }
@@ -1168,7 +1174,7 @@ function endQuiz(){
             const sorted = [...teams].sort((a,b) => b.score - a.score);
             document.getElementById('ranking-body').innerHTML = sorted.map((t, i) => {
                 let r = i === 0 ? (t.score > 20 ? "👑 全知全能神" : "🥇 智慧大师") : (i === 1 ? "🥈 知识守护者" : (i === 2 ? "🥉 潜力新星" : "📜 历史见证者"));
-                return `<tr class="${i === 0 ? 'bg-yellow-50' : 'border-b'}"><td class="p-12 text-7xl text-gray-400">#${i+1}</td><td class="p-12">${t.name}</td><td class="p-12"><span class="bg-blue-600 text-white px-10 py-4 rounded-3xl shadow-2xl">${t.score}</span></td><td class="p-12 text-blue-800 font-black">${r}</td></tr>`;
+                return `<tr class="${i === 0 ? 'bg-yellow-50' : 'border-b'}"><td class="p-12 text-7xl text-gray-400">#${i+1}</td><td class="p-12">${escapeHtml(t.name)}</td><td class="p-12"><span class="bg-blue-600 text-white px-10 py-4 rounded-3xl shadow-2xl">${t.score}</span></td><td class="p-12 text-blue-800 font-black">${r}</td></tr>`;
             }).join('');
             speak("竞技结束，恭喜获胜者！");
         }
@@ -1293,7 +1299,6 @@ function endQuiz(){
         // ========== LOCAL STORAGE PERSISTENCE ==========
         function saveSettings() {
             const settings = {
-                apiKey: document.getElementById('api-key').value,
                 qCount: document.getElementById('q-count-input').value,
                 teamCount: document.getElementById('team-count-input').value,
                 ptsCorrect: document.getElementById('pts-correct').value,
@@ -1323,7 +1328,6 @@ function endQuiz(){
             if (!saved) return;
             try {
                 const s = JSON.parse(saved);
-                if (s.apiKey) document.getElementById('api-key').value = s.apiKey;
                 if (s.qCount) { document.getElementById('q-count-input').value = s.qCount; document.getElementById('q-count-val').innerText = s.qCount; document.getElementById('diff-total-target').innerText = s.qCount; }
                 if (s.teamCount) { document.getElementById('team-count-input').value = s.teamCount; document.getElementById('team-count-val').innerText = s.teamCount; }
                 if (s.ptsCorrect) document.getElementById('pts-correct').value = s.ptsCorrect;
@@ -1364,7 +1368,7 @@ function endQuiz(){
             document.getElementById('live-scores').innerHTML = teams.map((t, i) => `
                 <div class="bg-gray-800 text-white px-4 py-3 rounded-2xl font-black text-2xl border-b-8 border-yellow-500 shadow-xl flex items-center gap-2">
                     <button onclick="adjustTeamScore(${i}, -1)" class="w-7 h-7 bg-red-500 rounded-full text-lg leading-none hover:bg-red-400 flex-shrink-0" title="手动扣分">−</button>
-                    <span class="whitespace-nowrap">${t.name}: ${t.score}</span>
+                    <span class="whitespace-nowrap">${escapeHtml(t.name)}: ${t.score}</span>
                     <button onclick="adjustTeamScore(${i}, 1)" class="w-7 h-7 bg-green-500 rounded-full text-lg leading-none hover:bg-green-400 flex-shrink-0" title="手动加分">+</button>
                 </div>
             `).join('');
@@ -1391,7 +1395,7 @@ function endQuiz(){
                 else if (isTimeout) { bgClass = 'bg-gray-200 border-gray-400'; icon = '⏰'; }
                 else { bgClass = 'bg-red-100 border-red-400'; icon = '❌'; }
                 return `<div class="${bgClass} p-5 rounded-2xl border-2 text-center">
-                    <p class="font-black text-3xl">${t.name}</p>
+                    <p class="font-black text-3xl">${escapeHtml(t.name)}</p>
                     <p class="text-4xl font-black">${icon} ${choiceLabel}</p>
                     <p class="text-3xl font-black ${pointsChange >= 0 ? 'text-green-700' : 'text-red-600'}">${ptsStr} 分</p>
                     <p class="text-2xl font-black text-gray-700 mt-2 pt-2 border-t border-gray-300">总分: ${t.score}</p>
