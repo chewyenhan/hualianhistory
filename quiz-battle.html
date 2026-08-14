@@ -2143,10 +2143,20 @@ function initWheel(availableNames) {
     }
 }
 
+// 抽签按钮锁定/解锁：抽签后变灰锁定，直到老师点「确认出战」或「缺席跳过」才解锁
+function setSpinBtnEnabled(en) {
+    var btn = document.getElementById('spin-btn');
+    if (!btn) return;
+    btn.disabled = !en;
+    btn.style.opacity = en ? '1' : '0.4';
+    btn.style.cursor = en ? 'pointer' : 'not-allowed';
+    btn.style.pointerEvents = en ? 'auto' : 'none';
+}
+
 function spinWheel() {
     if (wheelState.isSpinning) return;
     wheelState.isSpinning = true;
-    document.getElementById('spin-btn').disabled = true;
+    setSpinBtnEnabled(false);
     document.getElementById('wheel-result').classList.add('hidden');
     document.getElementById('wheel-result-actions').classList.add('hidden');
     document.getElementById('confirm-student-btn').classList.add('hidden');
@@ -2179,7 +2189,8 @@ function spinWheel() {
             const idx = Math.floor((1.5 * Math.PI - (wheelState.startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / arc) % avail.length;
             const chosen = avail[idx];
             wheelState.isSpinning = false;
-            document.getElementById('spin-btn').disabled = false;
+            // 抽签结束保持锁定（变灰），直到老师点「确认出战/缺席跳过」再解锁，防止误触再抽导致匹配错乱
+            setSpinBtnEnabled(false);
             document.getElementById('wheel-result-actions').classList.remove('hidden');
             document.getElementById('wheel-result').classList.remove('hidden');
             document.getElementById('wheel-result-name').innerText = chosen;
@@ -2237,6 +2248,7 @@ function skipCurrentStudent() {
     clearTimeout(wheelTimeout);
     var nameToSkip = wheelState.lastSpunName;
     if (!nameToSkip) return;
+    setSpinBtnEnabled(true); // 解锁，准备重抽
 
     // Remove student from the students object
     delete students[nameToSkip];
@@ -2303,6 +2315,7 @@ function confirmStudent() {
         document.getElementById('wheel-label').innerText = '🔵 右方战士抽选中...';
         var avail = getWheelCandidateNames();
         initWheel(avail);
+        setSpinBtnEnabled(true);
     } else if (wheelState.secondStudent) {
         // Second spin confirmed, proceed to character selection
         wheelState.lastSpunName = null;
@@ -2331,6 +2344,8 @@ function startWheelPhase() {
         document.getElementById('spin-btn').classList.add('hidden');
         return;
     }
+    document.getElementById('spin-btn').classList.remove('hidden');
+    setSpinBtnEnabled(true);
     initWheel(avail);
 }
 
@@ -3475,26 +3490,12 @@ function proceedAfterRound() {
 
 function spinForSlot(slot) {
     var winnerName = slot === 'left' ? battleState.rightStudent : battleState.leftStudent;
-    var loserName = slot === 'left' ? battleState.leftStudent : battleState.rightStudent;
-    // Reset eliminated flags if no challengers available
-    // Guard: never reset the just-eliminated loser — they should NOT immediately re-enter the wheel
-    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+    // 没有可挑战的对手（除冠军外无未淘汰学生）→ 直接进入总结，不再复活已淘汰学生
+    var uneliminated = config.allowRepeat ? Object.keys(students) : Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     var available = uneliminated.filter(function(n) { return n !== winnerName; });
     if (available.length < 1) {
-        // If all students have been picked at least once, show leaderboard instead of recycling
-        if (allStudentsPicked()) {
-            document.getElementById('battle-view').classList.add('hidden');
-            document.getElementById('wheel-view').classList.add('hidden');
-            endGameEarly();
-            return;
-        }
-        // Reset eliminated students except the current battle participants
-        Object.keys(students).forEach(function(n) {
-            if (n !== loserName && n !== winnerName) { students[n].eliminated = false; }
-        });
-        // If still no challengers, reluctantly allow the loser
-        var still = Object.keys(students).filter(function(n) { return !students[n].eliminated && n !== winnerName; });
-        if (still.length < 1 && students[loserName]) { students[loserName].eliminated = false; }
+        endGameEarly();
+        return;
     }
     document.getElementById('battle-view').classList.add('hidden');
     document.getElementById('wheel-view').classList.remove('hidden');
@@ -3518,6 +3519,7 @@ function spinForSlot(slot) {
 
     var avail = getWheelCandidateNames();
     initWheel(avail);
+    setSpinBtnEnabled(true);
 
     var origComplete = onWheelComplete;
     onWheelComplete = function(name) {
@@ -3560,27 +3562,11 @@ function spinForBoth() {
     skillState.leftSkill = null; skillState.leftSkillConsumed = false; skillState.leftDoubleScore = false;
     skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
     skillState.leftLastSkillStreak = 0; skillState.rightLastSkillStreak = 0;
-    // Reset eliminated for all students if none available
-    // Guard: never reset the two students currently in battle — they just lost and should not re-enter immediately
-    var guardLeft = battleState.leftStudent;
-    var guardRight = battleState.rightStudent;
-    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+    // 不足两人可出战 → 直接进入总结，不再复活已淘汰学生
+    var uneliminated = config.allowRepeat ? Object.keys(students) : Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     if (uneliminated.length < 2) {
-        // If all students have been picked at least once, show leaderboard instead of recycling
-        if (allStudentsPicked()) {
-            endGameEarly();
-            return;
-        }
-        // First pass: reset eliminated students NOT currently in battle
-        Object.keys(students).forEach(function(n) {
-            if (n !== guardLeft && n !== guardRight) { students[n].eliminated = false; }
-        });
-        // If still not enough, reluctantly allow guarded students
-        var still = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
-        if (still.length < 2) {
-            if (guardLeft && students[guardLeft]) students[guardLeft].eliminated = false;
-            if (guardRight && students[guardRight]) students[guardRight].eliminated = false;
-        }
+        endGameEarly();
+        return;
     }
     startWheelPhase();
 }
@@ -3670,15 +3656,6 @@ function endGameEarly() {
     } else {
         showLeaderboard();
     }
-}
-
-function allStudentsPicked() {
-    var allNames = Object.keys(students);
-    if (allNames.length === 0) return false;
-    for (var i = 0; i < allNames.length; i++) {
-        if (!pickedStudentSet[allNames[i]]) return false;
-    }
-    return true;
 }
 
 function markStudentPicked(name) {
