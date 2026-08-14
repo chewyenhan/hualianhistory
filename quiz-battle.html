@@ -3317,6 +3317,7 @@ function resolveRound(result, winningSide) {
 
         // Capture loser's streak before reset (for King Slayer check)
         var loserStreakBefore = students[loserName] ? students[loserName].streak : 0;
+        var winsBefore = students[winnerName].wins;
 
         students[winnerName].wins++;
         // Double score skill: extra win
@@ -3366,7 +3367,7 @@ function resolveRound(result, winningSide) {
         if (gameMode === 'group' && groups.length > 0) {
             var wGid = winningSide === 'left' ? groupWheelState.leftGroupIdx : groupWheelState.rightGroupIdx;
             var lGid = winningSide === 'left' ? groupWheelState.rightGroupIdx : groupWheelState.leftGroupIdx;
-            if (wGid !== null && wGid !== undefined && groups[wGid]) groups[wGid].totalWins++;
+            if (wGid !== null && wGid !== undefined && groups[wGid]) groups[wGid].totalWins += (students[winnerName].wins - winsBefore);
             // Mark loser player as eliminated in group
             if (lGid !== null && lGid !== undefined && groups[lGid]) {
                 groups[lGid].players.forEach(function(p) {
