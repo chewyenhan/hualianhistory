@@ -462,10 +462,6 @@ body {
         <section class="p-8 border-4 border-dashed border-blue-200 rounded-3xl" id="solo-student-section">
             <h3 class="text-3xl font-black mb-4 text-center">👥 学生名单</h3>
             <textarea id="student-list" class="setup-input h-32 text-lg" placeholder="输入学生姓名，用逗号或空格分隔&#10;例如：小明, 小华, 小丽, 小强, ..."></textarea>
-            <div class="mt-4 flex items-center gap-4">
-                <input type="checkbox" id="allow-repeat" class="w-8 h-8 cursor-pointer">
-                <label for="allow-repeat" class="text-xl font-black cursor-pointer">🔄 允许同一学生重复被抽中</label>
-            </div>
         </section>
 
         <!-- Group Setup (Group Mode, initially hidden) -->
@@ -660,7 +656,7 @@ let charCache = {};
 let config = {
     qCount: 10, easyCount: 3, mediumCount: 5, hardCount: 2,
     shuffleDifficulty: true, timerEnabled: true, timerSeconds: 20,
-    answerSeconds: 5, allowRepeat: false
+    answerSeconds: 5
 };
 
 // Game state
@@ -1797,8 +1793,7 @@ async function launchBattleAI() {
         shuffleDifficulty: document.getElementById('shuffle-difficulty').checked,
         timerEnabled: document.getElementById('timer-enabled').checked,
         timerSeconds: parseInt(document.getElementById('timer-seconds-input').value) || 20,
-        answerSeconds: parseInt(document.getElementById('answer-seconds-input').value) || 5,
-        allowRepeat: document.getElementById('allow-repeat').checked
+        answerSeconds: parseInt(document.getElementById('answer-seconds-input').value) || 5
     };
 
     // Parse students (solo) or groups (group mode)
@@ -1826,7 +1821,6 @@ async function launchBattleAI() {
         // Initialize round-robin queue
         groupQueue = [];
         for (var gi = 0; gi < groups.length; gi++) { groupQueue.push(gi); }
-        config.allowRepeat = false; // group mode never repeats
     } else {
         // Solo mode: parse from textarea
         const raw = document.getElementById('student-list').value.trim();
@@ -2118,7 +2112,7 @@ let wheelTimeout = null;
 let charSelectState = { pickingFor: 'left', leftPick: null, rightPick: null, singlePick: false };
 
 function getWheelCandidateNames() {
-    var names = config.allowRepeat ? Object.keys(students) : Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+    var names = Object.keys(students).filter(function(n) { return !students[n].eliminated && !students[n].resting; });
     if (wheelState.excludeStudent) {
         var filtered = names.filter(function(n) { return n !== wheelState.excludeStudent; });
         if (filtered.length >= 1) names = filtered;
@@ -2204,14 +2198,11 @@ function spinWheel() {
 }
 
 function getAvailableStudents() {
-    const names = Object.keys(students);
-    if (config.allowRepeat) return names;
-    return names.filter(n => !students[n].eliminated);
+    return Object.keys(students).filter(n => !students[n].eliminated && !students[n].resting);
 }
 
 function getUneliminatedStudents() {
-    if (config.allowRepeat) return Object.keys(students);
-    return Object.keys(students).filter(n => !students[n].eliminated);
+    return Object.keys(students).filter(n => !students[n].eliminated && !students[n].resting);
 }
 
 function onWheelComplete(name) {
@@ -3016,6 +3007,8 @@ function startBattleRound() {
     turnOverlayActive = false;
     leftFallen = false;
     rightFallen = false;
+    // 强制休息结束：让位者重新进入轮盘候选
+    Object.keys(students).forEach(function(n) { if (students[n].resting) students[n].resting = false; });
     // Reset per-round skill flags
     skillState.leftReviveUsedThisRound = false;
     skillState.rightReviveUsedThisRound = false;
@@ -3348,6 +3341,15 @@ function resolveRound(result, winningSide) {
         if (students[winnerName].streak > students[winnerName].bestStreak) students[winnerName].bestStreak = students[winnerName].streak;
         checkLevelUp(winnerName);
 
+        // 连胜≥5 强制休息（仅双人决战模式）：王者让位下台，名字保留在轮盘待再抽。
+        // 用独立 resting 标记而非 eliminated —— eliminated 会被轮盘过滤掉，永远抽不回。
+        var restedName = null;
+        if (gameMode !== 'group' && students[winnerName].streak >= 5) {
+            students[winnerName].resting = true;
+            students[winnerName].streak = 0;   // 休息归来后重新累计连胜
+            restedName = students[winnerName].name;
+        }
+
         // Always update loser stats (MUST run before skill wheel check)
         students[loserName].losses++;
         students[loserName].streak = 0;
@@ -3435,7 +3437,9 @@ function resolveRound(result, winningSide) {
     if (!skillWheelState.pendingSide) {
         setTimeout(function() {
             document.getElementById('battle-note').classList.remove('hidden');
-            document.getElementById('battle-note-text').innerText = q.note || '';
+            var noteText = q.note || '';
+            if (restedName) noteText = '🏆 ' + restedName + ' 连胜5场，强制休息一轮，下轮重新抽选！\n\n' + noteText;
+            document.getElementById('battle-note-text').innerText = noteText;
             document.getElementById('timer-label').innerText = '✅ 回合结束';
             var nextBtn = document.getElementById('next-round-btn-text');
             if (battleState.questionIndex + 1 >= scenes.length) {
@@ -3462,15 +3466,18 @@ function proceedAfterRound() {
     var leftName = battleState.leftStudent, rightName = battleState.rightStudent;
     var leftAlive = students[leftName] && !students[leftName].eliminated;
     var rightAlive = students[rightName] && !students[rightName].eliminated;
+    // 强制休息的王者视为「不在台上」：下一轮连他一起换人
+    var leftOnStage = leftAlive && !(students[leftName] && students[leftName].resting);
+    var rightOnStage = rightAlive && !(students[rightName] && students[rightName].resting);
 
     stopRenderLoop();
 
-    if (leftAlive && !rightAlive) {
+    if (leftOnStage && !rightOnStage) {
         battleState.leftStudent = leftName;
         battleState.leftCharacter = (students[leftName] && students[leftName].character) || battleState.leftCharacter;
         battleState.leftLevel = (students[leftName] && students[leftName].level) || 1;
         spinForSlot('right');
-    } else if (!leftAlive && rightAlive) {
+    } else if (!leftOnStage && rightOnStage) {
         battleState.rightStudent = rightName;
         battleState.rightCharacter = (students[rightName] && students[rightName].character) || battleState.rightCharacter;
         battleState.rightLevel = (students[rightName] && students[rightName].level) || 1;
@@ -3494,7 +3501,7 @@ function proceedAfterRound() {
 function spinForSlot(slot) {
     var winnerName = slot === 'left' ? battleState.rightStudent : battleState.leftStudent;
     // 没有可挑战的对手（除冠军外无未淘汰学生）→ 直接进入总结，不再复活已淘汰学生
-    var uneliminated = config.allowRepeat ? Object.keys(students) : Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated && !students[n].resting; });
     var available = uneliminated.filter(function(n) { return n !== winnerName; });
     if (available.length < 1) {
         endGameEarly();
@@ -3566,7 +3573,7 @@ function spinForBoth() {
     skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
     skillState.leftLastSkillStreak = 0; skillState.rightLastSkillStreak = 0;
     // 不足两人可出战 → 直接进入总结，不再复活已淘汰学生
-    var uneliminated = config.allowRepeat ? Object.keys(students) : Object.keys(students).filter(function(n) { return !students[n].eliminated; });
+    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated && !students[n].resting; });
     if (uneliminated.length < 2) {
         endGameEarly();
         return;
@@ -3939,7 +3946,6 @@ function saveSettings() {
             timerEnabled: document.getElementById('timer-enabled').checked,
             timerSeconds: document.getElementById('timer-seconds-input').value,
             answerSeconds: document.getElementById('answer-seconds-input').value,
-            allowRepeat: document.getElementById('allow-repeat').checked,
             studentList: document.getElementById('student-list').value,
             sourceText: document.getElementById('source-text').value
         };
@@ -3960,7 +3966,6 @@ function loadSettings() {
         if (s.timerEnabled !== undefined) document.getElementById('timer-enabled').checked = s.timerEnabled;
         if (s.timerSeconds) document.getElementById('timer-seconds-input').value = s.timerSeconds;
         if (s.answerSeconds) document.getElementById('answer-seconds-input').value = s.answerSeconds;
-        if (s.allowRepeat !== undefined) document.getElementById('allow-repeat').checked = s.allowRepeat;
         if (s.studentList) document.getElementById('student-list').value = s.studentList;
         if (s.sourceText) document.getElementById('source-text').value = s.sourceText;
         document.getElementById('q-count-val').innerText = s.qCount || '10';
