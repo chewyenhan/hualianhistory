@@ -1844,21 +1844,23 @@ async function launchBattleAI() {
     document.getElementById('loading').classList.remove('hidden');
     const easyN = config.easyCount, medN = config.mediumCount, hardN = config.hardCount;
 
-    const prompt = `Task: Create EXACTLY ${qCount} quiz questions from this text: "${text}".
+    const prompt = `Task: Create EXACTLY ${qCount} multiple-choice questions from this text: "${text}".
 
-IMPORTANT RULES:
-- Use the EXACT SAME LANGUAGE as the source text.
+HARD RULES:
+- Use the EXACT SAME LANGUAGE as the source text. If the text is in Chinese, ALL questions/options/notes MUST be in Chinese.
+- Each question has exactly 3 options (A/B/C), exactly ONE correct answer.
+- ⚠️ ALL 3 options MUST be roughly the SAME LENGTH. The correct answer must NEVER be the longest or most detailed option — a student must NOT be able to guess the answer by length.
+- ⚠️ Every WRONG option must be PLAUSIBLE and tempting — something a student who half-remembers the material would pick. Do NOT write obviously-false filler options.
+- ⚠️ RANDOMIZE the correct answer position (ans): evenly distributed across positions 0/1/2. Do NOT always put it at index 0.
 - The 'note' field must be an ACTUAL EXPLANATION of the correct answer (2-3 sentences). Explain WHY it is correct, with key facts from the source text. Never write meta-phrases like "考察学生对XX的理解" — explain the CONTENT.
-- ⚠️ RANDOMIZE the correct answer position (ans): the correct answer MUST be evenly distributed across positions 0/1/2. Do NOT always put it at index 0.
-- ⚠️ BALANCE option lengths: all 3 options should be roughly the same length. Do NOT make the correct option longer or more detailed than wrong options.
+
+DIFFICULTY LEVELS — make them CLEARLY different from each other:
+- "easy" (${easyN}): DIRECT recall of ONE plainly-stated fact (a name, a date, a definition). One step to answer.
+- "medium" (${medN}): UNDERSTANDING or simple reasoning — connect two facts, identify cause/effect, or apply a concept. Two steps.
+- "hard" (${hardN}): DEEP analysis — compare across paragraphs, infer an implied conclusion, or choose among 2+ near-miss distractors. Hard questions must feel noticeably harder than easy ones.
 
 Format: JSON array of objects.
 Keys: q (the question), options (3 strings), ans (0-2 index of correct option), note (EXPLAIN the answer), title, emoji, diff (⭐ to ⭐⭐⭐⭐⭐), difficulty (exactly one of: "easy", "medium", "hard").
-
-CRITICAL DIFFICULTY DISTRIBUTION:
-- EXACTLY ${easyN} questions must have difficulty "easy". Straightforward recall.
-- EXACTLY ${medN} questions must have difficulty "medium". Some analysis.
-- EXACTLY ${hardN} questions must have difficulty "hard". Challenging, deeper inference.
 ${ config.shuffleDifficulty ? '- Randomly shuffle the order of difficulty levels. Do NOT group them together.' : '' }
 
 Output ONLY valid JSON array, no markdown, no code blocks.`;
