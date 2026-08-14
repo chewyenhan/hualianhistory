@@ -142,6 +142,23 @@ body {
 .char-card:hover { transform: scale(1.05); border-color: var(--primary); box-shadow: var(--shadow); }
 .char-card.selected { border-color: var(--accent); box-shadow: 0 0 30px var(--accent); }
 .char-card.taken { opacity: 0.3; pointer-events: none; }
+.char-portrait { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 14px; background: #101624; }
+
+/* 英雄出场 intro 覆盖层 */
+#intro-view {
+    position: fixed; inset: 0; z-index: 9000; background: radial-gradient(circle at 50% 40%, #1b2440 0%, #0d1220 70%);
+    display: flex; align-items: center; justify-content: center;
+}
+#intro-view.hidden { display: none; }
+#intro-card {
+    text-align: center; max-width: 560px; width: 90%;
+    animation: bounce-in 0.5s ease-out;
+}
+#intro-video { width: 100%; border-radius: 20px; box-shadow: 0 0 60px rgba(255,215,0,0.25); background: #101624; max-height: 60vh; object-fit: contain; }
+#intro-portrait { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 20px; box-shadow: 0 0 60px rgba(255,215,0,0.25); }
+#intro-name { font-size: 3.5rem; font-weight: 900; color: #ffd700; margin-top: 1rem; text-shadow: 0 0 20px rgba(255,215,0,0.5); }
+#intro-line { font-size: 1.4rem; color: #cdd5e6; font-style: italic; margin-top: 0.5rem; opacity: 0.9; }
+#intro-role { display: inline-block; background: #2a3550; color: #9fb0d0; border-radius: 20px; padding: 3px 16px; font-size: 0.95rem; margin-top: 0.5rem; }
 
 .timer-bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
 .timer-bar-fill { height: 100%; border-radius: 6px; transition: width 1s linear, background 0.5s; background: #22c55e; }
@@ -519,7 +536,18 @@ body {
 <!-- CHARACTER SELECT VIEW -->
 <div id="char-select-view" class="hidden container mx-auto p-8 flex flex-col items-center justify-center min-h-screen">
     <h2 class="text-5xl font-black mb-8 text-center" id="char-select-prompt">选择你的战士！</h2>
-    <div id="char-card-grid" class="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl"></div>
+    <div id="char-card-grid" class="grid grid-cols-2 md:grid-cols-4 gap-5 max-w-6xl"></div>
+</div>
+
+<!-- HERO INTRO VIEW (出场动画 + 语音) -->
+<div id="intro-view" class="hidden">
+    <div id="intro-card">
+        <video id="intro-video" autoplay muted playsinline></video>
+        <img id="intro-portrait" alt="">
+        <div id="intro-name"></div>
+        <div id="intro-role"></div>
+        <div id="intro-line"></div>
+    </div>
 </div>
 
 <!-- VS COUNTDOWN OVERLAY -->
@@ -849,21 +877,73 @@ function escHTML(str) {
     return div.innerHTML;
 }
 
-// ============ SECTION 2: PIXEL ART CHARACTERS (48x48, 3 levels) ============
-const CHARACTERS = {
-    knight:  { name:'圣骑士', emoji:'⚔️', colors:['#c0c0c0','#808080','#4169e1'] },
-    archer:  { name:'神箭手', emoji:'🏹', colors:['#228b22','#1a5c1a','#90ee90'] },
-    mage:    { name:'大法师', emoji:'🔮', colors:['#800080','#4b0082','#da70d6'] },
-    ninja:   { name:'暗影忍者', emoji:'🥷', colors:['#2f2f2f','#1a1a1a','#ff4500'] },
-    viking:  { name:'维京战士', emoji:'🪓', colors:['#8b4513','#654321','#ff6347'] },
-    samurai: { name:'武士', emoji:'👺', colors:['#b22222','#8b0000','#ffd700'] }
+// ============ SECTION 2: AI HEROES (12 中国神话/历史英雄) ============
+// projectile 字段路由到下方弹道绘制（6 种弹道复用）；battleSprite 为绿幕抠图后的透明全身立绘
+const HEROES = {
+    xiangyu:   { name:'项羽',   gender:'男', role:'战士', emoji:'🔱', projectile:'viking', colors:['#4a5568','#2d3748','#ffd700'],
+                 portrait:'assets/heroes/xiangyu.png', battleSprite:'assets/heroes/xiangyu-battle.png',
+                 introVideo:'assets/heroes/xiangyu-intro.mp4', introVoice:'assets/heroes/xiangyu-voice.mp3', introLine:'力拔山兮气盖世！' },
+    guanyu:    { name:'关羽',   gender:'男', role:'战士', emoji:'🗡️', projectile:'knight', colors:['#2f7d32','#1b5e20','#ffd700'],
+                 portrait:'assets/heroes/guanyu.png', battleSprite:'assets/heroes/guanyu-battle.png',
+                 introVideo:'assets/heroes/guanyu-intro.mp4', introVoice:'assets/heroes/guanyu-voice.mp3', introLine:'过五关斩六将，义薄云天！' },
+    libai:     { name:'李白',   gender:'男', role:'刺客', emoji:'🍶', projectile:'samurai', colors:['#e8e8e8','#9ca3af','#ffd700'],
+                 portrait:'assets/heroes/libai.png', battleSprite:'assets/heroes/libai-battle.png',
+                 introVideo:'assets/heroes/libai-intro.mp4', introVoice:'assets/heroes/libai-voice.mp3', introLine:'十步杀一人，千里不留行！' },
+    houyi:     { name:'后羿',   gender:'男', role:'射手', emoji:'🏹', projectile:'archer', colors:['#c1440e','#7c2d12','#ffd700'],
+                 portrait:'assets/heroes/houyi.png', battleSprite:'assets/heroes/houyi-battle.png',
+                 introVideo:'assets/heroes/houyi-intro.mp4', introVoice:'assets/heroes/houyi-voice.mp3', introLine:'吾弓所指，日月无光！' },
+    zhugeliang:{ name:'诸葛亮', gender:'男', role:'法师', emoji:'🪭', projectile:'mage', colors:['#4b6bfb','#312e81','#ffd700'],
+                 portrait:'assets/heroes/zhugeliang.png', battleSprite:'assets/heroes/zhugeliang-battle.png',
+                 introVideo:'assets/heroes/zhugeliang-intro.mp4', introVoice:'assets/heroes/zhugeliang-voice.mp3', introLine:'羽扇纶巾，谈笑间樯橹灰飞烟灭。' },
+    zhongkui:  { name:'钟馗',   gender:'男', role:'坦克', emoji:'⚔️', projectile:'viking', colors:['#3b2f2f','#1f1a1a','#ff4500'],
+                 portrait:'assets/heroes/zhongkui.png', battleSprite:'assets/heroes/zhongkui-battle.png',
+                 introVideo:'assets/heroes/zhongkui-intro.mp4', introVoice:'assets/heroes/zhongkui-voice.mp3', introLine:'钟馗在此，诸邪退散！' },
+    huamulan:  { name:'花木兰', gender:'女', role:'战士', emoji:'🔱', projectile:'knight', colors:['#b91c1c','#7f1d1d','#ffd700'],
+                 portrait:'assets/heroes/huamulan.png', battleSprite:'assets/heroes/huamulan-battle.png',
+                 introVideo:'assets/heroes/huamulan-intro.mp4', introVoice:'assets/heroes/huamulan-voice.mp3', introLine:'谁说女子不如男！' },
+    muguiying: { name:'穆桂英', gender:'女', role:'战士', emoji:'🔱', projectile:'knight', colors:['#db2777','#831843','#ffd700'],
+                 portrait:'assets/heroes/muguiying.png', battleSprite:'assets/heroes/muguiying-battle.png',
+                 introVideo:'assets/heroes/muguiying-intro.mp4', introVoice:'assets/heroes/muguiying-voice.mp3', introLine:'穆桂英挂帅，巾帼不让须眉！' },
+    diaochan:  { name:'貂蝉',   gender:'女', role:'刺客', emoji:'🪭', projectile:'ninja', colors:['#ec4899','#9d174d','#ffd700'],
+                 portrait:'assets/heroes/diaochan.png', battleSprite:'assets/heroes/diaochan-battle.png',
+                 introVideo:'assets/heroes/diaochan-intro.mp4', introVoice:'assets/heroes/diaochan-voice.mp3', introLine:'闭月羞花，一笑倾城。' },
+    wangzhaojun:{ name:'王昭君', gender:'女', role:'法师', emoji:'🎻', projectile:'mage', colors:['#06b6d4','#155e75','#ffd700'],
+                 portrait:'assets/heroes/wangzhaojun.png', battleSprite:'assets/heroes/wangzhaojun-battle.png',
+                 introVideo:'assets/heroes/wangzhaojun-intro.mp4', introVoice:'assets/heroes/wangzhaojun-voice.mp3', introLine:'一曲琵琶，落雁之姿。' },
+    change:    { name:'嫦娥',   gender:'女', role:'法师', emoji:'🌙', projectile:'mage', colors:['#818cf8','#4338ca','#ffd700'],
+                 portrait:'assets/heroes/change.png', battleSprite:'assets/heroes/change-battle.png',
+                 introVideo:'assets/heroes/change-intro.mp4', introVoice:'assets/heroes/change-voice.mp3', introLine:'广寒宫里，清辉如雪。' },
+    nvwa:      { name:'女娲',   gender:'女', role:'辅助', emoji:'🌈', projectile:'mage', colors:['#a855f7','#6b21a8','#ffd700'],
+                 portrait:'assets/heroes/nvwa.png', battleSprite:'assets/heroes/nvwa-battle.png',
+                 introVideo:'assets/heroes/nvwa-intro.mp4', introVoice:'assets/heroes/nvwa-voice.mp3', introLine:'炼石补天，福泽苍生。' }
 };
+
+// 立绘 + 战斗 sprite 缓存（AI PNG 异步加载）
+const portraitCache = {};       // key -> Image
+const battleSpriteCache = {};   // key -> Image
+
+function loadHeroAssets() {
+    Object.keys(HEROES).forEach(key => {
+        const h = HEROES[key];
+        const p = new Image(); p.onload = () => portraitCache[key] = p; p.src = h.portrait;
+        const b = new Image(); b.onload = () => battleSpriteCache[key] = b; b.src = h.battleSprite;
+    });
+}
+
+function getBattleSprite(key) {
+    const img = battleSpriteCache[key];
+    return (img && img.complete && img.naturalWidth > 0) ? img : null;
+}
+function getPortrait(key) {
+    const img = portraitCache[key];
+    return (img && img.complete && img.naturalWidth > 0) ? img : null;
+}
 
 function getCharacterCanvas(key, level) {
     const ck = key + '_' + level;
     if (charCache[ck]) return charCache[ck];
     const c = document.createElement('canvas'); c.width = 48; c.height = 48;
-    const ctx = c.getContext('2d'), ch = CHARACTERS[key];
+    const ctx = c.getContext('2d'), ch = HEROES[key] || { colors:['#888','#555','#ffd700'], projectile:key };
     ctx.clearRect(0, 0, 48, 48);
 
     const skin = '#ffdab9', eye = '#1a1a1a', main = ch.colors[0], dark = ch.colors[1], accent = ch.colors[2];
@@ -894,7 +974,7 @@ function getCharacterCanvas(key, level) {
     ctx.fillRect(16, 42, 8, 4); ctx.fillRect(24, 42, 8, 4); // boots
 
     // Weapon & character-specific details
-    switch (key) {
+    switch (ch.projectile || key) {
         case 'knight':
             ctx.fillStyle = silver;
             ctx.fillRect(12, 16, 4, 16); // sword blade
@@ -966,7 +1046,7 @@ function getCharacterCanvas(key, level) {
         ctx.fillRect(13, 18, 2, 16); ctx.fillRect(33, 18, 2, 16); // shoulder armor
         ctx.fillRect(15, 32, 18, 2); // belt
         // Cape
-        const capeCol = key === 'samurai' ? '#cc0000' : '#4a5568';
+        const capeCol = (ch.projectile || key) === 'samurai' ? '#cc0000' : '#4a5568';
         ctx.fillStyle = capeCol;
         ctx.fillRect(8, 20, 5, 14);
     }
@@ -978,7 +1058,7 @@ function getCharacterCanvas(key, level) {
         ctx.fillRect(13, 18, 3, 16); ctx.fillRect(32, 18, 3, 16); // gold shoulder pads
         ctx.fillRect(15, 34, 18, 3); // gold belt
         // Cape bigger
-        const capeCol2 = key === 'samurai' ? '#ff4444' : '#ffd700';
+        const capeCol2 = (ch.projectile || key) === 'samurai' ? '#ff4444' : '#ffd700';
         ctx.fillStyle = capeCol2;
         ctx.fillRect(6, 20, 7, 18);
     }
@@ -989,6 +1069,11 @@ function getCharacterCanvas(key, level) {
 
 // ============ SECTION 3: CANVAS BATTLE ARENA ============
 let canvasW = 1200, canvasH = 500, groundY = 325;
+
+// 战斗全身立绘高度（随 arena 自适应，保证头顶不顶出画面）
+function charHeight() {
+    return Math.min(230, Math.max(140, canvasH * 0.45));
+}
 
 function resizeCanvas() {
     const container = document.getElementById('arena-container');
@@ -1113,24 +1198,57 @@ function drawSkillShield(ctx, side, now) {
 
 function drawCharacterAt(ctx, side, charKey, level, now) {
     if (!charKey) return;
-    const spriteSize = 144; // 48 * 3
     const bounce = Math.sin(now * 0.003) * 2;
-    const x = side === 'left' ? canvasW * 0.22 : canvasW * 0.78;
-    const y = groundY - spriteSize + bounce;
-    const sprite = getCharacterCanvas(charKey, level);
-    ctx.imageSmoothingEnabled = false;
-    ctx.save();
-    if (side === 'right') {
-        ctx.translate(x, y); ctx.scale(-1, 1);
-        ctx.drawImage(sprite.canvas, -spriteSize, 0, spriteSize, spriteSize);
+    const cx = side === 'left' ? canvasW * 0.22 + 72 : canvasW * 0.78 + 72;
+    const sprite = getBattleSprite(charKey);
+    if (sprite) {
+        // AI 全身立绘（透明 PNG），按自然比例绘制，脚落在 groundY
+        const h = charHeight();
+        const w = h * sprite.naturalWidth / sprite.naturalHeight;
+        const y = groundY - h + bounce;
+        ctx.imageSmoothingEnabled = true;
+        ctx.save();
+        if (side === 'right') {
+            ctx.translate(cx, y); ctx.scale(-1, 1); ctx.drawImage(sprite, -w/2, 0, w, h);
+        } else {
+            ctx.drawImage(sprite, cx - w/2, y, w, h);
+        }
+        ctx.restore();
+        drawLevelGlow(ctx, cx, groundY - h * 0.55, level, now);
     } else {
-        ctx.drawImage(sprite.canvas, x, y, spriteSize, spriteSize);
+        // 兜底：像素小人（PNG 未加载完）
+        const spriteSize = 144;
+        const x = side === 'left' ? canvasW * 0.22 : canvasW * 0.78;
+        const y = groundY - spriteSize + bounce;
+        const ps = getCharacterCanvas(charKey, level);
+        ctx.imageSmoothingEnabled = false;
+        ctx.save();
+        if (side === 'right') {
+            ctx.translate(x, y); ctx.scale(-1, 1); ctx.drawImage(ps.canvas, -spriteSize, 0, spriteSize, spriteSize);
+        } else {
+            ctx.drawImage(ps.canvas, x, y, spriteSize, spriteSize);
+        }
+        ctx.restore();
     }
-    ctx.restore();
     // Name label
     const name = side === 'left' ? (battleState.leftStudent || '???') : (battleState.rightStudent || '???');
     ctx.fillStyle = '#fff'; ctx.font = 'bold 16px "Noto Sans SC"'; ctx.textAlign = 'center';
-    ctx.fillText(name, x + spriteSize/2, groundY + 24);
+    ctx.fillText(name, cx, groundY + 24);
+}
+
+// 升级光环：银（Lv2）/金（Lv3）环绕，替代原像素装甲
+function drawLevelGlow(ctx, cx, cy, level, now) {
+    if (level < 2) return;
+    const h = charHeight();
+    const pulse = 1 + Math.sin(now * 0.004) * 0.06;
+    const col = level >= 3 ? '255,215,0' : '192,192,192';
+    ctx.save();
+    ctx.strokeStyle = 'rgba(' + col + ',0.55)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, h * 0.5 * pulse, h * 0.62 * pulse, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
 }
 
 function drawScores(ctx, w, h, now) {
@@ -1140,23 +1258,24 @@ function drawScores(ctx, w, h, now) {
     const leftStreak = leftName && students[leftName] ? students[leftName].streak : 0;
     const rightStreak = rightName && students[rightName] ? students[rightName].streak : 0;
 
+    const headY = groundY - charHeight(); // 角色头顶 y（分数/技能据此上移，避免遮挡更高的人物）
     ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 48px "Orbitron", sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(leftScore, canvasW * 0.22 + 72, groundY - 160);
-    ctx.fillText(rightScore, canvasW * 0.78 + 72, groundY - 160);
+    ctx.fillText(leftScore, canvasW * 0.22 + 72, headY - 16);
+    ctx.fillText(rightScore, canvasW * 0.78 + 72, headY - 16);
     // Streak flames
     if (leftStreak >= 3) {
-        const fy = groundY - 200 + Math.sin(now * 0.008) * 3;
+        const fy = headY - 52 + Math.sin(now * 0.008) * 3;
         ctx.fillStyle = '#f97316'; ctx.font = '24px sans-serif';
         ctx.fillText('🔥'.repeat(Math.min(leftStreak, 5)), canvasW * 0.22 + 72, fy);
     }
     if (rightStreak >= 3) {
-        const fy = groundY - 200 + Math.sin(now * 0.008 + 1) * 3;
+        const fy = headY - 52 + Math.sin(now * 0.008 + 1) * 3;
         ctx.fillStyle = '#f97316'; ctx.font = '24px sans-serif';
         ctx.fillText('🔥'.repeat(Math.min(rightStreak, 5)), canvasW * 0.78 + 72, fy);
     }
     // Skill icons above characters
     var skillIcons = { shield: '🛡️', revive: '💚', time_freeze: '❄️', double_score: '⚡', preemptive: '🎯' };
-    var skillY = groundY - 248;
+    var skillY = headY - 80;
     if (skillState.leftSkill && !skillState.leftSkillConsumed) {
         ctx.font = '22px sans-serif';
         ctx.fillText((skillIcons[skillState.leftSkill] || '❓'), canvasW * 0.22 + 72, skillY);
@@ -1229,7 +1348,7 @@ function drawEffects(ctx, w, h, now) {
                     ctx.save(); ctx.translate(x, y); ctx.scale(giantScale, giantScale); ctx.translate(-x, -y);
                 }
 
-                switch (a.charKey) {
+                switch ((HEROES[a.charKey] && HEROES[a.charKey].projectile) || a.charKey) {
                     case 'knight':
                         ctx.fillStyle = a.isGiant ? '#ffe44d' : '#ffd700';
                         ctx.shadowColor = a.isGiant ? '#fff' : '#ffd700';
@@ -1331,12 +1450,18 @@ function drawEffects(ctx, w, h, now) {
             }
             case ANIM_TYPES.FALL: {
                 const sX = a.side === 'left' ? canvasW * 0.22 : canvasW * 0.78;
-                const sY = groundY - 144;
-                ctx.save(); ctx.translate(sX + 72, sY + 144);
+                ctx.save(); ctx.translate(sX + 72, groundY);
                 ctx.rotate((a.side === 'left' ? 1 : -1) * t * Math.PI/2);
-                const sprite = getCharacterCanvas(a.charKey || 'knight', a.level || 1);
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(sprite.canvas, -72, -144 - t*200, 144, 144);
+                const sprite = getBattleSprite(a.charKey);
+                if (sprite) {
+                    const h = charHeight(), w = h * sprite.naturalWidth / sprite.naturalHeight;
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.drawImage(sprite, -w/2, -h - t*220, w, h);
+                } else {
+                    const ps = getCharacterCanvas(a.charKey || 'xiangyu', a.level || 1);
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(ps.canvas, -72, -144 - t*200, 144, 144);
+                }
                 ctx.restore();
                 break;
             }
@@ -1438,24 +1563,24 @@ function drawEffects(ctx, w, h, now) {
     });
 
     // Draw static fallen sprites (persist after fall animation ends)
-    if (leftFallen) {
-        var lX = canvasW * 0.22, lY = groundY - 144;
-        ctx.save(); ctx.translate(lX + 72, lY + 144);
-        ctx.rotate(Math.PI / 2); // fully rotated (90°)
-        var lSprite = getCharacterCanvas(battleState.leftCharacter || 'knight', battleState.leftLevel || 1);
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(lSprite.canvas, -72, -144 - 200, 144, 144); // t=1: offset 200 down
+    function drawFallenSprite(charKey, side, dir) {
+        const lX = side === 'left' ? canvasW * 0.22 : canvasW * 0.78;
+        ctx.save(); ctx.translate(lX + 72, groundY);
+        ctx.rotate(dir * Math.PI / 2); // fully rotated (90°)
+        const spr = getBattleSprite(charKey);
+        if (spr) {
+            const h = charHeight(), w = h * spr.naturalWidth / spr.naturalHeight;
+            ctx.imageSmoothingEnabled = true;
+            ctx.drawImage(spr, -w/2, -h - 220, w, h); // 倒地偏移
+        } else {
+            const ps = getCharacterCanvas(charKey || 'xiangyu', battleState.leftLevel || 1);
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(ps.canvas, -72, -144 - 200, 144, 144);
+        }
         ctx.restore();
     }
-    if (rightFallen) {
-        var rX = canvasW * 0.78, rY = groundY - 144;
-        ctx.save(); ctx.translate(rX + 72, rY + 144);
-        ctx.rotate(-Math.PI / 2); // fully rotated (-90° for right side)
-        var rSprite = getCharacterCanvas(battleState.rightCharacter || 'knight', battleState.rightLevel || 1);
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(rSprite.canvas, -72, -144 - 200, 144, 144);
-        ctx.restore();
-    }
+    if (leftFallen) drawFallenSprite(battleState.leftCharacter, 'left', 1);
+    if (rightFallen) drawFallenSprite(battleState.rightCharacter, 'right', -1);
 }
 
 function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
@@ -2675,22 +2800,25 @@ function renderCharacterGrid() {
     const whoPicking = charSelectState.pickingFor === 'left' ? battleState.leftStudent : battleState.rightStudent;
     prompt.innerText = `${whoPicking} — 选择你的战士！`;
 
-    Object.entries(CHARACTERS).forEach(([key, data]) => {
+    Object.entries(HEROES).forEach(([key, data]) => {
         const taken = (charSelectState.pickingFor === 'right' && key === charSelectState.leftPick) ||
                       (charSelectState.pickingFor === 'left' && charSelectState.singlePick && key === charSelectState.rightPick);
         const card = document.createElement('div');
         card.className = 'char-card ' + (taken ? 'taken' : '');
-        const preview = document.createElement('canvas');
-        preview.width = 96; preview.height = 96;
-        const pctx = preview.getContext('2d');
-        const sprite = getCharacterCanvas(key, 1);
-        pctx.imageSmoothingEnabled = false;
-        pctx.drawImage(sprite.canvas, 0, 0, 96, 96);
-        card.appendChild(preview);
+        const img = document.createElement('img');
+        img.src = data.portrait;
+        img.alt = data.name;
+        img.className = 'char-portrait';
+        img.loading = 'lazy';
+        card.appendChild(img);
         const nameEl = document.createElement('p');
         nameEl.className = 'font-black text-xl mt-2';
         nameEl.innerText = data.emoji + ' ' + data.name;
         card.appendChild(nameEl);
+        const roleEl = document.createElement('p');
+        roleEl.className = 'text-sm opacity-70';
+        roleEl.innerText = data.role + ' · ' + (data.gender === '女' ? '👩' : '👨');
+        card.appendChild(roleEl);
         if (!taken) card.onclick = () => selectCharacter(key);
         grid.appendChild(card);
     });
@@ -2705,7 +2833,7 @@ function selectCharacter(charKey) {
         if (charSelectState.singlePick) {
             charSelectState.pickingFor = 'done';
             document.getElementById('char-select-view').classList.add('hidden');
-            showVSCountdown();
+            playIntro();
             return;
         }
         charSelectState.pickingFor = 'right';
@@ -2717,13 +2845,67 @@ function selectCharacter(charKey) {
         if (charSelectState.singlePick) {
             charSelectState.pickingFor = 'done';
             document.getElementById('char-select-view').classList.add('hidden');
-            showVSCountdown();
+            playIntro();
             return;
         }
         charSelectState.pickingFor = 'done';
         document.getElementById('char-select-view').classList.add('hidden');
-        showVSCountdown();
+        playIntro();
     }
+}
+
+function playIntro() {
+    const seq = [battleState.leftCharacter, battleState.rightCharacter].filter((k, i, a) => k && a.indexOf(k) === i);
+    const view = document.getElementById('intro-view');
+    const video = document.getElementById('intro-video');
+    const portrait = document.getElementById('intro-portrait');
+    const nameEl = document.getElementById('intro-name');
+    const roleEl = document.getElementById('intro-role');
+    const lineEl = document.getElementById('intro-line');
+    view.classList.remove('hidden');
+
+    function showHero(key, done) {
+        const h = HEROES[key];
+        if (!h) { done(); return; }
+        nameEl.innerText = h.emoji + ' ' + h.name;
+        roleEl.innerText = h.role + ' · ' + (h.gender === '女' ? '女' : '男');
+        lineEl.innerText = h.introLine;
+        // 立绘先显示（稳定兜底），视频加载成功则覆盖
+        portrait.src = h.portrait;
+        portrait.style.display = 'block';
+        video.style.display = 'none';
+        video.pause();
+        if (h.introVideo) {
+            video.src = h.introVideo;
+            video.onloadeddata = () => {
+                portrait.style.display = 'none';
+                video.style.display = 'block';
+                video.play().catch(() => {});
+            };
+            video.load();
+        }
+        // 出场语音：优先 edge-tts mp3，失败回退浏览器 TTS
+        let voiceOk = false;
+        if (h.introVoice) {
+            const au = new Audio(h.introVoice);
+            au.play().then(() => { voiceOk = true; }).catch(() => {});
+            setTimeout(() => { if (!voiceOk) speak(h.introLine); }, 900);
+        } else {
+            speak(h.introLine);
+        }
+        setTimeout(done, 2600);
+    }
+
+    let idx = 0;
+    function next() {
+        if (idx < seq.length) { showHero(seq[idx], () => { idx++; next(); }); }
+        else {
+            view.classList.add('hidden');
+            video.pause(); video.removeAttribute('src'); video.load();
+            showVSCountdown();
+        }
+    }
+    next();
 }
 
 function showVSCountdown() {
@@ -2731,8 +2913,8 @@ function showVSCountdown() {
     const text = document.getElementById('vs-text');
     overlay.classList.remove('hidden');
     const leftName = battleState.leftStudent, rightName = battleState.rightStudent;
-    const leftChar = CHARACTERS[battleState.leftCharacter].emoji;
-    const rightChar = CHARACTERS[battleState.rightCharacter].emoji;
+    const leftChar = (HEROES[battleState.leftCharacter] || {}).emoji || '';
+    const rightChar = (HEROES[battleState.rightCharacter] || {}).emoji || '';
 
     [3, 2, 1].forEach((n, i) => {
         setTimeout(() => {
@@ -3481,8 +3663,8 @@ function showLeaderboard() {
         body.innerHTML = sorted.map(function(s, i) {
         var badge = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
         var winRate = s.totalQuestions > 0 ? Math.round(s.correctAnswers / s.totalQuestions * 100) : 0;
-        var charEmoji = s.character ? CHARACTERS[s.character].emoji : '❓';
-        var charName = s.character ? CHARACTERS[s.character].name : '-';
+        var charEmoji = s.character ? HEROES[s.character].emoji : '❓';
+        var charName = s.character ? HEROES[s.character].name : '-';
         var levelStars = '⭐'.repeat(s.level || 1);
 
         return '<tr class="border-b border-white/10 ' + (i < 3 ? 'bg-yellow-50/10' : '') + '">' +
@@ -3708,6 +3890,7 @@ window.onload = function() {
     var style = localStorage.getItem('quiz_style') || 'tech';
     document.body.className = 'theme-' + style;
     detectModels();  // Always load models on page load
+    loadHeroAssets();  // 预加载英雄立绘 + 战斗 sprite
     loadSettings();
     // Auto-save config
     document.querySelectorAll('#setup-view input, #setup-view select, #setup-view textarea').forEach(function(el) {

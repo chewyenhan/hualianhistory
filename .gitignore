@@ -1,0 +1,8 @@
+# 本地构建工具（含 API Key，绝不提交到公开仓库）
+assets/heroes/batch_generate.py
+assets/heroes/chromakey.py
+assets/heroes/*-battle-raw.png
+assets/heroes/*-keyed.png
+assets/heroes/preview.html
+__pycache__/
+*.pyc
