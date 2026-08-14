@@ -144,21 +144,27 @@ body {
 .char-card.taken { opacity: 0.3; pointer-events: none; }
 .char-portrait { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 14px; background: #101624; }
 
-/* 英雄出场 intro 覆盖层 */
+/* 英雄出场 intro 覆盖层 —— 全屏沉浸式 */
 #intro-view {
-    position: fixed; inset: 0; z-index: 9000; background: radial-gradient(circle at 50% 40%, #1b2440 0%, #0d1220 70%);
-    display: flex; align-items: center; justify-content: center;
+    position: fixed; inset: 0; z-index: 9000; background: #000;
+    overflow: hidden;
 }
 #intro-view.hidden { display: none; }
-#intro-card {
-    text-align: center; max-width: 560px; width: 90%;
-    animation: bounce-in 0.5s ease-out;
+#intro-video {
+    position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover;
+    background: #000; z-index: 1;
 }
-#intro-video { width: 100%; border-radius: 20px; box-shadow: 0 0 60px rgba(255,215,0,0.25); background: #101624; max-height: 60vh; object-fit: contain; }
-#intro-portrait { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 20px; box-shadow: 0 0 60px rgba(255,215,0,0.25); }
-#intro-name { font-size: 3.5rem; font-weight: 900; color: #ffd700; margin-top: 1rem; text-shadow: 0 0 20px rgba(255,215,0,0.5); }
-#intro-line { font-size: 1.4rem; color: #cdd5e6; font-style: italic; margin-top: 0.5rem; opacity: 0.9; }
-#intro-role { display: inline-block; background: #2a3550; color: #9fb0d0; border-radius: 20px; padding: 3px 16px; font-size: 0.95rem; margin-top: 0.5rem; }
+#intro-portrait {
+    position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: contain;
+    background: radial-gradient(circle at 50% 40%, #1b2440 0%, #0d1220 70%); z-index: 1;
+}
+#intro-text {
+    position: fixed; left: 0; right: 0; bottom: 6vh; z-index: 10;
+    text-align: center; pointer-events: none; padding: 0 4vw;
+}
+#intro-name { font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 900; color: #ffd700; text-shadow: 0 0 30px rgba(255,215,0,0.6), 0 2px 14px rgba(0,0,0,0.9); }
+#intro-line { font-size: clamp(1.1rem, 3vw, 1.8rem); color: #fff; font-style: italic; margin-top: 0.6rem; text-shadow: 0 2px 12px rgba(0,0,0,0.9); }
+#intro-role { display: inline-block; background: rgba(20,26,44,0.75); color: #e6d9a8; border: 1px solid rgba(255,215,0,0.35); border-radius: 999px; padding: 4px 20px; font-size: 1rem; margin-top: 0.8rem; }
 
 .timer-bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
 .timer-bar-fill { height: 100%; border-radius: 6px; transition: width 1s linear, background 0.5s; background: #22c55e; }
@@ -541,9 +547,9 @@ body {
 
 <!-- HERO INTRO VIEW (出场动画 + 语音) -->
 <div id="intro-view" class="hidden">
-    <div id="intro-card">
-        <video id="intro-video" autoplay muted playsinline></video>
-        <img id="intro-portrait" alt="">
+    <video id="intro-video" autoplay muted playsinline></video>
+    <img id="intro-portrait" alt="">
+    <div id="intro-text">
         <div id="intro-name"></div>
         <div id="intro-role"></div>
         <div id="intro-line"></div>
@@ -928,6 +934,26 @@ function loadHeroAssets() {
         const p = new Image(); p.onload = () => portraitCache[key] = p; p.src = h.portrait;
         const b = new Image(); b.onload = () => battleSpriteCache[key] = b; b.src = h.battleSprite;
     });
+}
+
+// 出场视频/语音预缓存：选角时提前加载，避免 playIntro 时"照片→动画"切换卡顿
+const introMediaCache = {};   // key -> { video, audio }
+function preloadHeroMedia(key) {
+    if (!key || introMediaCache[key]) return;
+    const h = HEROES[key];
+    if (!h) return;
+    const media = {};
+    if (h.introVideo) {
+        const v = document.createElement('video');
+        v.muted = true; v.preload = 'auto'; v.playsInline = true;
+        v.src = h.introVideo; v.load();
+        media.video = v;
+    }
+    if (h.introVoice) {
+        const a = new Audio(); a.preload = 'auto'; a.src = h.introVoice; a.load();
+        media.audio = a;
+    }
+    introMediaCache[key] = media;
 }
 
 function getBattleSprite(key) {
@@ -2826,6 +2852,7 @@ function renderCharacterGrid() {
 
 function selectCharacter(charKey) {
     playSynth(800, 'square', 0.1, 0.2);
+    preloadHeroMedia(charKey);
     if (charSelectState.pickingFor === 'left') {
         charSelectState.leftPick = charKey;
         battleState.leftCharacter = charKey;
@@ -2870,30 +2897,41 @@ function playIntro() {
         nameEl.innerText = h.emoji + ' ' + h.name;
         roleEl.innerText = h.role + ' · ' + (h.gender === '女' ? '女' : '男');
         lineEl.innerText = h.introLine;
-        // 立绘先显示（稳定兜底），视频加载成功则覆盖
-        portrait.src = h.portrait;
-        portrait.style.display = 'block';
-        video.style.display = 'none';
-        video.pause();
-        if (h.introVideo) {
+        video.pause(); video.onloadeddata = null; video.onerror = null;
+        video.style.display = 'none'; portrait.style.display = 'none';
+
+        // 视频：立绘作为 poster，加载期间无缝显示立绘，加载完成即播放，避免"照片→动画"切换停顿
+        let videoDur = 0;
+        const videoPromise = new Promise(res => {
+            if (!h.introVideo) { res(); return; }
+            video.style.display = 'block';
+            video.poster = h.portrait;
+            video.onloadedmetadata = () => { videoDur = video.duration || 2.2; };
+            video.onloadeddata = () => { video.play().catch(() => {}); res(); };
+            video.onerror = () => { video.style.display = 'none'; portrait.style.display = 'block'; res(); };
             video.src = h.introVideo;
-            video.onloadeddata = () => {
-                portrait.style.display = 'none';
-                video.style.display = 'block';
-                video.play().catch(() => {});
-            };
             video.load();
-        }
-        // 出场语音：优先 edge-tts mp3，失败回退浏览器 TTS
-        let voiceOk = false;
-        if (h.introVoice) {
+        });
+
+        // 出场语音：优先 edge-tts mp3（用实际时长决定停留），失败回退浏览器 TTS
+        let voiceDur = 0;
+        const voicePromise = new Promise(res => {
+            if (!h.introVoice) { speak(h.introLine); res(); return; }
             const au = new Audio(h.introVoice);
-            au.play().then(() => { voiceOk = true; }).catch(() => {});
-            setTimeout(() => { if (!voiceOk) speak(h.introLine); }, 900);
-        } else {
-            speak(h.introLine);
-        }
-        setTimeout(done, 2600);
+            let settled = false;
+            const finish = (d) => { if (!settled) { settled = true; voiceDur = d; res(); } };
+            const fallback = setTimeout(() => { finish(0); speak(h.introLine); }, 1200);
+            au.onloadedmetadata = () => { clearTimeout(fallback); finish(au.duration || 0); au.play().catch(() => {}); };
+            au.onerror = () => { clearTimeout(fallback); finish(0); speak(h.introLine); };
+            au.preload = 'auto';
+            au.load();
+        });
+
+        // 停留时长 = max(视频, 语音, 2.2s) + 缓冲，确保语音不被截断
+        Promise.all([videoPromise, voicePromise]).then(() => {
+            const stay = Math.max(videoDur, voiceDur, 2.2) * 1000 + 400;
+            setTimeout(done, stay);
+        });
     }
 
     let idx = 0;
