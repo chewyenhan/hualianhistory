@@ -3348,6 +3348,23 @@ function resolveRound(result, winningSide) {
             students[winnerName].resting = true;
             students[winnerName].streak = 0;   // 休息归来后重新累计连胜
             restedName = students[winnerName].name;
+            
+            // 弹窗提醒 + 系统语音朗读
+            setTimeout(function() {
+                var duejieMessage = restedName + '由于连胜5局，遭遇渡劫！什么只能陷入轮回当中。\n\n⚡ 强制休息，等待下次被抽选 ⚡';
+                alert(duejieMessage);
+                
+                // 用浏览器原生 speechSynthesis API 朗读
+                if ('speechSynthesis' in window) {
+                    // 先取消之前的语音（如果有）
+                    window.speechSynthesis.cancel();
+                    // 新建语音
+                    var utterance = new SpeechSynthesisUtterance(restedName + '由于连胜5局，遭遇渡劫！什么只能陷入轮回当中。强制休息，等待下次被抽选。');
+                    utterance.lang = 'zh-CN';
+                    utterance.rate = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                }
+            }, 800);
         }
 
         // Always update loser stats (MUST run before skill wheel check)
@@ -3438,7 +3455,7 @@ function resolveRound(result, winningSide) {
         setTimeout(function() {
             document.getElementById('battle-note').classList.remove('hidden');
             var noteText = q.note || '';
-            if (restedName) noteText = '🏆 ' + restedName + ' 连胜5场，强制休息一轮，下轮重新抽选！\n\n' + noteText;
+            // 不再在知识总结中显示，弹窗已单独提醒
             document.getElementById('battle-note-text').innerText = noteText;
             document.getElementById('timer-label').innerText = '✅ 回合结束';
             var nextBtn = document.getElementById('next-round-btn-text');
