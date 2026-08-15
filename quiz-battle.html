@@ -619,6 +619,16 @@ body {
             <button id="group-player-confirm-btn" onclick="confirmGroupPlayer()" class="hidden px-10 py-4 bg-green-500 hover:bg-green-600 text-white rounded-full text-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-green-300">✅ 确认出战</button>
         </div>
     </div>
+
+    <!-- Public Enemy 天下公敌 · 报名挑战面板 (Group Mode) -->
+    <div id="public-enemy-signup-panel" class="hidden mt-8 p-8 rounded-2xl w-full max-w-2xl" style="background:linear-gradient(145deg,#7f1d1d,#991b1b);border:4px solid #f87171;box-shadow:0 0 50px rgba(239,68,68,0.5);">
+        <h3 class="text-4xl font-black mb-2 text-center" style="color:#fecaca;text-shadow:0 0 20px rgba(255,215,0,0.5)">👑 天下公敌 · 谁愿挑战王者？</h3>
+        <p class="text-2xl font-bold mb-2 text-center" style="color:#fca5a5" id="public-enemy-king-line"></p>
+        <p class="text-2xl font-black mb-6 text-center" style="color:#fef08a">⚔️ 打败王者，全体剩余组别各 <span class="text-4xl">+2</span> 分！</p>
+        <div id="public-enemy-group-buttons" class="flex flex-wrap gap-4 justify-center">
+            <!-- JS dynamic -->
+        </div>
+    </div>
 </div>
 
 <!-- CHARACTER SELECT VIEW -->
@@ -791,6 +801,15 @@ let groupWheelState = {
     rightPlayer: null,
     isSpinning: false,
     selectedPlayerIdx: null  // currently selected player in the group player pick UI
+};
+
+// 天下公敌（组别模式平衡机制）：连胜5场的守擂玩家晋升「王者」→ 触发天下公敌，
+// 其余组别报名挑战，打败王者则全体剩余存活组别各 +2 分。
+let publicEnemyState = {
+    active: false,       // 天下公敌是否生效
+    kingGroupIdx: null,  // 王者所在组索引
+    kingPlayer: null,    // 王者选手名（连胜5场的组员）
+    kingStreak: 0        // 触发时的连胜数
 };
 
 let skillState = {
@@ -2467,6 +2486,8 @@ function startGroupBattle() {
         leftPlayer: null, rightPlayer: null, isSpinning: false, selectedPlayerIdx: null,
         replacementSide: null
     };
+    publicEnemyState = { active: false, kingGroupIdx: null, kingPlayer: null, kingStreak: 0 };
+    document.getElementById('public-enemy-signup-panel').classList.add('hidden');
     pickedStudentSet = {}; // Reset picked student tracking for new game
     startGroupWheelPhase();
 }
@@ -2698,6 +2719,87 @@ function confirmGroupPlayer() {
     }
 }
 
+// ============ PUBLIC ENEMY (天下公敌) ============
+
+// 通用大字弹窗（红底警告风格），复用 skill-popup 样式
+function showBigPopup(icon, title, textLines, speakText) {
+    var overlay = document.createElement('div');
+    overlay.className = 'skill-popup-overlay';
+    var content = document.createElement('div');
+    content.className = 'skill-popup-content';
+    var iconEl = document.createElement('div');
+    iconEl.className = 'skill-popup-icon';
+    iconEl.innerHTML = icon;
+    var titleEl = document.createElement('h2');
+    titleEl.className = 'skill-popup-title';
+    titleEl.textContent = title;
+    var textEl = document.createElement('div');
+    textEl.className = 'skill-popup-text';
+    textEl.innerHTML = textLines.join('<br>');
+    content.appendChild(iconEl); content.appendChild(titleEl); content.appendChild(textEl);
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    // 3 秒后关闭 + 语音朗读
+    setTimeout(function() {
+        overlay.classList.add('hidden');
+        setTimeout(function() { if (overlay.parentNode) document.body.removeChild(overlay); }, 300);
+        if (speakText && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(speakText);
+            u.lang = 'zh-CN'; u.rate = 0.95; u.pitch = 1.0;
+            window.speechSynthesis.speak(u);
+        }
+    }, 3000);
+}
+
+// 天下公敌生效 → 报名制：列出所有存活且非王者组，老师点选谁来挑战
+function showPublicEnemySignup() {
+    document.getElementById('setup-view').classList.add('hidden');
+    document.getElementById('battle-view').classList.add('hidden');
+    document.getElementById('wheel-view').classList.add('hidden');
+    document.getElementById('group-player-pick-panel').classList.add('hidden');
+    document.getElementById('spin-btn').classList.add('hidden');
+
+    var panel = document.getElementById('public-enemy-signup-panel');
+    panel.classList.remove('hidden');
+    var kingName = publicEnemyState.kingPlayer || '';
+    var kingGroupName = (publicEnemyState.kingGroupIdx !== null && groups[publicEnemyState.kingGroupIdx]) ? groups[publicEnemyState.kingGroupIdx].name : '';
+    document.getElementById('public-enemy-king-line').innerText = '👑 王者：' + kingName + '（' + kingGroupName + '）连胜' + publicEnemyState.kingStreak + '场守擂中';
+
+    var buttonsDiv = document.getElementById('public-enemy-group-buttons');
+    buttonsDiv.innerHTML = '';
+    groups.forEach(function(g, gid) {
+        if (gid === publicEnemyState.kingGroupIdx) return;
+        if (g.aliveCount <= 0) return;
+        var btn = document.createElement('button');
+        btn.className = 'group-player-btn';
+        btn.style.border = '2px solid #f87171';
+        btn.innerText = '🔥 ' + g.name + ' 报名挑战';
+        btn.onclick = function() { choosePublicEnemyChallengerGroup(gid); };
+        buttonsDiv.appendChild(btn);
+    });
+    if (buttonsDiv.children.length === 0) {
+        buttonsDiv.innerHTML = '<p class="text-2xl font-black text-white">没有可挑战的组别了 → 王者夺冠！</p>';
+        setTimeout(showGroupLeaderboard, 1200);
+    }
+}
+
+// 报名选组 → 进入该组选人（复用 group-player-pick-panel）
+function choosePublicEnemyChallengerGroup(gid) {
+    document.getElementById('public-enemy-signup-panel').classList.add('hidden');
+    var kingSide = (publicEnemyState.kingPlayer === groupWheelState.leftPlayer) ? 'left' : 'right';
+    var challengerSide = kingSide === 'left' ? 'right' : 'left';
+    if (challengerSide === 'left') {
+        groupWheelState.leftGroupIdx = gid;
+        groupWheelState.phase = 'leftPlayer';
+    } else {
+        groupWheelState.rightGroupIdx = gid;
+        groupWheelState.phase = 'rightPlayer';
+    }
+    renderGroupPlayerList(gid, challengerSide);
+}
+
 // ============ GROUP BATTLE PROCEED ============
 
 function groupProceedAfterRound() {
@@ -2826,7 +2928,20 @@ function groupProceedAfterRound() {
         return;
     }
 
-    startGroupWheelPhase();
+    // 天下公敌失效检查：王者本人已被淘汰（如双方超时都算输）→ 解除
+    if (publicEnemyState.active && students[publicEnemyState.kingPlayer] && students[publicEnemyState.kingPlayer].eliminated) {
+        publicEnemyState.active = false;
+        publicEnemyState.kingGroupIdx = null;
+        publicEnemyState.kingPlayer = null;
+        publicEnemyState.kingStreak = 0;
+    }
+
+    if (publicEnemyState.active) {
+        // 天下公敌生效：跳过轮盘，进入「谁愿挑战王者？」报名制
+        showPublicEnemySignup();
+    } else {
+        startGroupWheelPhase();
+    }
 }
 
 function updateGroupElimination() {
@@ -3110,8 +3225,10 @@ function startBattleRound() {
 
     const leftName = battleState.leftStudent || '左战士';
     const rightName = battleState.rightStudent || '右战士';
-    document.getElementById('buzzer-left-name').innerText = leftName;
-    document.getElementById('buzzer-right-name').innerText = rightName;
+    // 天下公敌的王者名字旁显示 👑
+    var kingCrown = function(n) { return (publicEnemyState.active && publicEnemyState.kingPlayer === n) ? ' 👑' : ''; };
+    document.getElementById('buzzer-left-name').innerText = leftName + kingCrown(leftName);
+    document.getElementById('buzzer-right-name').innerText = rightName + kingCrown(rightName);
     document.getElementById('timer-label').innerText = '⏱️ 抢答倒计时';
 
     if (students[leftName]) battleState.leftLevel = students[leftName].level || 1;
@@ -3516,6 +3633,32 @@ function resolveRound(result, winningSide) {
                 groups[lGid].players.forEach(function(p) {
                     if (p.name === loserName) p.eliminated = true;
                 });
+            }
+            // ===== 天下公敌机制（组别模式平衡）=====
+            // ① 王者晋升：守擂玩家连胜≥5 且当前不在天下公敌状态 → 触发
+            if (!publicEnemyState.active && students[winnerName].streak >= 5) {
+                publicEnemyState.active = true;
+                publicEnemyState.kingGroupIdx = wGid;
+                publicEnemyState.kingPlayer = winnerName;
+                publicEnemyState.kingStreak = students[winnerName].streak;
+                showBigPopup('👑', '天下公敌！',
+                    [winnerName + ' 连胜' + students[winnerName].streak + '场，晋升王者！', '打败王者，全体剩余组别各 +2 分！'],
+                    winnerName + '连胜' + students[winnerName].streak + '场，晋升王者！天下公敌启动！打败王者，全体剩余组别各加2分！');
+            }
+            // ② 讨伐成功：王者本人被击败 → 全体剩余存活且非王者组各 +2 分，天下公敌解除
+            if (publicEnemyState.active && loserName === publicEnemyState.kingPlayer) {
+                var slayedKing = publicEnemyState.kingPlayer;
+                groups.forEach(function(g, gid) {
+                    if (gid === publicEnemyState.kingGroupIdx) return;
+                    if (g.aliveCount > 0) g.totalWins += 2;
+                });
+                showBigPopup('⚔️', '讨伐成功！',
+                    [winnerName + ' 击败了王者 ' + slayedKing + '！', '全体剩余组别各 +2 分！'],
+                    winnerName + '击败了天下公敌！全体剩余组别各加2分！');
+                publicEnemyState.active = false;
+                publicEnemyState.kingGroupIdx = null;
+                publicEnemyState.kingPlayer = null;
+                publicEnemyState.kingStreak = 0;
             }
         }
 
