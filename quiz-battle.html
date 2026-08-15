@@ -2217,7 +2217,7 @@ let wheelTimeout = null;
 let charSelectState = { pickingFor: 'left', leftPick: null, rightPick: null, singlePick: false };
 
 function getWheelCandidateNames() {
-    var names = Object.keys(students).filter(function(n) { return !students[n].eliminated && !students[n].resting; });
+    var names = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     if (wheelState.excludeStudent) {
         var filtered = names.filter(function(n) { return n !== wheelState.excludeStudent; });
         if (filtered.length >= 1) names = filtered;
@@ -2303,11 +2303,11 @@ function spinWheel() {
 }
 
 function getAvailableStudents() {
-    return Object.keys(students).filter(n => !students[n].eliminated && !students[n].resting);
+    return Object.keys(students).filter(n => !students[n].eliminated);
 }
 
 function getUneliminatedStudents() {
-    return Object.keys(students).filter(n => !students[n].eliminated && !students[n].resting);
+    return Object.keys(students).filter(n => !students[n].eliminated);
 }
 
 function onWheelComplete(name) {
@@ -3208,8 +3208,6 @@ function startBattleRound() {
     turnOverlayActive = false;
     leftFallen = false;
     rightFallen = false;
-    // 强制休息结束：让位者重新进入轮盘候选
-    Object.keys(students).forEach(function(n) { if (students[n].resting) students[n].resting = false; });
     // Reset per-round skill flags
     skillState.leftReviveUsedThisRound = false;
     skillState.rightReviveUsedThisRound = false;
@@ -3706,9 +3704,8 @@ function proceedAfterRound() {
     var leftName = battleState.leftStudent, rightName = battleState.rightStudent;
     var leftAlive = students[leftName] && !students[leftName].eliminated;
     var rightAlive = students[rightName] && !students[rightName].eliminated;
-    // 强制休息的王者视为「不在台上」：下一轮连他一起换人
-    var leftOnStage = leftAlive && !(students[leftName] && students[leftName].resting);
-    var rightOnStage = rightAlive && !(students[rightName] && students[rightName].resting);
+    var leftOnStage = leftAlive;
+    var rightOnStage = rightAlive;
 
     stopRenderLoop();
 
@@ -3741,7 +3738,7 @@ function proceedAfterRound() {
 function spinForSlot(slot) {
     var winnerName = slot === 'left' ? battleState.rightStudent : battleState.leftStudent;
     // 没有可挑战的对手（除冠军外无未淘汰学生）→ 直接进入总结，不再复活已淘汰学生
-    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated && !students[n].resting; });
+    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     var available = uneliminated.filter(function(n) { return n !== winnerName; });
     if (available.length < 1) {
         endGameEarly();
@@ -3813,7 +3810,7 @@ function spinForBoth() {
     skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
     skillState.leftLastSkillStreak = 0; skillState.rightLastSkillStreak = 0;
     // 不足两人可出战 → 直接进入总结，不再复活已淘汰学生
-    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated && !students[n].resting; });
+    var uneliminated = Object.keys(students).filter(function(n) { return !students[n].eliminated; });
     if (uneliminated.length < 2) {
         endGameEarly();
         return;
