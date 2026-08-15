@@ -620,12 +620,15 @@ body {
         </div>
     </div>
 
-    <!-- Public Enemy 天下公敌 · 报名挑战面板 (Group Mode) -->
+    <!-- Public Enemy 天下公敌 · 报名挑战面板 -->
     <div id="public-enemy-signup-panel" class="hidden mt-8 p-8 rounded-2xl w-full max-w-2xl" style="background:linear-gradient(145deg,#7f1d1d,#991b1b);border:4px solid #f87171;box-shadow:0 0 50px rgba(239,68,68,0.5);">
         <h3 class="text-4xl font-black mb-2 text-center" style="color:#fecaca;text-shadow:0 0 20px rgba(255,215,0,0.5)">👑 天下公敌 · 谁愿挑战王者？</h3>
         <p class="text-2xl font-bold mb-2 text-center" style="color:#fca5a5" id="public-enemy-king-line"></p>
-        <p class="text-2xl font-black mb-6 text-center" style="color:#fef08a">⚔️ 打败王者，全体剩余组别各 <span class="text-4xl">+2</span> 分！</p>
+        <p class="text-2xl font-black mb-6 text-center" style="color:#fef08a" id="public-enemy-reward-line">⚔️ 打败王者，全体剩余组别各 <span class="text-4xl">+2</span> 分！</p>
         <div id="public-enemy-group-buttons" class="flex flex-wrap gap-4 justify-center">
+            <!-- JS dynamic -->
+        </div>
+        <div id="public-enemy-student-buttons" class="flex flex-wrap gap-4 justify-center">
             <!-- JS dynamic -->
         </div>
     </div>
@@ -2761,6 +2764,10 @@ function showPublicEnemySignup() {
     document.getElementById('group-player-pick-panel').classList.add('hidden');
     document.getElementById('spin-btn').classList.add('hidden');
 
+    document.getElementById('public-enemy-reward-line').innerText = '⚔️ 打败王者，全体剩余组别各 +2 分！';
+    document.getElementById('public-enemy-group-buttons').classList.remove('hidden');
+    document.getElementById('public-enemy-student-buttons').classList.add('hidden');
+
     var panel = document.getElementById('public-enemy-signup-panel');
     panel.classList.remove('hidden');
     var kingName = publicEnemyState.kingPlayer || '';
@@ -2798,6 +2805,75 @@ function choosePublicEnemyChallengerGroup(gid) {
         groupWheelState.phase = 'rightPlayer';
     }
     renderGroupPlayerList(gid, challengerSide);
+}
+
+// 天下公敌生效 → 双人决战报名制：列出所有存活且非王者学生，老师点选谁来挑战
+function showPublicEnemyDuelSignup() {
+    document.getElementById('setup-view').classList.add('hidden');
+    document.getElementById('battle-view').classList.add('hidden');
+    document.getElementById('wheel-view').classList.add('hidden');
+    document.getElementById('group-player-pick-panel').classList.add('hidden');
+    document.getElementById('spin-btn').classList.add('hidden');
+
+    var panel = document.getElementById('public-enemy-signup-panel');
+    panel.classList.remove('hidden');
+    document.getElementById('public-enemy-reward-line').innerText = '⚔️ 打败王者，讨伐者 +2 分，全体存活各 +1 分！';
+    document.getElementById('public-enemy-group-buttons').classList.add('hidden');
+    document.getElementById('public-enemy-student-buttons').classList.remove('hidden');
+
+    var kingName = publicEnemyState.kingPlayer || '';
+    document.getElementById('public-enemy-king-line').innerText = '👑 王者：' + kingName + ' 连胜' + publicEnemyState.kingStreak + '场守擂中';
+
+    var buttonsDiv = document.getElementById('public-enemy-student-buttons');
+    buttonsDiv.innerHTML = '';
+    Object.keys(students).forEach(function(n) {
+        if (n === kingName) return;
+        if (students[n].eliminated) return;
+        var btn = document.createElement('button');
+        btn.className = 'group-player-btn';
+        btn.style.border = '2px solid #f87171';
+        btn.innerText = '🔥 ' + n + ' 报名挑战';
+        btn.onclick = function() { choosePublicEnemyDuelChallenger(n); };
+        buttonsDiv.appendChild(btn);
+    });
+    if (buttonsDiv.children.length === 0) {
+        buttonsDiv.innerHTML = '<p class="text-2xl font-black text-white">没有可挑战的对手了 → 王者夺冠！</p>';
+        setTimeout(showLeaderboard, 1200);
+    }
+}
+
+// 报名选挑战者 → 王者保留角色，挑战者进单侧选角（复用 startSingleCharSelect）
+function choosePublicEnemyDuelChallenger(name) {
+    document.getElementById('public-enemy-signup-panel').classList.add('hidden');
+    var kingSide = (publicEnemyState.kingPlayer === battleState.leftStudent) ? 'left' : 'right';
+    var challengerSide = kingSide === 'left' ? 'right' : 'left';
+
+    if (!students[name]) {
+        students[name] = { name: name, wins: 0, losses: 0, streak: 0, bestStreak: 0, character: null, level: 1, eliminated: false, usedCount: 1, totalQuestions: 0, correctAnswers: 0 };
+    } else {
+        students[name].usedCount = (students[name].usedCount || 0) + 1;
+    }
+    markStudentPicked(name);
+    students[name].eliminated = false;
+
+    if (challengerSide === 'left') {
+        battleState.leftStudent = name;
+        if (students[name].character) {
+            battleState.leftCharacter = students[name].character;
+            battleState.leftLevel = students[name].level || 1;
+        }
+        skillState.leftSkill = null; skillState.leftSkillConsumed = false; skillState.leftDoubleScore = false;
+        skillState.leftLastSkillStreak = 0;
+    } else {
+        battleState.rightStudent = name;
+        if (students[name].character) {
+            battleState.rightCharacter = students[name].character;
+            battleState.rightLevel = students[name].level || 1;
+        }
+        skillState.rightSkill = null; skillState.rightSkillConsumed = false; skillState.rightDoubleScore = false;
+        skillState.rightLastSkillStreak = 0;
+    }
+    startSingleCharSelect(challengerSide);
 }
 
 // ============ GROUP BATTLE PROCEED ============
