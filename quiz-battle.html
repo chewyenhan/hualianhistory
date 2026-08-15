@@ -2059,6 +2059,8 @@ function startBattle() {
     };
     skillWheelState = { targetSkill: null, isSpinning: false, pendingSide: null, pendingName: null };
     pickedStudentSet = {}; // Reset picked student tracking for new game
+    publicEnemyState = { active: false, kingGroupIdx: null, kingPlayer: null, kingStreak: 0 };
+    document.getElementById('public-enemy-signup-panel').classList.add('hidden');
     startWheelPhase();
 }
 
@@ -3774,6 +3776,19 @@ function proceedAfterRound() {
         stopRenderLoop();
         document.getElementById('battle-view').classList.add('hidden');
         showLeaderboard();
+        return;
+    }
+
+    // 天下公敌（双人决战）：王者已被淘汰（如双方超时都算输）→ 解除
+    if (publicEnemyState.active && students[publicEnemyState.kingPlayer] && students[publicEnemyState.kingPlayer].eliminated) {
+        publicEnemyState.active = false;
+        publicEnemyState.kingGroupIdx = null;
+        publicEnemyState.kingPlayer = null;
+        publicEnemyState.kingStreak = 0;
+    }
+    // 天下公敌生效中：跳过轮盘，进入「谁愿挑战王者？」报名制
+    if (publicEnemyState.active) {
+        showPublicEnemyDuelSignup();
         return;
     }
 
