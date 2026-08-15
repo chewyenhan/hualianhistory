@@ -3544,70 +3544,6 @@ function resolveRound(result, winningSide) {
         if (students[winnerName].streak > students[winnerName].bestStreak) students[winnerName].bestStreak = students[winnerName].streak;
         checkLevelUp(winnerName);
 
-        // 连胜≥5 强制休息（仅双人决战模式）：王者让位下台，名字保留在轮盘待再抽。
-        // 用独立 resting 标记而非 eliminated —— eliminated 会被轮盘过滤掉，永远抽不回。
-        var restedName = null;
-        if (gameMode !== 'group' && students[winnerName].streak >= 5) {
-            students[winnerName].resting = true;
-            students[winnerName].streak = 0;   // 休息归来后重新累计连胜
-            restedName = students[winnerName].name;
-            
-            // 弹窗提醒 + 系统语音朗读
-            setTimeout(function() {
-                // 游戏风技能弹窗
-                var duejieMessage = '👑 ' + restedName + '\n\n王者超载！由于艰苦的战斗，你必须马上休息\n\n进入5连胜强制冷却中...等待时机再战！';
-
-                // 创建游戏风技能弹窗
-                var skillPopup = document.createElement('div');
-                skillPopup.id = 'skill-popup-overlay';
-                skillPopup.className = 'skill-popup-overlay';
-
-                var skillContent = document.createElement('div');
-                skillContent.className = 'skill-popup-content';
-
-                var skillIcon = document.createElement('div');
-                skillIcon.className = 'skill-popup-icon';
-                skillIcon.innerHTML = '👑';
-
-                var skillTitle = document.createElement('h2');
-                skillTitle.className = 'skill-popup-title';
-                skillTitle.textContent = restedName;
-
-                var skillText = document.createElement('div');
-                skillText.className = 'skill-popup-text';
-                skillText.innerHTML = duejieMessage.replace('\n\n', '<br><br>');
-
-                skillContent.appendChild(skillIcon);
-                skillContent.appendChild(skillTitle);
-                skillContent.appendChild(skillText);
-                skillPopup.appendChild(skillContent);
-                document.body.appendChild(skillPopup);
-
-                // 触发动画
-                setTimeout(function() {
-                    skillPopup.classList.add('active');
-                }, 10);
-
-                // 3秒后关闭
-                setTimeout(function() {
-                    skillPopup.classList.remove('active');
-                    setTimeout(function() {
-                        document.body.removeChild(skillPopup);
-                    }, 300);
-
-                    // 语音朗读
-                    if ('speechSynthesis' in window) {
-                        window.speechSynthesis.cancel();
-                        var utterance = new SpeechSynthesisUtterance(restedName + '王者超载！由于艰苦的战斗，你必须马上休息。进入5连胜强制冷却中，等待时机再战！');
-                        utterance.lang = 'zh-CN';
-                        utterance.rate = 0.95;
-                        utterance.pitch = 1.0;
-                        window.speechSynthesis.speak(utterance);
-                    }
-                }, 3000);
-            }, 800);
-        }
-
         // Always update loser stats (MUST run before skill wheel check)
         students[loserName].losses++;
         students[loserName].streak = 0;
@@ -3634,20 +3570,29 @@ function resolveRound(result, winningSide) {
                     if (p.name === loserName) p.eliminated = true;
                 });
             }
-            // ===== 天下公敌机制（组别模式平衡）=====
-            // ① 王者晋升：守擂玩家连胜≥5 且当前不在天下公敌状态 → 触发
-            if (!publicEnemyState.active && students[winnerName].streak >= 5) {
-                publicEnemyState.active = true;
-                publicEnemyState.kingGroupIdx = wGid;
-                publicEnemyState.kingPlayer = winnerName;
-                publicEnemyState.kingStreak = students[winnerName].streak;
+        }
+
+        // ===== 天下公敌（两种模式共用）=====
+        // ① 王者晋升：守擂玩家连胜≥5 且当前不在天下公敌状态 → 触发
+        if (!publicEnemyState.active && students[winnerName].streak >= 5) {
+            publicEnemyState.active = true;
+            publicEnemyState.kingGroupIdx = (gameMode === 'group') ? wGid : null;
+            publicEnemyState.kingPlayer = winnerName;
+            publicEnemyState.kingStreak = students[winnerName].streak;
+            if (gameMode === 'group') {
                 showBigPopup('👑', '天下公敌！',
                     [winnerName + ' 连胜' + students[winnerName].streak + '场，晋升王者！', '打败王者，全体剩余组别各 +2 分！'],
                     winnerName + '连胜' + students[winnerName].streak + '场，晋升王者！天下公敌启动！打败王者，全体剩余组别各加2分！');
+            } else {
+                showBigPopup('👑', '天下公敌！',
+                    [winnerName + ' 连胜' + students[winnerName].streak + '场，晋升王者！', '打败王者，讨伐者 +2 分，全体存活各 +1 分！'],
+                    winnerName + '连胜' + students[winnerName].streak + '场，晋升王者！天下公敌启动！打败王者，讨伐者加2分，全体存活各加1分！');
             }
-            // ② 讨伐成功：王者本人被击败 → 全体剩余存活且非王者组各 +2 分，天下公敌解除
-            if (publicEnemyState.active && loserName === publicEnemyState.kingPlayer) {
-                var slayedKing = publicEnemyState.kingPlayer;
+        }
+        // ② 讨伐成功：王者本人被击败 → 按模式发奖，天下公敌解除
+        if (publicEnemyState.active && loserName === publicEnemyState.kingPlayer) {
+            var slayedKing = publicEnemyState.kingPlayer;
+            if (gameMode === 'group') {
                 groups.forEach(function(g, gid) {
                     if (gid === publicEnemyState.kingGroupIdx) return;
                     if (g.aliveCount > 0) g.totalWins += 2;
@@ -3655,11 +3600,22 @@ function resolveRound(result, winningSide) {
                 showBigPopup('⚔️', '讨伐成功！',
                     [winnerName + ' 击败了王者 ' + slayedKing + '！', '全体剩余组别各 +2 分！'],
                     winnerName + '击败了天下公敌！全体剩余组别各加2分！');
-                publicEnemyState.active = false;
-                publicEnemyState.kingGroupIdx = null;
-                publicEnemyState.kingPlayer = null;
-                publicEnemyState.kingStreak = 0;
+            } else {
+                // 双人决战：讨伐者 +2，全体其他存活学生各 +1（讨伐者不叠加；王者已淘汰自然不含）
+                students[winnerName].wins += 2;
+                Object.keys(students).forEach(function(n) {
+                    if (n === winnerName) return;
+                    if (n === publicEnemyState.kingPlayer) return;
+                    if (students[n] && !students[n].eliminated) students[n].wins += 1;
+                });
+                showBigPopup('⚔️', '讨伐成功！',
+                    [winnerName + ' 击败了王者 ' + slayedKing + '！', '讨伐者 +2 分，全体存活各 +1 分！'],
+                    winnerName + '击败了天下公敌！讨伐者加2分，全体存活各加1分！');
             }
+            publicEnemyState.active = false;
+            publicEnemyState.kingGroupIdx = null;
+            publicEnemyState.kingPlayer = null;
+            publicEnemyState.kingStreak = 0;
         }
 
         // Play animations and sounds
