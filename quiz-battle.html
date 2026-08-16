@@ -3695,6 +3695,14 @@ function resolveRound(result, winningSide) {
                     [winnerName + ' 击败了王者 ' + slayedKing + '！', '讨伐者 +2 分，全体存活各 +1 分！'],
                     winnerName + '击败了天下公敌！讨伐者加2分，全体存活各加1分！');
             }
+            // 讨伐者连胜同步 +2：打败王者一次拿 4 分，但连胜只 +2 达不到大招(3连胜)/King Slayer(3+连胜)阈值，
+            // 导致后续学生既拿不到大招、也触发不了 King Slayer。这里让连胜与「+4 分」对齐。
+            students[winnerName].streak += 2;
+            if (students[winnerName].streak > students[winnerName].bestStreak) students[winnerName].bestStreak = students[winnerName].streak;
+            // 静默更新等级（讨伐额外连胜不重复播放升级音效/特效，checkLevelUp 已在上面调用过）
+            var _lv = students[winnerName].streak >= 3 ? 3 : (students[winnerName].streak >= 2 ? 2 : 1);
+            if (_lv > students[winnerName].level) students[winnerName].level = _lv;
+
             publicEnemyState.active = false;
             publicEnemyState.kingGroupIdx = null;
             publicEnemyState.kingPlayer = null;
