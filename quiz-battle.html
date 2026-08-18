@@ -1097,7 +1097,7 @@ function playUltimateVideo(heroKey, done) {
     };
     vd.onerror = finish;   // 视频缺失/网络差 → 兜底继续
     vd.onended = finish;   // 播完关掉
-    var timer = setTimeout(finish, 5000);  // 加载超时兜底
+    var timer = setTimeout(finish, 6000);  // 加载超时兜底（GitHub Pages CDN 时快时慢，1.4s~11s 实测）
     ov.classList.remove('hidden');
     vd.src = 'assets/heroes/' + heroKey + '-ultimate.mp4';
     vd.load();
