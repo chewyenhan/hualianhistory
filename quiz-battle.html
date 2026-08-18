@@ -166,6 +166,24 @@ body {
 #intro-line { font-size: clamp(1.1rem, 3vw, 1.8rem); color: #fff; font-style: italic; margin-top: 0.6rem; text-shadow: 0 2px 12px rgba(0,0,0,0.9); }
 #intro-role { display: inline-block; background: rgba(20,26,44,0.75); color: #e6d9a8; border: 1px solid rgba(255,215,0,0.35); border-radius: 999px; padding: 4px 20px; font-size: 1rem; margin-top: 0.8rem; }
 
+/* 全屏大招覆盖层 —— double_score 命中时的英雄大招视频 */
+#ultimate-view {
+    /* 11000 = 全文件最高层：视频播放期间盖住弹窗/技能轮盘/turn-overlay，播完再浮现 */
+    position: fixed; inset: 0; z-index: 11000; background: #000;
+    overflow: hidden;
+}
+#ultimate-view.hidden { display: none; }
+#ultimate-video {
+    position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover;
+    background: #000; z-index: 1;
+}
+#ultimate-caption {
+    position: fixed; left: 0; right: 0; bottom: 6vh; z-index: 10;
+    text-align: center; pointer-events: none; padding: 0 4vw;
+    font-size: clamp(1.4rem, 4vw, 2.4rem); font-weight: 900; color: #ffd700;
+    text-shadow: 0 0 30px rgba(255,215,0,0.6), 0 2px 14px rgba(0,0,0,0.9);
+}
+
 .timer-bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
 .timer-bar-fill { height: 100%; border-radius: 6px; transition: width 1s linear, background 0.5s; background: #22c55e; }
 
@@ -656,6 +674,12 @@ body {
     </div>
 </div>
 
+<!-- ULTIMATE VIEW (大招视频：double_score 命中时全屏播放) -->
+<div id="ultimate-view" class="hidden">
+    <video id="ultimate-video" autoplay muted playsinline></video>
+    <div id="ultimate-caption"></div>
+</div>
+
 <!-- VS COUNTDOWN OVERLAY -->
 <div id="vs-overlay" class="hidden">
     <div id="vs-text">3</div>
@@ -1036,6 +1060,34 @@ const HEROES = {
 // 立绘 + 战斗 sprite 缓存（AI PNG 异步加载）
 const portraitCache = {};       // key -> Image
 const battleSpriteCache = {};   // key -> Image
+
+// ============ 全屏大招视频：double_score 命中时播放胜方英雄大招 ============
+// 视频路径按命名约定推导 {slug}-ultimate.mp4（assets/heroes/*-ultimate.mp4）。
+// 复用 intro 视频的兜底模式：加载失败 / 5s 超时 → 静默关闭，不卡战斗流程。
+function playUltimateVideo(heroKey, done) {
+    var h = HEROES[heroKey];
+    var ov = document.getElementById('ultimate-view');
+    var vd = document.getElementById('ultimate-video');
+    if (!ov || !vd || !h) { done && done(); return; }
+    var cap = document.getElementById('ultimate-caption');
+    if (cap) cap.innerText = '⚡ ' + h.emoji + ' ' + h.name + ' 大招';
+    var settled = false;
+    var finish = function() {
+        if (settled) return; settled = true;
+        clearTimeout(timer);
+        vd.onloadeddata = vd.onerror = vd.onended = null;
+        vd.pause(); vd.removeAttribute('src'); vd.load();
+        ov.classList.add('hidden');
+        done();
+    };
+    vd.onloadeddata = function() { clearTimeout(timer); vd.play().catch(function() {}); };
+    vd.onerror = finish;   // 视频缺失/网络差 → 兜底继续
+    vd.onended = finish;   // 播完关掉
+    var timer = setTimeout(finish, 5000);  // 加载超时兜底
+    ov.classList.remove('hidden');
+    vd.src = 'assets/heroes/' + heroKey + '-ultimate.mp4';
+    vd.load();
+}
 
 function loadHeroAssets() {
     Object.keys(HEROES).forEach(key => {
@@ -3711,12 +3763,20 @@ function resolveRound(result, winningSide) {
 
         // Play animations and sounds
         playCorrectSound();
-        // The skill flag is cleared once its bonus win is awarded above, so use the
-        // captured result to keep the giant-weapon animation in sync with scoring.
-        addAttackAnimation(winningSide, winnerChar, doubleScoreUsed);
-        setTimeout(function() {
-            addFallAnimation(loserSide, loserChar, winningSide === 'left' ? battleState.rightLevel : battleState.leftLevel);
-        }, 700);
+        if (doubleScoreUsed) {
+            // 大招视频：double_score 命中 → 全屏播放胜方英雄大招（代替常规攻击动画），
+            // 视频播完（或加载失败/5s 超时兜底）后接倒地动画，节奏更顺。
+            playUltimateVideo(winnerChar, function() {
+                addFallAnimation(loserSide, loserChar, winningSide === 'left' ? battleState.rightLevel : battleState.leftLevel);
+            });
+        } else {
+            // The skill flag is cleared once its bonus win is awarded above, so use the
+            // captured result to keep the giant-weapon animation in sync with scoring.
+            addAttackAnimation(winningSide, winnerChar, doubleScoreUsed);
+            setTimeout(function() {
+                addFallAnimation(loserSide, loserChar, winningSide === 'left' ? battleState.rightLevel : battleState.leftLevel);
+            }, 700);
+        }
 
         // Skill wheel trigger: every 3 consecutive wins (streak 3, 6, 9, ...)
         var winnerStreak = students[winnerName] ? students[winnerName].streak : 0;

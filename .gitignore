@@ -6,3 +6,12 @@ assets/heroes/*-keyed.png
 assets/heroes/preview.html
 __pycache__/
 *.pyc
+
+# 大招视频生成/审核脚本（gen_ultimate.py 含 API Key）+ 一次性抽帧产物
+assets/heroes/gen_ultimate.py
+assets/heroes/review_ultimates.py
+assets/heroes/identify_weapons.py
+assets/heroes/frames_*/
+assets/heroes/*_review.txt
+assets/heroes/identify_out.txt
+assets/heroes/review_ultimates_out.txt
