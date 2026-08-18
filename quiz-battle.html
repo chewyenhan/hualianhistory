@@ -676,7 +676,9 @@ body {
 
 <!-- ULTIMATE VIEW (大招视频：double_score 命中时全屏播放) -->
 <div id="ultimate-view" class="hidden">
-    <video id="ultimate-video" autoplay playsinline></video>
+    <!-- muted 必须保留：Chrome 对非 muted 的 autoplay 视频会延迟加载（卡 NETWORK_LOADING）；
+         加载完成后 playUltimateVideo 里会立即 muted=false 解静音 → 有声音 -->
+    <video id="ultimate-video" autoplay muted playsinline></video>
     <div id="ultimate-caption"></div>
 </div>
 
@@ -1083,12 +1085,14 @@ function playUltimateVideo(heroKey, done) {
     };
     vd.onloadeddata = function() {
         clearTimeout(timer);
-        // 大招视频带音轨（不带 muted），自动播放被浏览器拦截时 → 点覆盖层开启声音
+        // 大招视频带音轨：静音加载完成后立即解静音 → 有声音
+        // （真实对战中玩家已有交互手势，解静音立即生效；无手势的预览被拦时走下方点击兜底）
+        vd.muted = false;
         var pr = vd.play();
         if (pr && pr.catch) pr.catch(function() {
             ov.style.cursor = 'pointer';
             if (cap) cap.innerText = cap.innerText + ' · 点击开启声音';
-            ov.onclick = function() { vd.play().catch(function() {}); };
+            ov.onclick = function() { vd.muted = false; vd.play().catch(function() {}); };
         });
     };
     vd.onerror = finish;   // 视频缺失/网络差 → 兜底继续
