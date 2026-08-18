@@ -1089,6 +1089,33 @@ function playUltimateVideo(heroKey, done) {
     vd.load();
 }
 
+// ============ 测试钩子（URL 门控，正常游玩不影响） ============
+// ?testUlt=<heroKey>   → 页面加载后直接全屏播放该英雄大招视频（验证视频/兼作教师预览）
+// ?forceDouble=1       → 双方开局即挂双倍得分，第一场任意一方答对即走真实大招路径
+(function() {
+    var p = new URLSearchParams(location.search);
+    var t = p.get('testUlt');
+    var fd = p.get('forceDouble') === '1';
+    if (t || fd) {
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (t) playUltimateVideo(t, function() {});
+                if (fd) {
+                    // startBattle() 会重置 skillState，包装它：重置后再挂双倍得分
+                    var orig = window.startBattle;
+                    if (typeof orig === 'function') {
+                        window.startBattle = function() {
+                            orig.apply(this, arguments);
+                            skillState.leftDoubleScore = true;
+                            skillState.rightDoubleScore = true;
+                        };
+                    }
+                }
+            }, 400);
+        });
+    }
+})();
+
 function loadHeroAssets() {
     Object.keys(HEROES).forEach(key => {
         const h = HEROES[key];
