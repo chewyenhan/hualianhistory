@@ -676,7 +676,7 @@ body {
 
 <!-- ULTIMATE VIEW (大招视频：double_score 命中时全屏播放) -->
 <div id="ultimate-view" class="hidden">
-    <video id="ultimate-video" autoplay muted playsinline></video>
+    <video id="ultimate-video" autoplay playsinline></video>
     <div id="ultimate-caption"></div>
 </div>
 
@@ -1076,11 +1076,21 @@ function playUltimateVideo(heroKey, done) {
         if (settled) return; settled = true;
         clearTimeout(timer);
         vd.onloadeddata = vd.onerror = vd.onended = null;
+        ov.onclick = null; ov.style.cursor = '';
         vd.pause(); vd.removeAttribute('src'); vd.load();
         ov.classList.add('hidden');
         done();
     };
-    vd.onloadeddata = function() { clearTimeout(timer); vd.play().catch(function() {}); };
+    vd.onloadeddata = function() {
+        clearTimeout(timer);
+        // 大招视频带音轨（不带 muted），自动播放被浏览器拦截时 → 点覆盖层开启声音
+        var pr = vd.play();
+        if (pr && pr.catch) pr.catch(function() {
+            ov.style.cursor = 'pointer';
+            if (cap) cap.innerText = cap.innerText + ' · 点击开启声音';
+            ov.onclick = function() { vd.play().catch(function() {}); };
+        });
+    };
     vd.onerror = finish;   // 视频缺失/网络差 → 兜底继续
     vd.onended = finish;   // 播完关掉
     var timer = setTimeout(finish, 5000);  // 加载超时兜底
