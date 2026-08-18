@@ -1097,7 +1097,10 @@ function playUltimateVideo(heroKey, done) {
     };
     vd.onerror = finish;   // 视频缺失/网络差 → 兜底继续
     vd.onended = finish;   // 播完关掉
-    var timer = setTimeout(finish, 6000);  // 加载超时兜底（GitHub Pages CDN 时快时慢，1.4s~11s 实测）
+    // 超时必须 > ~5.4s：GitHub Pages CDN 首个媒体请求常卡 ~5.4s，随后 Chrome 自动中止并
+    // 重试（重试命中缓存，30ms 即成功）。若超时更短，finish() 的 removeAttribute('src') 会
+    // 打断这个自动重试 → 视频永久卡死。12s 只作为双保险（onerror 已覆盖 404 场景）。
+    var timer = setTimeout(finish, 12000);
     ov.classList.remove('hidden');
     vd.src = 'assets/heroes/' + heroKey + '-ultimate.mp4';
     vd.load();
