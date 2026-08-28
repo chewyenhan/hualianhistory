@@ -36,7 +36,8 @@ export default {
     if (url.pathname === '/models' && request.method === 'GET') {
       return new Response(JSON.stringify({
         models: [
-          { name: 'models/gemini-3.5-flash-lite', displayName: 'Gemini 3.5 Flash Lite (免费推荐)' }
+          { name: 'models/gemini-3.5-flash-lite', displayName: 'Gemini 3.5 Flash Lite (免费推荐)' },
+          { name: 'models/gemini-3.7-flash', displayName: 'Gemini 3.7 Flash (更强·困难题更准)' }
         ]
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
