@@ -509,6 +509,35 @@
             window.speechSynthesis.speak(utterance);
         }
 
+        // 🛡️ 规范化 AI 返回的题目对象：把字段名变体统一映射到 q/options/ans/note/difficulty
+        function normalizeScene(s, idx) {
+            if (!s || typeof s !== 'object') return null;
+            const q = s.q ?? s.question ?? s.text ?? s.title ?? s.prompt ?? s['题干'];
+            const options = s.options ?? s.choices ?? s.answers ?? s['选项'];
+            if (!Array.isArray(options) || options.length < 2) return null;
+            let ansRaw = s.ans ?? s.answer ?? s.correct ?? s.correct_answer ?? s.answer_index ?? s.correct_index ?? s.correctIndex ?? s['正确答案'];
+            let ans;
+            if (typeof ansRaw === 'number') {
+                ans = ansRaw;
+            } else if (typeof ansRaw === 'string') {
+                const t = ansRaw.trim();
+                if (/^\d+$/.test(t)) {
+                    ans = parseInt(t, 10);
+                } else if (/^[a-c]$/i.test(t)) {
+                    ans = t.toLowerCase().charCodeAt(0) - 97;
+                } else {
+                    ans = options.findIndex(o => (o ?? '').trim() === t);
+                    if (ans < 0) ans = options.findIndex(o => (o ?? '').includes(t) || t.includes(o));
+                }
+            } else {
+                ans = 0;
+            }
+            if (!Number.isInteger(ans) || ans < 0 || ans >= options.length) ans = 0;
+            const note = s.note ?? s.explanation ?? s.analysis ?? s.reason ?? s['解析'] ?? '';
+            const difficulty = s.difficulty ?? s.level ?? s['难度'] ?? 'medium';
+            return { q, options, ans, note, difficulty, id: s.id };
+        }
+
         // 🔀 Fisher-Yates 打乱每题的选项顺序，并同步更新正确答案索引
         function shuffleOptions(scenes) {
             scenes.forEach(s => {
@@ -672,7 +701,11 @@ ${text}
 - 中等题（${medN} 题）= 需要理解或简单推理：串联两个事实、判断因果、应用一个概念，两步
 - 困难题（${hardN} 题）= 需要深层分析：跨段落对比、推断隐含结论、在 2 个以上"接近正确"的迷惑项里选。困难题必须明显比简单题难
 
-- Output ONLY valid JSON array, no markdown, no code blocks.`;
+- Output ONLY valid JSON array, no markdown, no code blocks.
+- ⚠️ 每道题必须严格使用以下字段名（不要换成别的名字）：
+  {"q":"题目文字","options":["选项A","选项B","选项C"],"ans":0,"note":"2-3句知识讲解","difficulty":"easy|medium|hard"}
+  其中 q=题目文字、options=3个选项字符串数组、ans=正确答案索引(0/1/2)、note=讲解、difficulty=难度
+- 只输出这个 JSON 数组本身，不要任何多余文字或解释。`;
 
             let isOfflineMode = false;
             try {
@@ -689,11 +722,11 @@ ${text}
                 const aiTxt = data.candidates[0].content.parts[0].text;
                 const match = aiTxt.match(/\[[\s\S]*\]/);
                 if (!match) throw new Error("AI 格式错误");
-                scenes = JSON.parse(match[0]);
+                scenes = JSON.parse(match[0]).map(normalizeScene).filter(Boolean);
                 shuffleOptions(scenes);
             } catch(e) {
                 console.warn('⚠️ API 调用失败，使用离线 fallback 模式', e);
-                scenes = buildFallbackData(text, parseInt(easyN), parseInt(medN), parseInt(hardN), config.qCount);
+                scenes = buildFallbackData(text, parseInt(easyN), parseInt(medN), parseInt(hardN), config.qCount).map(normalizeScene).filter(Boolean);
                 shuffleOptions(scenes);
                 isOfflineMode = true;
             }
