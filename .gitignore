@@ -15,3 +15,6 @@ assets/heroes/frames_*/
 assets/heroes/*_review.txt
 assets/heroes/identify_out.txt
 assets/heroes/review_ultimates_out.txt
+
+# Installed dependencies are generated locally.
+node_modules/
