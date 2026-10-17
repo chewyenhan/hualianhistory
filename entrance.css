@@ -1,0 +1,44 @@
+/* Brass cartographic mark, followed by a two-part navy curtain. */
+.entrance{display:none;position:fixed;inset:0;z-index:100;overflow:hidden;isolation:isolate;color:var(--gold)}
+html[data-enter] .entrance{display:block;animation:entry-failsafe .1s 3.2s forwards}
+.entrance-panel{position:absolute;left:0;width:100%;height:50%;background:#0e1b23;z-index:-1}
+.entrance-panel-top{top:0;border-bottom:1px solid #ddba7b33}
+.entrance-panel-bottom{bottom:0;border-top:1px solid #ddba7b33}
+.entrance-mark{position:absolute;left:50%;top:46%;width:min(420px,90vw);text-align:center;transform:translate(-50%,-50%)}
+.entrance-compass{width:210px;height:210px;stroke:#ddba7b;stroke-width:.65;opacity:.55}
+.entrance-seal{position:absolute;top:69px;left:50%;transform:translateX(-50%);font:58px/1.25 'ZCOOL XiaoWei','STSong',serif}
+.entrance-name{font:32px/1.5 'ZCOOL XiaoWei','STSong',serif;letter-spacing:10px;padding-left:10px;margin:12px 0}
+.entrance-sub{font-size:11px;color:#b6b8ad;letter-spacing:3px;margin:0}
+.entrance-line{position:absolute;top:50%;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,#ddba7b,transparent);transform:scaleX(0);z-index:2;opacity:0}
+.entrance-skip{position:absolute;right:5%;bottom:7%;display:flex;gap:24px;align-items:center;color:var(--gold);border:1px solid #ddba7b55;background:transparent;padding:9px 17px;font-size:11px;letter-spacing:1px}
+html[data-enter=running] .entrance-mark{animation:entry-mark 1.35s cubic-bezier(.2,.7,.25,1) both}
+html[data-enter=running] .entrance-compass{animation:entry-compass 1.5s ease-out both}
+html[data-enter=running] .entrance-line{animation:entry-line 1.35s ease-in-out both}
+html[data-enter=running] .entrance-panel-top{animation:entry-top 1.05s .9s cubic-bezier(.76,0,.24,1) both}
+html[data-enter=running] .entrance-panel-bottom{animation:entry-bottom 1.05s .9s cubic-bezier(.76,0,.24,1) both}
+html[data-enter=running] .entrance-skip{opacity:1}
+html[data-enter=running] .hero-art{animation:entry-landscape 2.3s cubic-bezier(.2,.65,.3,1) both}
+html[data-enter=running] .hero-content>.eyebrow{animation:entry-copy .7s 1.15s both}
+html[data-enter=running] .hero-content>h1{animation:entry-copy .85s 1.3s both}
+html[data-enter=running] .hero-content>.hero-copy{animation:entry-copy .8s 1.45s both}
+html[data-enter=running] .hero-content>.actions,html[data-enter=running] .hero-content>.switches{animation:entry-copy .7s 1.6s both}
+.entry-replay{border:0;background:transparent;padding:0;color:var(--gold);font-size:11px;white-space:nowrap}
+@keyframes entry-mark{0%{opacity:0;transform:translate(-50%,-45%)}25%,65%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-54%)}}
+@keyframes entry-compass{from{transform:rotate(-24deg)}to{transform:rotate(0)}}
+@keyframes entry-line{0%,35%{opacity:0;transform:scaleX(0)}65%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
+@keyframes entry-top{to{transform:translateY(-101%)}}
+@keyframes entry-bottom{to{transform:translateY(101%)}}
+@keyframes entry-skip{0%,70%{opacity:1}100%{opacity:0;visibility:hidden}}
+@keyframes entry-landscape{from{transform:scale(1.07);filter:brightness(.6)}to{transform:scale(1);filter:brightness(1)}}
+@keyframes entry-copy{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes entry-failsafe{to{visibility:hidden;pointer-events:none}}
+@media(max-width:600px){.entrance-compass{width:180px;height:180px}.entrance-seal{top:58px;font-size:50px}.entrance-name{font-size:28px}.entrance-sub{font-size:10px;letter-spacing:2px}}
+@media(prefers-reduced-motion:reduce){html[data-enter] .entrance{display:none}html[data-enter] .hero-art,html[data-enter] .hero-content>*{animation:none!important}}
+
+/* Generated brass artifact replaces the initial line-art compass. */
+.entrance-compass{width:280px;height:280px;object-fit:contain;opacity:1;mask-image:radial-gradient(circle,#000 62%,transparent 73%);filter:drop-shadow(0 10px 30px #0005)}
+.entrance-seal{top:102px;font-size:62px;color:#ead09d;text-shadow:0 2px 15px #ddba7b35}
+.entrance-panel{background:radial-gradient(ellipse at 50% 100%,#1b3039 0%,#0e1b23 65%)}
+.entrance-panel-bottom{background:radial-gradient(ellipse at 50% 0%,#1b3039 0%,#0e1b23 65%)}
+@keyframes entry-compass{from{transform:rotate(-9deg) scale(.94)}to{transform:rotate(0) scale(1)}}
+@media(max-width:600px){.entrance-compass{width:240px;height:240px}.entrance-seal{top:86px;font-size:56px}}
